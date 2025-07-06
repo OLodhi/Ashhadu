@@ -7,6 +7,7 @@ import { Eye, EyeOff, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import Logo from '@/components/ui/Logo';
 import SafeLink from '@/components/ui/SafeLink';
+import OAuthButtons from '@/components/auth/OAuthButtons';
 import toast from 'react-hot-toast';
 
 export default function LoginPage() {
@@ -233,6 +234,9 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+
+          {/* OAuth Buttons */}
+          <OAuthButtons mode="signin" className="mt-6" />
 
           {/* Sign Up Link */}
           <div className="mt-6 text-center">

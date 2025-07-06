@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server';
 import { Database } from '@/types/database';
 
 export async function middleware(req: NextRequest) {
-  console.log('🔵 Middleware running for path:', req.nextUrl.pathname);
+  console.log('🟢 MIDDLEWARE RUNNING FOR PATH:', req.nextUrl.pathname);
   
   let response = NextResponse.next({
     request: {
@@ -101,6 +101,8 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith(route)
   );
   const isAuthRoute = authRoutes.some(route => pathname.startsWith(route));
+
+  console.log('🔵 Route check:', { pathname, isCustomerProtected, isAdminProtected, hasSession: !!session });
 
   // If user is not authenticated and trying to access protected routes
   if (!session && (isCustomerProtected || isAdminProtected)) {

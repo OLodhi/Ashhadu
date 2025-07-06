@@ -11,7 +11,6 @@ import {
   Grid,
   List,
   Star,
-  Heart,
   ShoppingCart,
   SlidersHorizontal,
   X,
@@ -24,6 +23,7 @@ import { useCartStore } from '@/store/cartStore';
 import { formatPrice } from '@/lib/utils';
 import { IslamicArtCategory } from '@/types/product';
 import { toast } from 'react-hot-toast';
+import WishlistButton from '@/components/ui/WishlistButton';
 
 const ShopPageClient = () => {
   const { addToCart } = useCartStore();
@@ -205,9 +205,11 @@ const ShopPageClient = () => {
 
         {/* Action Buttons */}
         <div className="absolute top-3 right-3 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button className="p-2 bg-white/90 text-luxury-gray-600 rounded-full hover:bg-white hover:text-red-600 transition-colors">
-            <Heart className="h-4 w-4" />
-          </button>
+          <WishlistButton
+            productId={product.id.toString()}
+            size="small"
+            variant="icon"
+          />
           <button 
             onClick={() => handleQuickAddToCart(product)}
             className="p-2 bg-white/90 text-luxury-gray-600 rounded-full hover:bg-white hover:text-luxury-gold transition-colors"
@@ -319,9 +321,11 @@ const ShopPageClient = () => {
         </div>
 
         <div className="flex items-center space-x-2">
-          <button className="p-2 text-luxury-gray-600 hover:text-red-600 transition-colors">
-            <Heart className="h-4 w-4" />
-          </button>
+          <WishlistButton
+            productId={product.id.toString()}
+            size="small"
+            variant="icon"
+          />
           <button 
             onClick={() => handleQuickAddToCart(product)}
             className="btn-luxury text-sm"

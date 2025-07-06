@@ -3,11 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Star, Heart, ShoppingBag, ArrowRight } from 'lucide-react';
+import { Star, ShoppingBag, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { formatPrice } from '@/lib/utils';
 import { useCartStore } from '@/store/cartStore';
 import { toast } from 'react-hot-toast';
+import WishlistButton from '@/components/ui/WishlistButton';
 
 const staticFeaturedProducts = [
   {
@@ -138,9 +139,12 @@ const FeaturedProducts = () => {
 
                   {/* Actions */}
                   <div className="absolute top-3 right-3 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <button className="w-8 h-8 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-sm">
-                      <Heart size={16} className="text-luxury-black hover:text-luxury-gold" />
-                    </button>
+                    <WishlistButton
+                      productId={product.id.toString()}
+                      size="small"
+                      variant="icon"
+                      className="shadow-sm"
+                    />
                     <button className="w-8 h-8 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-sm">
                       <ShoppingBag size={16} className="text-luxury-black hover:text-luxury-gold" />
                     </button>

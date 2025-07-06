@@ -1,72 +1,39 @@
-// Order Management Types
+// Order Management Types - Compatible with Supabase Schema
 
 export interface Order {
   id: string;
-  orderNumber: string;
-  
-  // Customer Information
-  customer: Customer;
-  billing: BillingAddress;
-  shipping: ShippingAddress;
-  
-  // Order Items
-  items: OrderItem[];
+  customer_id: string;
+  status: OrderStatus;
   
   // Pricing
-  subtotal: number;
-  shippingCost: number;
-  taxAmount: number;
-  vatAmount: number;
-  discountAmount: number;
   total: number;
-  currency: 'GBP' | 'USD' | 'EUR';
+  subtotal: number;
+  tax_amount: number;
+  shipping_amount: number;
+  currency: string;
   
-  // Order Status
-  status: OrderStatus;
-  paymentStatus: PaymentStatus;
-  fulfillmentStatus: FulfillmentStatus;
+  // Payment
+  payment_status: PaymentStatus;
+  payment_method?: string;
+  stripe_payment_intent_id?: string;
   
-  // Payment Information
-  paymentMethod: PaymentMethod;
-  paymentProvider: 'stripe' | 'paypal' | 'bank-transfer' | 'cash' | 'manual';
-  paymentId?: string;
-  transactionId?: string;
-  
-  // Shipping
-  shippingMethod: ShippingMethod;
-  trackingNumber?: string;
-  estimatedDelivery?: string;
-  actualDelivery?: string;
+  // Additional info
+  notes?: string;
   
   // Timestamps
-  createdAt: string;
-  updatedAt: string;
-  paidAt?: string;
-  shippedAt?: string;
-  deliveredAt?: string;
+  shipped_at?: string;
+  delivered_at?: string;
+  created_at: string;
+  updated_at: string;
   
-  // Additional Information
-  notes: string;
-  internalNotes: string;
-  source: OrderSource;
-  tags: string[];
-  priority: OrderPriority;
-  
-  // UK Specific
-  vatNumber?: string;
-  businessOrder: boolean;
-  invoiceRequired: boolean;
-  
-  // Islamic Art Specific
-  customizations: OrderCustomization[];
-  giftMessage?: string;
-  giftWrapping: boolean;
-  
-  // Manufacturing
-  productionStatus: ProductionStatus;
-  estimatedProductionTime: number; // in hours
-  actualProductionTime?: number;
-  printingNotes?: string;
+  // Related data (when included)
+  order_items?: OrderItem[];
+  customer?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+  };
 }
 
 export interface Customer {
@@ -126,38 +93,23 @@ export interface ShippingAddress extends BillingAddress {
 
 export interface OrderItem {
   id: string;
-  productId: string;
-  variantId?: string;
-  
-  // Product Details (snapshot at time of order)
-  name: string;
-  arabicName?: string;
-  sku: string;
-  image: string;
-  
-  // Pricing
-  unitPrice: number;
+  order_id: string;
+  product_id: string;
   quantity: number;
-  totalPrice: number;
-  originalPrice?: number;
-  discountAmount?: number;
+  price: number;
+  total: number;
+  product_name: string;
+  product_sku: string;
+  created_at: string;
   
-  // Customizations
-  customizations: ItemCustomization[];
-  personalizations: ItemPersonalization[];
-  
-  // Manufacturing
-  printStatus: PrintStatus;
-  printTime: number;
-  finishingTime: number;
-  materialUsed: string;
-  printNotes?: string;
-  
-  // Fulfillment
-  fulfilled: boolean;
-  fulfilledAt?: string;
-  serialNumber?: string;
-  qualityChecked: boolean;
+  // Related data (when included)
+  product?: {
+    id: string;
+    name: string;
+    featured_image?: string;
+    slug: string;
+    islamic_category?: string;
+  };
 }
 
 export interface ItemCustomization {
@@ -182,27 +134,57 @@ export interface OrderCustomization {
   additionalCost?: number;
 }
 
-export type OrderStatus = 
-  | 'pending'           // Order placed, awaiting payment
-  | 'confirmed'         // Payment confirmed, ready for production
-  | 'processing'        // In production
-  | 'ready'            // Ready for shipping
-  | 'shipped'          // Shipped to customer
-  | 'delivered'        // Delivered successfully
-  | 'cancelled'        // Order cancelled
-  | 'refunded'         // Order refunded
-  | 'on-hold'          // On hold for review
-  | 'failed';          // Payment failed
+export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 
-export type PaymentStatus =
-  | 'pending'          // Payment not yet processed
-  | 'authorized'       // Payment authorized but not captured
-  | 'paid'            // Payment completed
-  | 'partially-paid'   // Partial payment received
-  | 'failed'          // Payment failed
-  | 'cancelled'       // Payment cancelled
-  | 'refunded'        // Payment refunded
-  | 'disputed';       // Payment disputed/chargeback
+// Order status display configuration
+export const ORDER_STATUS_CONFIG = {
+  pending: {
+    label: 'Pending',
+    color: 'bg-yellow-100 text-yellow-800',
+    description: 'Order received and being processed'
+  },
+  processing: {
+    label: 'Processing',
+    color: 'bg-blue-100 text-blue-800',
+    description: 'Order is being prepared'
+  },
+  shipped: {
+    label: 'Shipped',
+    color: 'bg-purple-100 text-purple-800',
+    description: 'Order has been shipped'
+  },
+  delivered: {
+    label: 'Delivered',
+    color: 'bg-green-100 text-green-800',
+    description: 'Order has been delivered'
+  },
+  cancelled: {
+    label: 'Cancelled',
+    color: 'bg-red-100 text-red-800',
+    description: 'Order has been cancelled'
+  }
+} as const;
+
+// Payment status display configuration
+export const PAYMENT_STATUS_CONFIG = {
+  pending: {
+    label: 'Pending',
+    color: 'bg-yellow-100 text-yellow-800'
+  },
+  paid: {
+    label: 'Paid',
+    color: 'bg-green-100 text-green-800'
+  },
+  failed: {
+    label: 'Failed',
+    color: 'bg-red-100 text-red-800'
+  },
+  refunded: {
+    label: 'Refunded',
+    color: 'bg-gray-100 text-gray-800'
+  }
+} as const;
 
 export type FulfillmentStatus =
   | 'pending'          // Not yet fulfilled
@@ -318,21 +300,19 @@ export interface OrderStats {
 
 export interface OrderFilters {
   status?: OrderStatus[];
-  paymentStatus?: PaymentStatus[];
-  fulfillmentStatus?: FulfillmentStatus[];
-  productionStatus?: ProductionStatus[];
-  dateRange?: {
-    start: string;
-    end: string;
-  };
-  customerType?: ('registered' | 'guest')[];
-  orderSource?: OrderSource[];
-  priority?: OrderPriority[];
+  payment_status?: PaymentStatus[];
   search?: string;
+  dateFrom?: string;
+  dateTo?: string;
   minAmount?: number;
   maxAmount?: number;
-  shippingMethod?: string[];
-  country?: string[];
+}
+
+export interface OrderStats {
+  totalOrders: number;
+  totalSpent: number;
+  averageOrderValue: number;
+  lastOrderDate?: string;
 }
 
 export interface OrderSearchParams {

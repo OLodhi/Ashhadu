@@ -7,6 +7,7 @@ import { Eye, EyeOff, Mail, Lock, User, Phone, ArrowRight, Loader2, Check } from
 import { useAuth } from '@/contexts/AuthContext';
 import Logo from '@/components/ui/Logo';
 import SafeLink from '@/components/ui/SafeLink';
+import OAuthButtons from '@/components/auth/OAuthButtons';
 import toast from 'react-hot-toast';
 
 export default function SignUpPage() {
@@ -436,6 +437,9 @@ export default function SignUpPage() {
               )}
             </button>
           </form>
+
+          {/* OAuth Buttons */}
+          <OAuthButtons mode="signup" className="mt-6" />
 
           {/* Sign In Link */}
           <div className="mt-6 text-center">

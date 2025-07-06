@@ -146,8 +146,24 @@ export const db = {
   orders: {
     select: () => supabase.from('orders').select('*'),
     selectById: (id: string) => supabase.from('orders').select('*').eq('id', id).single(),
+    selectByCustomerId: (customerId: string) => supabase.from('orders').select('*').eq('customer_id', customerId),
+    selectWithItems: (customerId: string) => supabase.from('orders').select(`
+      *,
+      order_items (
+        *,
+        product:products (
+          id,
+          name,
+          featured_image,
+          slug,
+          islamic_category,
+          arabic_name
+        )
+      )
+    `).eq('customer_id', customerId),
     insert: (data: any) => supabase.from('orders').insert(data).select().single(),
     update: (id: string, data: any) => supabase.from('orders').update(data).eq('id', id).select().single(),
+    delete: (id: string) => supabase.from('orders').delete().eq('id', id),
   },
   
   // Order Items
@@ -179,6 +195,36 @@ export const db = {
   reviews: {
     selectByProductId: (productId: string) => supabase.from('reviews').select('*').eq('product_id', productId),
     insert: (data: any) => supabase.from('reviews').insert(data).select().single(),
+  },
+  
+  // Wishlists
+  wishlists: {
+    select: () => supabase.from('wishlists').select('*'),
+    selectByCustomerId: (customerId: string) => supabase.from('wishlists').select(`
+      *,
+      product:products (
+        id,
+        name,
+        arabic_name,
+        slug,
+        description,
+        short_description,
+        price,
+        regular_price,
+        currency,
+        featured_image,
+        category,
+        stock_status,
+        status,
+        created_at
+      )
+    `).eq('customer_id', customerId).order('created_at', { ascending: false }),
+    selectWithProduct: (customerId: string, productId: string) => supabase.from('wishlists').select('*').eq('customer_id', customerId).eq('product_id', productId).single(),
+    insert: (data: any) => supabase.from('wishlists').insert(data).select().single(),
+    delete: (customerId: string, productId: string) => supabase.from('wishlists').delete().eq('customer_id', customerId).eq('product_id', productId),
+    deleteById: (id: string) => supabase.from('wishlists').delete().eq('id', id),
+    count: (customerId: string) => supabase.from('wishlists').select('id', { count: 'exact', head: true }).eq('customer_id', customerId),
+    checkExists: (customerId: string, productId: string) => supabase.from('wishlists').select('id').eq('customer_id', customerId).eq('product_id', productId).single(),
   }
 };
 

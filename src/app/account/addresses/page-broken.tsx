@@ -48,14 +48,6 @@ export default function AddressesPage() {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-
-  // Debug authentication state
-  console.log('🔍 AddressesPage Auth State:', {
-    user: user ? { id: user.id, email: user.email } : 'NOT LOGGED IN',
-    customer: customer ? { id: customer.id, email: customer.email } : 'NO CUSTOMER',
-    authLoading,
-    loading
-  });
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [formData, setFormData] = useState<AddressFormData>({
     type: 'shipping',
@@ -210,7 +202,6 @@ export default function AddressesPage() {
     setShowForm(true);
   };
 
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -218,23 +209,14 @@ export default function AddressesPage() {
       return;
     }
 
-    // Debug authentication state
-    console.log('🔍 Authentication Debug:', {
-      user: user ? { id: user.id, email: user.email } : null,
-      customer: customer ? { id: customer.id, email: customer.email } : null,
-      userExists: !!user,
-      customerExists: !!customer
-    });
-
     if (!user?.id) {
       toast.error('User not authenticated. Please log in again.');
-      console.error('❌ No user found');
       return;
     }
 
+
     if (!customer?.id) {
       toast.error('Customer profile not found. Please refresh the page or contact support.');
-      console.error('❌ No customer found for user:', user.id);
       return;
     }
 
@@ -242,7 +224,7 @@ export default function AddressesPage() {
 
     try {
       const addressData = {
-        customer_id: customer.id, // ✅ CRITICAL FIX: Using customer.id instead of user.id
+        customer_id: customer.id,
         type: formData.type,
         label: formData.label || null,
         first_name: formData.firstName,
@@ -258,25 +240,15 @@ export default function AddressesPage() {
         is_default: formData.isDefault,
       };
 
-      console.log('📦 Address data to save:', addressData);
-
       if (editingAddress) {
         // Update existing address
-        console.log('✏️ Updating address:', editingAddress.id);
         const { error } = await db.addresses.update(editingAddress.id, addressData);
-        if (error) {
-          console.error('❌ Update error:', error);
-          throw error;
-        }
+        if (error) throw error;
         toast.success('Address updated successfully');
       } else {
         // Create new address
-        console.log('➕ Creating new address');
         const { error } = await db.addresses.insert(addressData);
-        if (error) {
-          console.error('❌ Insert error:', error);
-          throw error;
-        }
+        if (error) throw error;
         toast.success('Address added successfully');
       }
 

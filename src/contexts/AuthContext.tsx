@@ -49,8 +49,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
-  
-  console.log('🟡 AuthProvider initialized');
 
   useEffect(() => {
     // Get initial session
@@ -120,8 +118,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, userData: SignUpData) => {
-    console.log('Starting signup process for:', email);
-    
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -138,105 +134,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
-        console.error('Auth signup error:', error);
         return { user: null, error };
-      }
-
-      console.log('Auth signup successful:', {
-        userId: data.user?.id,
-        email: data.user?.email,
-        emailConfirmedAt: data.user?.email_confirmed_at,
-        session: data.session
-      });
-
-      // Profile and customer records are created automatically by database trigger
-      // No need to manually create them
-      if (data.user && data.user.id) {
-        console.log('✅ User created successfully! Profile/customer created by database trigger.');
-        
-        // Optional: Give the trigger a moment to complete
-        await new Promise(resolve => setTimeout(resolve, 500));
       }
 
       return { user: data.user, error: null };
     } catch (error: any) {
-      console.error('Unexpected signup error:', error);
       return { user: null, error: error as AuthError };
-    }
-  };
-
-  const createUserProfile = async (userId: string, email: string, userData: SignUpData) => {
-    console.log('Creating user profile for:', { userId, email, userData });
-    
-    try {
-      // Try direct database insert first
-      console.log('Attempting direct database insert...');
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          user_id: userId,
-          email,
-          full_name: `${userData.firstName} ${userData.lastName}`,
-          role: 'customer'
-        })
-        .select()
-        .single();
-
-      if (!profileError) {
-        console.log('Profile created successfully via direct insert');
-        
-        // Create customer record
-        const { data: customerData, error: customerError } = await supabase
-          .from('customers')
-          .insert({
-            email,
-            first_name: userData.firstName,
-            last_name: userData.lastName,
-            phone: userData.phone || null,
-            marketing_consent: userData.marketingConsent || false
-          })
-          .select()
-          .single();
-          
-        if (!customerError) {
-          console.log('Customer created successfully via direct insert');
-          return;
-        }
-      }
-      
-      // If direct insert failed, try API route (which uses service role)
-      console.log('Direct insert failed, trying API route with service role...');
-      console.log('Profile error:', profileError?.code, profileError?.message);
-      
-      const response = await fetch('/api/auth/create-profile', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId,
-          email,
-          userData: {
-            firstName: userData.firstName,
-            lastName: userData.lastName,
-            phone: userData.phone,
-            marketingConsent: userData.marketingConsent
-          }
-        })
-      });
-      
-      const result = await response.json();
-      
-      if (!response.ok) {
-        console.error('API route failed:', result);
-        throw new Error(result.error || 'Failed to create profile via API');
-      }
-      
-      console.log('Profile and customer created successfully via API route');
-      
-    } catch (error) {
-      console.error('Error in createUserProfile:', error);
-      throw error;
     }
   };
 

@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Menu, X, ShoppingBag, Search, User, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '@/store/cartStore';
+import { useWishlist } from '@/contexts/WishlistContext';
 import Logo from '@/components/ui/Logo';
 import SearchModal from '@/components/modals/SearchModal';
 import CartSidebar from '@/components/cart/CartSidebar';
@@ -34,10 +35,17 @@ const Header = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [hoveredMenu, setHoveredMenu] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false);
   
   const pathname = usePathname();
   const { items, getTotalItems } = useCartStore();
+  const { wishlistCount } = useWishlist();
   const totalItems = getTotalItems();
+
+  // Fix hydration mismatch for cart count
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   // Handle scroll effect
   useEffect(() => {
@@ -157,11 +165,16 @@ const Header = () => {
 
               {/* Wishlist */}
               <Link
-                href="/wishlist"
-                className="p-2 text-luxury-black hover:text-luxury-gold transition-colors duration-200"
-                aria-label="View wishlist"
+                href="/account/wishlist"
+                className="relative p-2 text-luxury-black hover:text-luxury-gold transition-colors duration-200"
+                aria-label={`View wishlist with ${wishlistCount} items`}
               >
                 <Heart size={20} />
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-1 -right-1 h-5 w-5 text-xs font-medium text-luxury-black bg-luxury-gold rounded-full flex items-center justify-center">
+                    {wishlistCount > 99 ? '99+' : wishlistCount}
+                  </span>
+                )}
               </Link>
 
               {/* Account */}
@@ -177,10 +190,10 @@ const Header = () => {
               <button
                 onClick={() => setIsCartOpen(true)}
                 className="relative p-2 text-luxury-black hover:text-luxury-gold transition-colors duration-200"
-                aria-label={`Shopping cart with ${totalItems} items`}
+                aria-label={`Shopping cart with ${hydrated ? totalItems : 0} items`}
               >
                 <ShoppingBag size={20} />
-                {totalItems > 0 && (
+                {hydrated && totalItems > 0 && (
                   <span className="absolute -top-1 -right-1 h-5 w-5 text-xs font-medium text-luxury-black bg-luxury-gold rounded-full flex items-center justify-center">
                     {totalItems > 99 ? '99+' : totalItems}
                   </span>
@@ -194,10 +207,10 @@ const Header = () => {
               <button
                 onClick={() => setIsCartOpen(true)}
                 className="relative p-2 text-luxury-black hover:text-luxury-gold transition-colors duration-200"
-                aria-label={`Shopping cart with ${totalItems} items`}
+                aria-label={`Shopping cart with ${hydrated ? totalItems : 0} items`}
               >
                 <ShoppingBag size={20} />
-                {totalItems > 0 && (
+                {hydrated && totalItems > 0 && (
                   <span className="absolute -top-1 -right-1 h-5 w-5 text-xs font-medium text-luxury-black bg-luxury-gold rounded-full flex items-center justify-center">
                     {totalItems > 99 ? '99+' : totalItems}
                   </span>
@@ -250,11 +263,18 @@ const Header = () => {
                     </Link>
                     
                     <Link
-                      href="/wishlist"
+                      href="/account/wishlist"
                       className="flex items-center space-x-2 p-2 text-luxury-black hover:text-luxury-gold transition-colors duration-200"
                     >
-                      <Heart size={20} />
-                      <span className="text-sm font-medium">Wishlist</span>
+                      <div className="relative">
+                        <Heart size={20} />
+                        {wishlistCount > 0 && (
+                          <span className="absolute -top-1 -right-1 h-4 w-4 text-xs font-medium text-luxury-black bg-luxury-gold rounded-full flex items-center justify-center">
+                            {wishlistCount > 9 ? '9+' : wishlistCount}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-sm font-medium">Wishlist ({wishlistCount})</span>
                     </Link>
                   </div>
 

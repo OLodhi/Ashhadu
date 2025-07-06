@@ -203,7 +203,18 @@ CREATE TABLE reviews (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
 
--- 10. Inventory Movements
+-- 10. Wishlists
+CREATE TABLE wishlists (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  customer_id UUID REFERENCES customers(id) ON DELETE CASCADE NOT NULL,
+  product_id UUID REFERENCES products(id) ON DELETE CASCADE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  
+  -- Ensure each customer can only have one entry per product
+  UNIQUE(customer_id, product_id)
+);
+
+-- 11. Inventory Movements
 CREATE TABLE inventory_movements (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   product_id UUID REFERENCES products(id) ON DELETE CASCADE NOT NULL,
@@ -234,6 +245,8 @@ CREATE INDEX idx_customers_email ON customers(email);
 CREATE INDEX idx_addresses_customer_id ON addresses(customer_id);
 CREATE INDEX idx_addresses_type ON addresses(type);
 CREATE INDEX idx_addresses_is_default ON addresses(is_default);
+CREATE INDEX idx_wishlists_customer_id ON wishlists(customer_id);
+CREATE INDEX idx_wishlists_product_id ON wishlists(product_id);
 
 -- Create updated_at triggers
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -375,6 +388,35 @@ CREATE POLICY "Users can view own order items" ON order_items FOR SELECT USING (
   )
 );
 CREATE POLICY "Admins can manage all order items" ON order_items FOR ALL USING (
+  EXISTS (
+    SELECT 1 FROM profiles WHERE user_id = auth.uid() AND role = 'admin'
+  )
+);
+
+-- Wishlists: Users can only manage their own wishlist items
+ALTER TABLE wishlists ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own wishlist" ON wishlists FOR SELECT USING (
+  customer_id IN (
+    SELECT id FROM customers WHERE email = (
+      SELECT email FROM profiles WHERE user_id = auth.uid()
+    )
+  )
+);
+CREATE POLICY "Users can add to own wishlist" ON wishlists FOR INSERT WITH CHECK (
+  customer_id IN (
+    SELECT id FROM customers WHERE email = (
+      SELECT email FROM profiles WHERE user_id = auth.uid()
+    )
+  )
+);
+CREATE POLICY "Users can remove from own wishlist" ON wishlists FOR DELETE USING (
+  customer_id IN (
+    SELECT id FROM customers WHERE email = (
+      SELECT email FROM profiles WHERE user_id = auth.uid()
+    )
+  )
+);
+CREATE POLICY "Admins can manage all wishlists" ON wishlists FOR ALL USING (
   EXISTS (
     SELECT 1 FROM profiles WHERE user_id = auth.uid() AND role = 'admin'
   )

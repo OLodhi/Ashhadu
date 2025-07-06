@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { AccountLayout } from '@/components/account/AccountLayout';
 import { useAuth } from '@/contexts/AuthContext';
+import { useWishlist } from '@/contexts/WishlistContext';
 import { supabase } from '@/lib/supabase';
 
 interface Order {
@@ -37,6 +38,7 @@ interface DashboardStats {
 
 export default function AccountDashboard() {
   const { user, profile, customer, loading: authLoading } = useAuth();
+  const { wishlistCount, totalValue, wishlistItems } = useWishlist();
   const router = useRouter();
   
   // Debug customer data
@@ -89,14 +91,10 @@ export default function AccountDashboard() {
       const totalOrders = ordersList.length;
       const totalSpent = ordersList.reduce((sum, order) => sum + order.total, 0);
 
-      // Load wishlist count (we'll implement wishlist table later)
-      // For now, using placeholder
-      const wishlistItems = 0;
-
       setStats({
         totalOrders,
         totalSpent,
-        wishlistItems,
+        wishlistItems: wishlistCount, // Use real wishlist count
         recentOrders: ordersList
       });
     } catch (error) {
@@ -404,6 +402,72 @@ export default function AccountDashboard() {
               >
                 <ShoppingBag className="mr-2 h-4 w-4" />
                 Shop Now
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Recent Wishlist Items */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-gray-900">Recent Wishlist Items</h3>
+            <Link
+              href="/account/wishlist"
+              className="text-luxury-gold hover:text-yellow-600 font-medium text-sm"
+            >
+              View All ({wishlistCount})
+            </Link>
+          </div>
+          
+          {wishlistItems.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {wishlistItems.slice(0, 3).map((item) => (
+                <div key={item.id} className="border border-gray-100 rounded-lg p-4 hover:border-gray-200 transition-colors">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                      {item.product.featured_image ? (
+                        <img
+                          src={item.product.featured_image}
+                          alt={item.product.name}
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                      ) : (
+                        <Heart className="h-6 w-6 text-gray-400" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <Link
+                        href={`/products/${item.product.slug}`}
+                        className="text-sm font-medium text-gray-900 hover:text-luxury-gold transition-colors truncate block"
+                      >
+                        {item.product.name}
+                      </Link>
+                      {item.product.arabic_name && (
+                        <p className="text-xs text-gray-600 arabic-text mt-1">
+                          {item.product.arabic_name}
+                        </p>
+                      )}
+                      <p className="text-sm font-medium text-luxury-gold mt-1">
+                        {formatCurrency(item.product.price, item.product.currency)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Heart className="mx-auto h-12 w-12 text-gray-400" />
+              <h4 className="mt-4 text-lg font-medium text-gray-900">No Wishlist Items</h4>
+              <p className="mt-2 text-gray-600">
+                Save your favorite Islamic art pieces to see them here
+              </p>
+              <Link
+                href="/shop"
+                className="mt-4 inline-flex items-center px-4 py-2 bg-luxury-gold text-luxury-black font-medium rounded-lg hover:bg-yellow-400 transition-colors"
+              >
+                <Heart className="mr-2 h-4 w-4" />
+                Explore Art
               </Link>
             </div>
           )}
