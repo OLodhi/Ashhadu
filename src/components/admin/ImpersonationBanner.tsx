@@ -25,7 +25,7 @@ export function ImpersonationBanner() {
     top: 0,
     left: 0,
     right: 0,
-    zIndex: 1000,
+    zIndex: 9999,
     padding: '12px 20px',
     display: 'flex',
     alignItems: 'center',
@@ -117,22 +117,5 @@ export function ImpersonationBanner() {
   );
 }
 
-// Higher-order component to add top padding when impersonation is active
-export function withImpersonationPadding<T extends object>(
-  WrappedComponent: React.ComponentType<T>
-) {
-  return function ImpersonationPaddedComponent(props: T) {
-    const { impersonationSession } = useImpersonation();
-    
-    const containerStyle: React.CSSProperties = {
-      paddingTop: impersonationSession.isImpersonating ? '54px' : '0',
-      transition: 'padding-top 0.3s ease'
-    };
-
-    return (
-      <div style={containerStyle}>
-        <WrappedComponent {...props} />
-      </div>
-    );
-  };
-}
+// Note: Higher-order component removed - padding is now handled globally
+// through MainContentWrapper and layout adjustments

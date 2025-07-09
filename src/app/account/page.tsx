@@ -282,7 +282,7 @@ export default function AccountDashboard() {
                 <Mail className="h-5 w-5 text-gray-400 mr-3" />
                 <div>
                   <p className="text-sm text-gray-600">Email</p>
-                  <p className="font-medium">{user?.email}</p>
+                  <p className="font-medium">{customer?.email || user?.email}</p>
                 </div>
               </div>
             </div>

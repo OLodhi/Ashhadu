@@ -4,6 +4,7 @@ import './globals.css';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { WishlistProvider } from '@/contexts/WishlistContext';
+import { ImpersonationBanner } from '@/components/admin/ImpersonationBanner';
 
 // Font configurations
 const inter = Inter({
@@ -49,6 +50,7 @@ export default function RootLayout({
       <body className="font-inter antialiased">
         <AuthProvider>
           <WishlistProvider>
+            <ImpersonationBanner />
             {children}
           </WishlistProvider>
           <Toaster

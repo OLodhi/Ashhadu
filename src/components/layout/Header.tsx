@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '@/store/cartStore';
 import { useWishlist } from '@/contexts/WishlistContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useImpersonation } from '@/hooks/useImpersonation';
 import { getUserRedirectPath } from '@/lib/auth-utils-shared';
 import Logo from '@/components/ui/Logo';
 import SearchModal from '@/components/modals/SearchModal';
@@ -44,6 +45,7 @@ const Header = () => {
   const { items, getTotalItems } = useCartStore();
   const { wishlistCount } = useWishlist();
   const { user, profile, signOut, isAdmin } = useAuth();
+  const { impersonationSession } = useImpersonation();
   const totalItems = getTotalItems();
 
   // Fix hydration mismatch for cart count
@@ -98,6 +100,12 @@ const Header = () => {
     return getUserRedirectPath(profile);
   };
 
+  // Get the appropriate wishlist URL based on user role
+  const getWishlistUrl = () => {
+    if (!user || !profile) return '/account/wishlist';
+    return profile.role === 'admin' ? '/admin/dashboard' : '/account/wishlist';
+  };
+
   const isActiveLink = (href: string) => {
     if (href === '/') {
       return pathname === '/';
@@ -105,10 +113,13 @@ const Header = () => {
     return pathname.startsWith(href);
   };
 
+  // Calculate top position based on impersonation state
+  const headerTopPosition = impersonationSession.isImpersonating ? 'top-[54px]' : 'top-0';
+
   return (
     <>
       <header 
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        className={`fixed ${headerTopPosition} left-0 right-0 z-50 transition-all duration-300 ${
           isScrolled 
             ? 'bg-white/95 backdrop-blur-md shadow-luxury border-b border-luxury-gray-100' 
             : 'bg-white/80 backdrop-blur-sm'
@@ -184,7 +195,7 @@ const Header = () => {
 
               {/* Wishlist */}
               <Link
-                href="/account/wishlist"
+                href={getWishlistUrl()}
                 className="relative p-2 text-luxury-black hover:text-luxury-gold transition-colors duration-200"
                 aria-label={`View wishlist with ${wishlistCount} items`}
               >
@@ -345,7 +356,7 @@ const Header = () => {
                     </Link>
                     
                     <Link
-                      href="/account/wishlist"
+                      href={getWishlistUrl()}
                       className="flex items-center space-x-2 p-2 text-luxury-black hover:text-luxury-gold transition-colors duration-200"
                     >
                       <div className="relative">

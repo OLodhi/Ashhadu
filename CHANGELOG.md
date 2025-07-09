@@ -10,6 +10,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial changelog documentation
 
+## [1.0.4] - 2025-07-09
+
+### Fixed
+- **Admin Wishlist Navigation**: Admin users clicking wishlist button now properly redirect to `/admin/dashboard` instead of customer account
+- **Impersonation System**: Complete overhaul of admin impersonation functionality with proper customer data loading
+- **Customer Data Display**: Impersonation now correctly shows customer information (name, phone, address, payment details) instead of empty dashboard
+- **Email Display**: During impersonation, customer email is displayed instead of admin email across all account pages
+- **Shop Page Compilation**: Resolved JSX syntax error causing site crash when visiting shop page during impersonation
+
+### Added
+- **Global Impersonation Bar**: Impersonation banner now positioned at very top of page (above navbar) and persists across all pages
+- **Dynamic Content Spacing**: `MainContentWrapper` component for proper spacing when impersonation bar is active
+- **Impersonation-Aware Authentication**: Enhanced `validateUserSession()` to check impersonation sessions first
+- **Customer Data Loading**: Added `validateImpersonationSession()` helper for proper customer data retrieval
+- **Debug Utilities**: Enhanced logging and error handling for impersonation troubleshooting
+
+### Changed
+- **Header Navigation**: Added dynamic wishlist URL function based on user role (`getWishlistUrl()`)
+- **Authentication System**: Made session validation impersonation-aware with proper customer data loading
+- **Layout Architecture**: Moved impersonation banner to root layout for global persistence
+- **Component Positioning**: Updated Header and page components to accommodate impersonation bar
+- **API Profile Route**: Enhanced to handle impersonation sessions and return customer data
+
+### Technical Details
+- **Files Modified**: 10 files updated, 1 new file created (`MainContentWrapper.tsx`)
+- **Authentication Enhancement**: `auth-utils-server.ts` expanded with 233+ lines of impersonation logic
+- **Code Statistics**: 505 insertions, 265 deletions across core authentication and layout files
+- **Shop Page Regeneration**: Complete rebuild of `ShopPageClient.tsx` with proper JSX structure
+- **Z-index Management**: Impersonation banner positioned with z-index 9999 for proper layering
+
 ## [1.0.3] - 2025-07-09
 
 ### Fixed
@@ -112,6 +142,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History
 
+- **v1.0.4** (2025-07-09): Admin impersonation system overhaul and navigation fixes
 - **v1.0.3** (2025-07-09): Header navigation and account routing improvements
 - **v1.0.2** (2025-07-09): Admin login redirect fix and API endpoint addition
 - **v1.0.1** (2025-07-09): Authentication system fixes and documentation

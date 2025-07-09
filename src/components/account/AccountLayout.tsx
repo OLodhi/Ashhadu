@@ -19,7 +19,6 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/layout/Header';
 import SafeLink from '@/components/ui/SafeLink';
-import { ImpersonationBanner } from '@/components/admin/ImpersonationBanner';
 import { useImpersonation } from '@/hooks/useImpersonation';
 import toast from 'react-hot-toast';
 
@@ -96,15 +95,12 @@ export function AccountLayout({ children, title, description }: AccountLayoutPro
     );
   }
 
-  const topPadding = impersonationSession.isImpersonating ? 'pt-28' : 'pt-16';
+  const topPadding = impersonationSession.isImpersonating ? 'pt-[128px]' : 'pt-20';
 
   return (
     <>
       {/* Header */}
       <Header />
-
-      {/* Impersonation Banner */}
-      <ImpersonationBanner />
 
       <div className={`min-h-screen bg-gray-50 ${topPadding}`}>
         {/* Mobile sidebar */}

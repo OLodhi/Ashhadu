@@ -7,20 +7,21 @@ import CollectionsPreview from '@/components/homepage/CollectionsPreview';
 import AboutSection from '@/components/homepage/AboutSection';
 import TestimonialsSection from '@/components/homepage/TestimonialsSection';
 import NewsletterCTA from '@/components/homepage/NewsletterCTA';
+import { MainContentWrapper } from '@/components/layout/MainContentWrapper';
 
 export default function HomePage() {
   return (
     <div className="min-h-screen">
       <Header />
       
-      <main id="main-content" className="pt-16 lg:pt-20">
+      <MainContentWrapper>
         <HeroSection />
         <FeaturedProducts />
         <CollectionsPreview />
         <AboutSection />
         <TestimonialsSection />
         <NewsletterCTA />
-      </main>
+      </MainContentWrapper>
       
       <Footer />
     </div>

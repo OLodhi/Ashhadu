@@ -5,17 +5,16 @@ export async function GET(request: NextRequest) {
   try {
     console.log('🔍 Profile API: Starting profile validation...');
     
-    // Debug: Check what auth context we have
-    const supabase = await createServerSupabaseClient();
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    console.log('🔍 Profile API: Session check:', { 
-      hasSession: !!session, 
-      userId: session?.user?.id,
-      error: sessionError?.message 
-    });
-    
-    // Validate user session
+    // Validate user session (now supports impersonation)
     const validationResult = await validateUserSession();
+    
+    console.log('🔍 Profile API: Validation result:', {
+      isValid: validationResult.isValid,
+      hasProfile: !!validationResult.profile,
+      hasCustomer: !!validationResult.customer,
+      userRole: validationResult.profile?.role,
+      error: validationResult.error
+    });
     
     if (!validationResult.isValid) {
       console.log('❌ Profile API: Session validation failed:', validationResult.error);
@@ -24,7 +23,18 @@ export async function GET(request: NextRequest) {
 
     console.log('✅ Profile API: Session validated successfully');
     
-    // If profile doesn't exist, create it
+    // For impersonation sessions, we already have complete customer data
+    if (validationResult.profile && validationResult.customer) {
+      console.log('✅ Profile API: Returning complete user data (including impersonation)');
+      return createAuthResponse(true, {
+        profile: validationResult.profile,
+        customer: validationResult.customer,
+        user: validationResult.session!.user,
+        isImpersonating: validationResult.session?.access_token === 'impersonation_token'
+      });
+    }
+    
+    // If profile doesn't exist, create it (this is for regular authentication)
     if (!validationResult.profile) {
       console.log('🔄 Profile API: Profile not found, creating new profile...');
       const createResult = await createUserProfile(validationResult.session!.user);

@@ -165,9 +165,56 @@ export function createMiddlewareSupabaseClient(req: NextRequest) {
 
 /**
  * Validate user session and load complete user data
+ * Now supports impersonation sessions
  */
 export async function validateUserSession(): Promise<AuthValidationResult> {
   try {
+    console.log('🔍 validateUserSession: Starting session validation...');
+    
+    // FIRST: Check if we have an impersonation session
+    const impersonationResult = await validateImpersonationSession();
+    
+    if (impersonationResult.isImpersonating) {
+      console.log('✅ validateUserSession: Using impersonation session');
+      
+      if (impersonationResult.customerData && impersonationResult.profile) {
+        // Create a synthetic session for the impersonated customer
+        const syntheticSession: AuthSession = {
+          user: {
+            id: impersonationResult.customerData.id,
+            email: impersonationResult.customerData.email,
+            user_metadata: {
+              full_name: `${impersonationResult.customerData.first_name} ${impersonationResult.customerData.last_name}`,
+              role: 'customer'
+            }
+          },
+          access_token: 'impersonation_token',
+          refresh_token: 'impersonation_refresh',
+          expires_at: Date.now() + 3600000 // 1 hour from now
+        };
+        
+        return {
+          isValid: true,
+          session: syntheticSession,
+          profile: impersonationResult.profile,
+          customer: impersonationResult.customerData,
+          error: null
+        };
+      } else {
+        console.error('❌ validateUserSession: Impersonation session missing customer data');
+        return {
+          isValid: false,
+          session: null,
+          profile: null,
+          customer: null,
+          error: 'Invalid impersonation session data'
+        };
+      }
+    }
+    
+    // SECOND: If no impersonation, check regular authentication
+    console.log('🔍 validateUserSession: Checking regular authentication session...');
+    
     const supabase = await createServerSupabaseClient();
     
     // Get session with retry logic
@@ -379,4 +426,190 @@ export function createAuthResponse(
     },
     { status }
   );
+}
+
+/**
+ * Validate impersonation session and return customer data
+ */
+export async function validateImpersonationSession(): Promise<{
+  isImpersonating: boolean;
+  customerData?: AuthCustomer;
+  profile?: AuthProfile;
+  adminUserId?: string;
+  error?: string;
+}> {
+  try {
+    console.log('🔍 validateImpersonationSession: Checking for impersonation session...');
+    
+    const cookieStore = await cookies();
+    const impersonationCookie = cookieStore.get('impersonation_session');
+    
+    if (!impersonationCookie) {
+      console.log('🔍 validateImpersonationSession: No impersonation session found');
+      return { isImpersonating: false };
+    }
+    
+    let impersonationSession;
+    try {
+      impersonationSession = JSON.parse(impersonationCookie.value);
+    } catch (parseError) {
+      console.error('❌ validateImpersonationSession: Invalid session data:', parseError);
+      // Clear invalid cookie
+      await clearImpersonationSession();
+      return { isImpersonating: false, error: 'Invalid impersonation session' };
+    }
+    
+    if (!impersonationSession.isImpersonating || !impersonationSession.impersonatedCustomer) {
+      console.log('🔍 validateImpersonationSession: Invalid impersonation session structure');
+      await clearImpersonationSession();
+      return { isImpersonating: false, error: 'Invalid impersonation session structure' };
+    }
+    
+    // Check if session has expired (2 hours)
+    const sessionStartTime = new Date(impersonationSession.impersonationStartedAt);
+    const currentTime = new Date();
+    const sessionDuration = currentTime.getTime() - sessionStartTime.getTime();
+    const maxDuration = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+    
+    if (sessionDuration > maxDuration) {
+      console.log('⏰ validateImpersonationSession: Session expired');
+      await clearImpersonationSession();
+      return { isImpersonating: false, error: 'Impersonation session expired' };
+    }
+    
+    console.log('✅ validateImpersonationSession: Found active impersonation session:', {
+      customerId: impersonationSession.impersonatedCustomer.id,
+      customerEmail: impersonationSession.impersonatedCustomer.email,
+      adminUserId: impersonationSession.originalAdminUserId,
+      sessionDuration: `${Math.round(sessionDuration / 1000 / 60)} minutes`
+    });
+    
+    // Load customer data from database
+    const supabase = await createServerSupabaseClient();
+    const { data: customerData, error: customerError } = await supabase
+      .from('customers')
+      .select('*')
+      .eq('id', impersonationSession.impersonatedCustomer.id)
+      .single();
+    
+    if (customerError) {
+      console.error('❌ validateImpersonationSession: Error loading customer data:', customerError);
+      return { 
+        isImpersonating: false, 
+        error: 'Failed to load customer data' 
+      };
+    }
+    
+    if (!customerData) {
+      console.error('❌ validateImpersonationSession: Customer not found');
+      return { 
+        isImpersonating: false, 
+        error: 'Customer not found' 
+      };
+    }
+    
+    // Validate customer data integrity
+    if (!customerData.first_name || !customerData.last_name || !customerData.email) {
+      console.error('❌ validateImpersonationSession: Incomplete customer data:', {
+        hasFirstName: !!customerData.first_name,
+        hasLastName: !!customerData.last_name,
+        hasEmail: !!customerData.email
+      });
+      return { 
+        isImpersonating: false, 
+        error: 'Incomplete customer data' 
+      };
+    }
+    
+    // Create a synthetic profile for the customer
+    const customerProfile: AuthProfile = {
+      user_id: impersonationSession.impersonatedCustomer.id, // Use customer ID as user_id
+      email: customerData.email,
+      full_name: `${customerData.first_name} ${customerData.last_name}`,
+      role: 'customer',
+      created_at: customerData.created_at,
+      updated_at: customerData.updated_at
+    };
+    
+    console.log('✅ validateImpersonationSession: Customer data loaded successfully:', {
+      customerId: customerData.id,
+      customerName: customerProfile.full_name,
+      customerEmail: customerData.email,
+      hasPhone: !!customerData.phone,
+      hasBillingAddress: !!customerData.billing_address,
+      hasShippingAddress: !!customerData.shipping_address
+    });
+    
+    return {
+      isImpersonating: true,
+      customerData: customerData as AuthCustomer,
+      profile: customerProfile,
+      adminUserId: impersonationSession.originalAdminUserId
+    };
+    
+  } catch (error) {
+    console.error('❌ validateImpersonationSession: Unexpected error:', error);
+    return { 
+      isImpersonating: false, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    };
+  }
+}
+
+/**
+ * Clear impersonation session cookie
+ */
+async function clearImpersonationSession(): Promise<void> {
+  try {
+    const cookieStore = await cookies();
+    cookieStore.set('impersonation_session', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 0,
+      path: '/'
+    });
+    console.log('🧹 clearImpersonationSession: Impersonation session cleared');
+  } catch (error) {
+    console.error('❌ clearImpersonationSession: Error clearing session:', error);
+  }
+}
+
+/**
+ * Debug helper to log current authentication state
+ */
+export async function debugAuthState(): Promise<void> {
+  try {
+    const cookieStore = await cookies();
+    const allCookies = cookieStore.getAll();
+    
+    console.log('🔍 DEBUG: Current authentication state:', {
+      cookieCount: allCookies.length,
+      cookies: allCookies.map(c => ({ name: c.name, hasValue: !!c.value, length: c.value.length })),
+      impersonationCookie: !!cookieStore.get('impersonation_session'),
+      supabaseCookies: allCookies.filter(c => c.name.includes('supabase')).map(c => c.name)
+    });
+    
+    // Check impersonation session
+    const impersonationResult = await validateImpersonationSession();
+    console.log('🔍 DEBUG: Impersonation check result:', {
+      isImpersonating: impersonationResult.isImpersonating,
+      hasCustomerData: !!impersonationResult.customerData,
+      hasProfile: !!impersonationResult.profile,
+      error: impersonationResult.error
+    });
+    
+    // Check regular session
+    const supabase = await createServerSupabaseClient();
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    console.log('🔍 DEBUG: Regular session check:', {
+      hasSession: !!session,
+      userId: session?.user?.id,
+      userEmail: session?.user?.email,
+      error: sessionError?.message
+    });
+    
+  } catch (error) {
+    console.error('❌ DEBUG: Error in debug function:', error);
+  }
 }

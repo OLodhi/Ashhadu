@@ -424,7 +424,7 @@ export default function OrderDetailPage() {
                 </div>
                 <div className="flex items-center space-x-3">
                   <Mail className="h-4 w-4 text-gray-400" />
-                  <span className="text-sm text-gray-900">{user?.email}</span>
+                  <span className="text-sm text-gray-900">{customer?.email || user?.email}</span>
                 </div>
                 {customer?.phone && (
                   <div className="flex items-center space-x-3">
