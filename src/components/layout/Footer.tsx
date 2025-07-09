@@ -81,7 +81,7 @@ const Footer = () => {
           {/* Company Info */}
           <div className="lg:col-span-2">
             <Link href="/" className="inline-block mb-6">
-              <Logo className="h-10 w-auto text-white" />
+              <Logo className="h-10 w-auto" textColor="text-white" />
             </Link>
             <p className="text-gray-300 mb-6 leading-relaxed">
               Ashhadu Islamic Art specializes in premium 3D printed Islamic calligraphy 

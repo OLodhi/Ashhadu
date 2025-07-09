@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { AccountLayout } from '@/components/account/AccountLayout';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase-client';
 import { Order, OrderStatus, PaymentStatus, OrderFilters, ORDER_STATUS_CONFIG, PAYMENT_STATUS_CONFIG } from '@/types/order';
 import toast from 'react-hot-toast';
 

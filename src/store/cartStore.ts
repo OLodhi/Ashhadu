@@ -21,7 +21,7 @@ interface CartStore {
   isOpen: boolean;
   
   // Actions
-  addItem: (item: Omit<CartItem, 'quantity'>) => void;
+  addItem: (item: CartItem) => void;
   addToCart: (product: any) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
@@ -41,18 +41,18 @@ export const useCartStore = create<CartStore>()(
         const existingItem = get().items.find(i => i.id === item.id);
         
         if (existingItem) {
-          // Update quantity if item already exists
+          // Update quantity if item already exists - add the new quantity to existing
           set({
             items: get().items.map(i =>
               i.id === item.id 
-                ? { ...i, quantity: i.quantity + 1 }
+                ? { ...i, quantity: i.quantity + item.quantity }
                 : i
             )
           });
         } else {
-          // Add new item
+          // Add new item with the specified quantity
           set({
-            items: [...get().items, { ...item, quantity: 1 }]
+            items: [...get().items, item]
           });
         }
       },

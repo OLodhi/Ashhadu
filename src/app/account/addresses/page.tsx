@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, MapPin, Edit, Trash2, Star, Building, Home, Briefcase } from 'lucide-react';
 import { AccountLayout } from '@/components/account/AccountLayout';
 import { useAuth } from '@/contexts/AuthContext';
-import { db } from '@/lib/supabase';
+import { db } from '@/lib/supabase-client';
 import toast from 'react-hot-toast';
 
 interface Address {

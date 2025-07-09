@@ -13,6 +13,7 @@ CREATE TYPE order_status AS ENUM ('pending', 'processing', 'shipped', 'delivered
 CREATE TYPE payment_status AS ENUM ('pending', 'paid', 'failed', 'refunded');
 CREATE TYPE review_status AS ENUM ('pending', 'approved', 'rejected');
 CREATE TYPE inventory_movement_type AS ENUM ('in', 'out', 'adjustment');
+CREATE TYPE payment_method_type AS ENUM ('card', 'paypal', 'apple_pay', 'google_pay');
 
 -- 1. User Profiles (extends Supabase auth.users)
 CREATE TABLE profiles (
@@ -121,6 +122,7 @@ CREATE TABLE customers (
   shipping_address JSONB,
   date_of_birth DATE,
   marketing_consent BOOLEAN DEFAULT false NOT NULL,
+  stripe_customer_id TEXT UNIQUE, -- Stripe customer ID for payment processing
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
@@ -226,6 +228,47 @@ CREATE TABLE inventory_movements (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
 
+-- 12. Payment Methods (secure tokens only - never store actual card details)
+CREATE TABLE payment_methods (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  customer_id UUID REFERENCES customers(id) ON DELETE CASCADE NOT NULL,
+  
+  -- Payment provider information
+  type payment_method_type NOT NULL,
+  provider TEXT NOT NULL DEFAULT 'stripe', -- 'stripe', 'paypal'
+  provider_payment_method_id TEXT NOT NULL, -- Stripe PM ID, PayPal reference, etc.
+  provider_customer_id TEXT, -- Stripe customer ID, PayPal payer ID, etc.
+  
+  -- Display information (for UI - never sensitive data)
+  display_name TEXT, -- e.g., "Visa ending in 4242"
+  brand TEXT, -- visa, mastercard, amex, etc.
+  last_four TEXT, -- last 4 digits for cards
+  exp_month INTEGER, -- expiry month for cards
+  exp_year INTEGER, -- expiry year for cards
+  
+  -- PayPal specific
+  paypal_email TEXT, -- PayPal account email (for display only)
+  
+  -- Settings
+  is_default BOOLEAN DEFAULT false NOT NULL,
+  is_active BOOLEAN DEFAULT true NOT NULL,
+  
+  -- Metadata
+  billing_address_id UUID REFERENCES addresses(id) ON DELETE SET NULL,
+  
+  -- Timestamps
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  
+  -- Constraints
+  UNIQUE(customer_id, provider_payment_method_id), -- Prevent duplicate tokens
+  CHECK (
+    (type = 'card' AND brand IS NOT NULL AND last_four IS NOT NULL) OR
+    (type = 'paypal' AND paypal_email IS NOT NULL) OR
+    (type IN ('apple_pay', 'google_pay'))
+  )
+);
+
 -- Create indexes for performance
 CREATE INDEX idx_products_slug ON products(slug);
 CREATE INDEX idx_products_category ON products(category);
@@ -247,6 +290,10 @@ CREATE INDEX idx_addresses_type ON addresses(type);
 CREATE INDEX idx_addresses_is_default ON addresses(is_default);
 CREATE INDEX idx_wishlists_customer_id ON wishlists(customer_id);
 CREATE INDEX idx_wishlists_product_id ON wishlists(product_id);
+CREATE INDEX idx_payment_methods_customer_id ON payment_methods(customer_id);
+CREATE INDEX idx_payment_methods_type ON payment_methods(type);
+CREATE INDEX idx_payment_methods_is_default ON payment_methods(is_default);
+CREATE INDEX idx_payment_methods_provider ON payment_methods(provider);
 
 -- Create updated_at triggers
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -263,6 +310,7 @@ CREATE TRIGGER update_customers_updated_at BEFORE UPDATE ON customers FOR EACH R
 CREATE TRIGGER update_addresses_updated_at BEFORE UPDATE ON addresses FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 CREATE TRIGGER update_orders_updated_at BEFORE UPDATE ON orders FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 CREATE TRIGGER update_reviews_updated_at BEFORE UPDATE ON reviews FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+CREATE TRIGGER update_payment_methods_updated_at BEFORE UPDATE ON payment_methods FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
 -- Row Level Security (RLS) Policies
 
@@ -437,6 +485,42 @@ CREATE POLICY "Admins can manage all reviews" ON reviews FOR ALL USING (
 -- Inventory Movements: Admin only
 ALTER TABLE inventory_movements ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admins can manage inventory movements" ON inventory_movements FOR ALL USING (
+  EXISTS (
+    SELECT 1 FROM profiles WHERE user_id = auth.uid() AND role = 'admin'
+  )
+);
+
+-- Payment Methods: Users can only see their own payment methods
+ALTER TABLE payment_methods ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own payment methods" ON payment_methods FOR SELECT USING (
+  customer_id IN (
+    SELECT id FROM customers WHERE email = (
+      SELECT email FROM profiles WHERE user_id = auth.uid()
+    )
+  )
+);
+CREATE POLICY "Users can insert own payment methods" ON payment_methods FOR INSERT WITH CHECK (
+  customer_id IN (
+    SELECT id FROM customers WHERE email = (
+      SELECT email FROM profiles WHERE user_id = auth.uid()
+    )
+  )
+);
+CREATE POLICY "Users can update own payment methods" ON payment_methods FOR UPDATE USING (
+  customer_id IN (
+    SELECT id FROM customers WHERE email = (
+      SELECT email FROM profiles WHERE user_id = auth.uid()
+    )
+  )
+);
+CREATE POLICY "Users can delete own payment methods" ON payment_methods FOR DELETE USING (
+  customer_id IN (
+    SELECT id FROM customers WHERE email = (
+      SELECT email FROM profiles WHERE user_id = auth.uid()
+    )
+  )
+);
+CREATE POLICY "Admins can manage all payment methods" ON payment_methods FOR ALL USING (
   EXISTS (
     SELECT 1 FROM profiles WHERE user_id = auth.uid() AND role = 'admin'
   )

@@ -7,6 +7,7 @@ import { Menu, X, ShoppingBag, Search, User, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '@/store/cartStore';
 import { useWishlist } from '@/contexts/WishlistContext';
+import { useAuth } from '@/contexts/AuthContext';
 import Logo from '@/components/ui/Logo';
 import SearchModal from '@/components/modals/SearchModal';
 import CartSidebar from '@/components/cart/CartSidebar';
@@ -35,11 +36,13 @@ const Header = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [hoveredMenu, setHoveredMenu] = useState<string | null>(null);
+  const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   
   const pathname = usePathname();
   const { items, getTotalItems } = useCartStore();
   const { wishlistCount } = useWishlist();
+  const { user, signOut } = useAuth();
   const totalItems = getTotalItems();
 
   // Fix hydration mismatch for cart count
@@ -77,6 +80,15 @@ const Header = () => {
 
   const handleMenuToggle = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      setIsAccountDropdownOpen(false);
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
   };
 
   const isActiveLink = (href: string) => {
@@ -178,13 +190,63 @@ const Header = () => {
               </Link>
 
               {/* Account */}
-              <Link
-                href="/account"
-                className="p-2 text-luxury-black hover:text-luxury-gold transition-colors duration-200"
-                aria-label="Account"
-              >
-                <User size={20} />
-              </Link>
+              {user ? (
+                <div
+                  className="relative"
+                  onMouseEnter={() => setIsAccountDropdownOpen(true)}
+                  onMouseLeave={() => setIsAccountDropdownOpen(false)}
+                >
+                  <Link
+                    href="/account"
+                    className="p-2 text-luxury-black hover:text-luxury-gold transition-colors duration-200"
+                    aria-label="Account"
+                  >
+                    <User size={20} />
+                  </Link>
+
+                  {/* Account Dropdown */}
+                  <AnimatePresence>
+                    {isAccountDropdownOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute top-full right-0 mt-2 w-48 bg-white border border-luxury-gray-100 shadow-luxury-hover rounded-lg overflow-hidden"
+                      >
+                        <Link
+                          href="/account"
+                          className="block px-4 py-3 text-sm text-luxury-black hover:bg-luxury-gray-50 hover:text-luxury-gold transition-colors duration-200"
+                          onClick={() => setIsAccountDropdownOpen(false)}
+                        >
+                          My Account
+                        </Link>
+                        <Link
+                          href="/account/orders"
+                          className="block px-4 py-3 text-sm text-luxury-black hover:bg-luxury-gray-50 hover:text-luxury-gold transition-colors duration-200"
+                          onClick={() => setIsAccountDropdownOpen(false)}
+                        >
+                          My Orders
+                        </Link>
+                        <button
+                          onClick={handleSignOut}
+                          className="w-full text-left px-4 py-3 text-sm text-luxury-black hover:bg-luxury-gray-50 hover:text-luxury-gold transition-colors duration-200"
+                        >
+                          Sign Out
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <Link
+                  href="/account"
+                  className="p-2 text-luxury-black hover:text-luxury-gold transition-colors duration-200"
+                  aria-label="Account"
+                >
+                  <User size={20} />
+                </Link>
+              )}
 
               {/* Cart */}
               <button

@@ -19,7 +19,7 @@ import {
 import { AccountLayout } from '@/components/account/AccountLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWishlist } from '@/contexts/WishlistContext';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase-client';
 
 interface Order {
   id: string;

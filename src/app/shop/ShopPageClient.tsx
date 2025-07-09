@@ -24,11 +24,13 @@ import { formatPrice } from '@/lib/utils';
 import { IslamicArtCategory } from '@/types/product';
 import { toast } from 'react-hot-toast';
 import WishlistButton from '@/components/ui/WishlistButton';
+import HollowStarRating from '@/components/ui/HollowStarRating';
 
 const ShopPageClient = () => {
   const { addToCart } = useCartStore();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reviewStats, setReviewStats] = useState<{ [productId: string]: { averageRating: number; totalReviews: number } }>({});
 
   // Filter and search state
   const [searchTerm, setSearchTerm] = useState('');
@@ -74,6 +76,52 @@ const ShopPageClient = () => {
 
     fetchProducts();
   }, []);
+
+  // Fetch review statistics for all products
+  useEffect(() => {
+    const fetchReviewStats = async () => {
+      if (products.length === 0) return;
+
+      try {
+        // Fetch review stats for all products in parallel
+        const statsPromises = products.map(async (product) => {
+          try {
+            const response = await fetch(`/api/products/${product.id}/reviews`);
+            if (response.ok) {
+              const data = await response.json();
+              return {
+                productId: product.id,
+                stats: {
+                  averageRating: data.data.statistics.averageRating || 0,
+                  totalReviews: data.data.statistics.totalReviews || 0
+                }
+              };
+            }
+          } catch (error) {
+            console.error(`Error fetching reviews for product ${product.id}:`, error);
+          }
+          return {
+            productId: product.id,
+            stats: { averageRating: 0, totalReviews: 0 }
+          };
+        });
+
+        const statsResults = await Promise.all(statsPromises);
+        
+        // Convert to object for easy lookup
+        const statsObject = statsResults.reduce((acc, { productId, stats }) => {
+          acc[productId] = stats;
+          return acc;
+        }, {} as { [productId: string]: { averageRating: number; totalReviews: number } });
+
+        setReviewStats(statsObject);
+      } catch (error) {
+        console.error('Error fetching review statistics:', error);
+      }
+    };
+
+    fetchReviewStats();
+  }, [products]);
 
   const categories: { value: IslamicArtCategory | 'all'; label: string; count: number }[] = [
     { value: 'all', label: 'All Products', count: products.length },
@@ -163,29 +211,22 @@ const ShopPageClient = () => {
     toast.success(`${product.name} added to cart!`);
   };
 
-  const getRatingStars = (rating: number) => {
-    return Array.from({ length: 5 }, (_, index) => (
-      <Star
-        key={index}
-        className={`h-4 w-4 ${
-          index < rating 
-            ? 'text-luxury-gold fill-current' 
-            : 'text-luxury-gray-300'
-        }`}
-      />
-    ));
-  };
 
-  const ProductCard = ({ product }: { product: any }) => (
+  const ProductCard = ({ product }: { product: any }) => {
+    const productReviewStats = reviewStats[product.id] || { averageRating: 0, totalReviews: 0 };
+    
+    return (
     <div className="bg-white rounded-lg shadow-luxury overflow-hidden group hover:shadow-luxury-hover transition-all duration-300">
       {/* Product Image */}
       <div className="relative aspect-square bg-luxury-gray-50 overflow-hidden">
-        <Link href={`/products/${product.id}`}>
+        <Link href={`/products/${product.id}`} className="block w-full h-full">
           <Image
             src={product.featuredImage || '/images/products/placeholder.jpg'}
             alt={product.name}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
+            priority={false}
+            unoptimized={product.featuredImage?.startsWith('data:')}
           />
         </Link>
         
@@ -235,10 +276,11 @@ const ShopPageClient = () => {
 
         {/* Rating */}
         <div className="flex items-center space-x-1 mb-2">
-          <div className="flex items-center">
-            {getRatingStars(product.rating || 5)}
-          </div>
-          <span className="text-sm text-luxury-gray-600">({product.reviewCount || 0})</span>
+          <HollowStarRating 
+            rating={productReviewStats.averageRating} 
+            size="small"
+          />
+          <span className="text-sm text-luxury-gray-600">({productReviewStats.totalReviews})</span>
         </div>
 
         {/* Price */}
@@ -266,18 +308,24 @@ const ShopPageClient = () => {
         </div>
       </div>
     </div>
-  );
+    );
+  };
 
-  const ProductListItem = ({ product }: { product: any }) => (
+  const ProductListItem = ({ product }: { product: any }) => {
+    const productReviewStats = reviewStats[product.id] || { averageRating: 0, totalReviews: 0 };
+    
+    return (
     <div className="bg-white rounded-lg shadow-luxury p-6 flex items-center space-x-6">
       {/* Product Image */}
       <div className="relative w-24 h-24 bg-luxury-gray-50 rounded-lg overflow-hidden flex-shrink-0">
-        <Link href={`/products/${product.id}`}>
+        <Link href={`/products/${product.id}`} className="block w-full h-full">
           <Image
             src={product.featuredImage || '/images/products/placeholder.jpg'}
             alt={product.name}
             fill
             className="object-cover"
+            priority={false}
+            unoptimized={product.featuredImage?.startsWith('data:')}
           />
         </Link>
       </div>
@@ -298,8 +346,11 @@ const ShopPageClient = () => {
 
         <div className="flex items-center space-x-4">
           <div className="flex items-center">
-            {getRatingStars(product.rating || 5)}
-            <span className="text-sm text-luxury-gray-600 ml-2">({product.reviewCount || 0})</span>
+            <HollowStarRating 
+              rating={productReviewStats.averageRating} 
+              size="small"
+            />
+            <span className="text-sm text-luxury-gray-600 ml-2">({productReviewStats.totalReviews})</span>
           </div>
           <span className="text-sm text-luxury-gray-600">SKU: {product.sku}</span>
         </div>
@@ -336,7 +387,8 @@ const ShopPageClient = () => {
         </div>
       </div>
     </div>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen">

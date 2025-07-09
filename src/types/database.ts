@@ -360,6 +360,7 @@ export interface Database {
           shipping_address: any | null; // JSON object
           date_of_birth: string | null;
           marketing_consent: boolean;
+          stripe_customer_id: string | null; // Stripe customer ID for payment processing
           created_at: string;
           updated_at: string;
         };
@@ -373,6 +374,7 @@ export interface Database {
           shipping_address?: any | null;
           date_of_birth?: string | null;
           marketing_consent?: boolean;
+          stripe_customer_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -386,6 +388,7 @@ export interface Database {
           shipping_address?: any | null;
           date_of_birth?: string | null;
           marketing_consent?: boolean;
+          stripe_customer_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -466,6 +469,66 @@ export interface Database {
           reference?: string | null;
           performed_by?: string;
           created_at?: string;
+        };
+      };
+      
+      payment_methods: {
+        Row: {
+          id: string;
+          customer_id: string;
+          type: 'card' | 'paypal' | 'apple_pay' | 'google_pay';
+          provider: string;
+          provider_payment_method_id: string;
+          provider_customer_id: string | null;
+          display_name: string | null;
+          brand: string | null;
+          last_four: string | null;
+          exp_month: number | null;
+          exp_year: number | null;
+          paypal_email: string | null;
+          is_default: boolean;
+          is_active: boolean;
+          billing_address_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          customer_id: string;
+          type: 'card' | 'paypal' | 'apple_pay' | 'google_pay';
+          provider?: string;
+          provider_payment_method_id: string;
+          provider_customer_id?: string | null;
+          display_name?: string | null;
+          brand?: string | null;
+          last_four?: string | null;
+          exp_month?: number | null;
+          exp_year?: number | null;
+          paypal_email?: string | null;
+          is_default?: boolean;
+          is_active?: boolean;
+          billing_address_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          customer_id?: string;
+          type?: 'card' | 'paypal' | 'apple_pay' | 'google_pay';
+          provider?: string;
+          provider_payment_method_id?: string;
+          provider_customer_id?: string | null;
+          display_name?: string | null;
+          brand?: string | null;
+          last_four?: string | null;
+          exp_month?: number | null;
+          exp_year?: number | null;
+          paypal_email?: string | null;
+          is_default?: boolean;
+          is_active?: boolean;
+          billing_address_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
         };
       };
     };

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { 
@@ -26,6 +26,12 @@ import { useCartStore } from '@/store/cartStore';
 import { formatPrice } from '@/lib/utils';
 import { Product } from '@/types/product';
 import { toast } from 'react-hot-toast';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
+import WishlistButton from '@/components/ui/WishlistButton';
+import ShareButton from '@/components/ui/ShareButton';
+import ImageLightbox from '@/components/ui/ImageLightbox';
+import HollowStarRating from '@/components/ui/HollowStarRating';
 
 const ProductDetailPage = () => {
   const { id } = useParams();
@@ -38,8 +44,52 @@ const ProductDetailPage = () => {
   const [quantity, setQuantity] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState<string>('');
   const [selectedMaterial, setSelectedMaterial] = useState<string>('');
-  const [isWishlisted, setIsWishlisted] = useState(false);
   const [activeTab, setActiveTab] = useState<'description' | 'specifications' | 'reviews' | 'cultural'>('description');
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewStats, setReviewStats] = useState({ totalReviews: 0, averageRating: 0 });
+
+  // Build product images array with proper deduplication and fallback logic
+  const productImages = useMemo(() => {
+    if (!product) return ['/images/products/placeholder.jpg'];
+    
+    const images: string[] = [];
+    
+    // Get all available image URLs from product.images array
+    const allImageUrls = product.images?.map(img => img.url).filter(Boolean) || [];
+    
+    // If we have a featured image, start with that
+    if (product.featuredImage && allImageUrls.includes(product.featuredImage)) {
+      images.push(product.featuredImage);
+      // Add remaining images in order, excluding the featured image
+      allImageUrls.forEach(url => {
+        if (url !== product.featuredImage) {
+          images.push(url);
+        }
+      });
+    } else if (allImageUrls.length > 0) {
+      // No featured image set, use all images in order
+      images.push(...allImageUrls);
+    } else if (product.featuredImage) {
+      // Only featured image exists (not in images array)
+      images.push(product.featuredImage);
+    } else {
+      // No images at all, use placeholder
+      images.push('/images/products/placeholder.jpg');
+    }
+    
+    return images;
+  }, [product?.featuredImage, product?.images]);
+
+  // Synchronize selectedImage with productImages array changes
+  useEffect(() => {
+    // Reset selectedImage to 0 when productImages array changes
+    if (productImages.length > 0 && selectedImage >= productImages.length) {
+      setSelectedImage(0);
+    }
+  }, [productImages, selectedImage]);
 
   // Fetch product from API
   useEffect(() => {
@@ -66,60 +116,104 @@ const ProductDetailPage = () => {
     fetchProduct();
   }, [id]);
 
+  // Fetch reviews for the product
+  useEffect(() => {
+    const fetchReviews = async () => {
+      if (!id) return;
+
+      try {
+        setReviewsLoading(true);
+        const response = await fetch(`/api/products/${id}/reviews`);
+        if (response.ok) {
+          const data = await response.json();
+          setReviews(data.data.reviews || []);
+          setReviewStats({
+            totalReviews: data.data.statistics.totalReviews || 0,
+            averageRating: data.data.statistics.averageRating || 0
+          });
+        } else {
+          console.error('Failed to fetch reviews');
+          setReviews([]);
+          setReviewStats({ totalReviews: 0, averageRating: 0 });
+        }
+      } catch (error) {
+        console.error('Error fetching reviews:', error);
+        setReviews([]);
+        setReviewStats({ totalReviews: 0, averageRating: 0 });
+      } finally {
+        setReviewsLoading(false);
+      }
+    };
+
+    fetchReviews();
+  }, [id]);
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
-        {/* Loading skeleton */}
-        <div className="bg-luxury-gray-50 py-4">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="h-4 bg-luxury-gray-200 rounded w-64 animate-pulse"></div>
-          </div>
-        </div>
+      <>
+        <Header />
         
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            <div className="space-y-4">
-              <div className="aspect-square bg-luxury-gray-200 rounded-lg animate-pulse"></div>
-              <div className="grid grid-cols-4 gap-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="aspect-square bg-luxury-gray-200 rounded-lg animate-pulse"></div>
-                ))}
-              </div>
+        <main className="pt-16 lg:pt-20 min-h-screen bg-white">
+          {/* Loading skeleton */}
+          <div className="bg-luxury-gray-50 py-4">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="h-4 bg-luxury-gray-200 rounded w-64 animate-pulse"></div>
             </div>
-            <div className="space-y-6">
-              <div className="space-y-3">
-                <div className="h-8 bg-luxury-gray-200 rounded w-3/4 animate-pulse"></div>
-                <div className="h-6 bg-luxury-gray-200 rounded w-1/2 animate-pulse"></div>
-                <div className="h-4 bg-luxury-gray-200 rounded w-1/3 animate-pulse"></div>
+          </div>
+          
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              <div className="space-y-4">
+                <div className="aspect-square bg-luxury-gray-200 rounded-lg animate-pulse"></div>
+                <div className="grid grid-cols-4 gap-2">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="aspect-square bg-luxury-gray-200 rounded-lg animate-pulse"></div>
+                  ))}
+                </div>
               </div>
-              <div className="h-10 bg-luxury-gray-200 rounded w-32 animate-pulse"></div>
-              <div className="space-y-2">
-                <div className="h-4 bg-luxury-gray-200 rounded animate-pulse"></div>
-                <div className="h-4 bg-luxury-gray-200 rounded w-5/6 animate-pulse"></div>
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <div className="h-8 bg-luxury-gray-200 rounded w-3/4 animate-pulse"></div>
+                  <div className="h-6 bg-luxury-gray-200 rounded w-1/2 animate-pulse"></div>
+                  <div className="h-4 bg-luxury-gray-200 rounded w-1/3 animate-pulse"></div>
+                </div>
+                <div className="h-10 bg-luxury-gray-200 rounded w-32 animate-pulse"></div>
+                <div className="space-y-2">
+                  <div className="h-4 bg-luxury-gray-200 rounded animate-pulse"></div>
+                  <div className="h-4 bg-luxury-gray-200 rounded w-5/6 animate-pulse"></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </main>
+        
+        <Footer />
+      </>
     );
   }
 
   if (!product) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-luxury-gray-50">
-        <div className="text-center">
-          <Package className="h-16 w-16 text-luxury-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-semibold text-luxury-black mb-2">Product not found</h2>
-          <p className="text-luxury-gray-600 mb-6">The product you're looking for doesn't exist.</p>
-          <button
-            onClick={() => router.push('/shop')}
-            className="btn-luxury"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Shop
-          </button>
-        </div>
-      </div>
+      <>
+        <Header />
+        
+        <main className="pt-16 lg:pt-20 flex items-center justify-center bg-luxury-gray-50 min-h-[calc(100vh-16rem)]">
+          <div className="text-center">
+            <Package className="h-16 w-16 text-luxury-gray-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-semibold text-luxury-black mb-2">Product not found</h2>
+            <p className="text-luxury-gray-600 mb-6">The product you're looking for doesn't exist.</p>
+            <button
+              onClick={() => router.push('/shop')}
+              className="btn-luxury"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Shop
+            </button>
+          </div>
+        </main>
+        
+        <Footer />
+      </>
     );
   }
 
@@ -133,10 +227,16 @@ const ProductDetailPage = () => {
     toast.success(`${product.name} added to cart!`);
   };
 
-  const productImages = [
-    product.featuredImage || product.images?.[0]?.url || '/images/products/placeholder.jpg',
-    ...(product.images?.filter(img => img.url !== product.featuredImage).map(img => img.url) || [])
-  ].filter(Boolean);
+  const openLightbox = (index: number) => {
+    // Ensure index is within bounds
+    const safeIndex = Math.max(0, Math.min(index, productImages.length - 1));
+    setLightboxIndex(safeIndex);
+    setLightboxOpen(true);
+  };
+
+  const closeLightbox = () => {
+    setLightboxOpen(false);
+  };
 
   const getRatingStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, index) => (
@@ -158,44 +258,57 @@ const ProductDetailPage = () => {
     }
     return 'Custom dimensions available';
   };
-
+  
   return (
-    <div className="min-h-screen bg-white">
-      {/* Breadcrumb */}
-      <div className="bg-luxury-gray-50 py-4">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex items-center space-x-2 text-sm">
-            <button 
-              onClick={() => router.push('/')}
-              className="text-luxury-gray-600 hover:text-luxury-black"
-            >
-              Home
-            </button>
-            <span className="text-luxury-gray-400">/</span>
-            <button 
-              onClick={() => router.push('/shop')}
-              className="text-luxury-gray-600 hover:text-luxury-black"
-            >
-              Shop
-            </button>
-            <span className="text-luxury-gray-400">/</span>
-            <span className="text-luxury-black font-medium">{product.name}</span>
-          </nav>
+    <>
+      <Header />
+      
+      <main className="pt-16 lg:pt-20 min-h-screen bg-white">
+        {/* Breadcrumb */}
+        <div className="bg-luxury-gray-50 py-4">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <nav className="flex items-center space-x-2 text-sm">
+              <button 
+                onClick={() => router.push('/')}
+                className="text-luxury-gray-600 hover:text-luxury-black"
+              >
+                Home
+              </button>
+              <span className="text-luxury-gray-400">/</span>
+              <button 
+                onClick={() => router.push('/shop')}
+                className="text-luxury-gray-600 hover:text-luxury-black"
+              >
+                Shop
+              </button>
+              <span className="text-luxury-gray-400">/</span>
+              <span className="text-luxury-black font-medium">{product.name}</span>
+            </nav>
+          </div>
         </div>
-      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Product Images */}
           <div className="space-y-4">
             {/* Main Image */}
-            <div className="aspect-square bg-luxury-gray-50 rounded-lg overflow-hidden relative group">
+            <div className="aspect-square bg-luxury-gray-50 rounded-lg overflow-hidden relative group max-w-full max-h-full">
               <Image
-                src={productImages[selectedImage]}
+                src={productImages[Math.min(selectedImage, productImages.length - 1)] || productImages[0]}
                 alt={product.name}
                 fill
                 className="object-cover transition-transform duration-300 group-hover:scale-105"
+                onClick={() => openLightbox(Math.min(selectedImage, productImages.length - 1))}
+                sizes="(max-width: 768px) 100vw, 50vw"
+                priority
               />
+              
+              {/* Zoom Indicator */}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center pointer-events-none cursor-pointer">
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                  Click to zoom
+                </div>
+              </div>
               
               {/* Badges */}
               <div className="absolute top-4 left-4 space-y-2">
@@ -217,16 +330,13 @@ const ProductDetailPage = () => {
               </div>
 
               {/* Wishlist Button */}
-              <button
-                onClick={() => setIsWishlisted(!isWishlisted)}
-                className={`absolute top-4 right-4 p-2 rounded-full transition-colors ${
-                  isWishlisted 
-                    ? 'bg-red-100 text-red-600' 
-                    : 'bg-white/80 text-luxury-gray-600 hover:bg-white hover:text-red-600'
-                }`}
-              >
-                <Heart className={`h-5 w-5 ${isWishlisted ? 'fill-current' : ''}`} />
-              </button>
+              <div className="absolute top-4 right-4">
+                <WishlistButton
+                  productId={product.id.toString()}
+                  size="medium"
+                  variant="icon"
+                />
+              </div>
             </div>
 
             {/* Thumbnail Images */}
@@ -235,8 +345,12 @@ const ProductDetailPage = () => {
                 {productImages.map((image, index) => (
                   <button
                     key={index}
-                    onClick={() => setSelectedImage(index)}
-                    className={`aspect-square bg-luxury-gray-50 rounded-lg overflow-hidden border-2 transition-colors ${
+                    onClick={() => {
+                      if (index >= 0 && index < productImages.length) {
+                        setSelectedImage(index);
+                      }
+                    }}
+                    className={`aspect-square bg-luxury-gray-50 rounded-lg overflow-hidden border-2 transition-colors relative ${
                       selectedImage === index 
                         ? 'border-luxury-gold' 
                         : 'border-transparent hover:border-luxury-gray-300'
@@ -247,6 +361,7 @@ const ProductDetailPage = () => {
                       alt={`${product.name} view ${index + 1}`}
                       fill
                       className="object-cover"
+                      sizes="(max-width: 768px) 25vw, 12vw"
                     />
                   </button>
                 ))}
@@ -265,9 +380,12 @@ const ProductDetailPage = () => {
               
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-1">
-                  {getRatingStars(product.rating || 5)}
+                  <HollowStarRating 
+                    rating={reviewStats.averageRating} 
+                    size="small"
+                  />
                   <span className="text-sm text-luxury-gray-600 ml-2">
-                    ({product.reviewCount || 0} reviews)
+                    ({reviewStats.totalReviews} review{reviewStats.totalReviews !== 1 ? 's' : ''})
                   </span>
                 </div>
                 <span className="text-sm text-luxury-gray-600">SKU: {product.sku}</span>
@@ -375,14 +493,21 @@ const ProductDetailPage = () => {
               </button>
               
               <div className="grid grid-cols-2 gap-3">
-                <button className="btn-luxury-ghost">
-                  <Heart className="h-4 w-4 mr-2" />
-                  Add to Wishlist
-                </button>
-                <button className="btn-luxury-ghost">
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Share
-                </button>
+                <WishlistButton
+                  productId={product.id.toString()}
+                  size="medium"
+                  variant="button"
+                  className="btn-luxury-ghost flex items-center justify-center"
+                />
+                <ShareButton
+                  productId={product.id.toString()}
+                  productName={product.name}
+                  productPrice={formatPrice(product.price || product.regularPrice || 0)}
+                  size="medium"
+                  variant="button"
+                  showText={false}
+                  className="btn-luxury-ghost flex items-center justify-center"
+                />
               </div>
             </div>
 
@@ -528,60 +653,77 @@ const ProductDetailPage = () => {
 
             {activeTab === 'reviews' && (
               <div className="space-y-8">
-                <div className="text-center">
-                  <div className="flex items-center justify-center space-x-2 mb-2">
-                    {getRatingStars(product.rating || 5)}
-                    <span className="text-2xl font-bold text-luxury-black ml-2">
-                      {product.rating || 5.0}
+                {/* Rating Summary - Left Aligned */}
+                <div className="text-left">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <HollowStarRating 
+                      rating={reviewStats.averageRating} 
+                      size="medium"
+                      showRating={true}
+                    />
+                    <span className="text-luxury-gray-600">
+                      Based on {reviewStats.totalReviews} review{reviewStats.totalReviews !== 1 ? 's' : ''}
                     </span>
                   </div>
-                  <p className="text-luxury-gray-600">
-                    Based on {product.reviewCount || 0} reviews
-                  </p>
                 </div>
 
-                {/* Sample Reviews */}
-                <div className="space-y-6">
-                  {[
-                    {
-                      name: "Sarah Ahmad",
-                      rating: 5,
-                      date: "2 weeks ago",
-                      comment: "Absolutely beautiful piece. The craftsmanship is exceptional and the Arabic calligraphy is perfectly executed. Highly recommended!",
-                      verified: true
-                    },
-                    {
-                      name: "Mohammed Hassan",
-                      rating: 5,
-                      date: "1 month ago", 
-                      comment: "Amazing quality and attention to detail. The packaging was excellent and it arrived quickly. Perfect for my home mosque.",
-                      verified: true
-                    }
-                  ].map((review, index) => (
-                    <div key={index} className="border-b border-luxury-gray-100 pb-6">
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <h5 className="font-medium text-luxury-black">{review.name}</h5>
-                            {review.verified && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Verified
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center space-x-2 mt-1">
-                            <div className="flex items-center">
-                              {getRatingStars(review.rating)}
+                {/* Reviews List */}
+                {reviewsLoading ? (
+                  <div className="space-y-6">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="border-b border-luxury-gray-100 pb-6 animate-pulse">
+                        <div className="flex items-start space-x-4 mb-3">
+                          <div className="h-4 bg-luxury-gray-200 rounded w-32"></div>
+                          <div className="h-4 bg-luxury-gray-200 rounded w-24"></div>
+                        </div>
+                        <div className="h-4 bg-luxury-gray-200 rounded w-full mb-2"></div>
+                        <div className="h-4 bg-luxury-gray-200 rounded w-3/4"></div>
+                      </div>
+                    ))}
+                  </div>
+                ) : reviews.length > 0 ? (
+                  <div className="space-y-6">
+                    {reviews.map((review) => (
+                      <div key={review.id} className="border-b border-luxury-gray-100 pb-6">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <div className="flex items-center space-x-2">
+                              <h5 className="font-medium text-luxury-black">{review.customerName}</h5>
+                              {review.verifiedPurchase && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Verified Purchase
+                                </span>
+                              )}
                             </div>
-                            <span className="text-sm text-luxury-gray-500">{review.date}</span>
+                            <div className="flex items-center space-x-2 mt-1">
+                              <div className="flex items-center">
+                                {getRatingStars(review.rating)}
+                              </div>
+                              <span className="text-sm text-luxury-gray-500">{review.relativeDate}</span>
+                            </div>
                           </div>
                         </div>
+                        {review.title && (
+                          <h6 className="font-medium text-luxury-black mb-2">{review.title}</h6>
+                        )}
+                        <p className="text-luxury-gray-700">{review.comment}</p>
                       </div>
-                      <p className="text-luxury-gray-700">{review.comment}</p>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="mb-4">
+                      <Star className="h-12 w-12 text-luxury-gray-300 mx-auto" />
                     </div>
-                  ))}
-                </div>
+                    <h3 className="text-lg font-semibold text-luxury-black mb-2">
+                      No reviews for this product
+                    </h3>
+                    <p className="text-luxury-gray-600">
+                      Be the first to review this beautiful Islamic art piece!
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -616,7 +758,19 @@ const ProductDetailPage = () => {
           </div>
         </div>
       </div>
-    </div>
+      </main>
+      
+      <Footer />
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        images={productImages}
+        initialIndex={lightboxIndex}
+        isOpen={lightboxOpen}
+        onClose={closeLightbox}
+        productName={product.name}
+      />
+    </>
   );
 };
 
