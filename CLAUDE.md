@@ -501,8 +501,17 @@ DELETE /api/products/[id]       - Delete product
 POST /api/upload                - Upload product images
 GET  /api/customers             - Customer management
 GET  /api/auth/profile          - User profile
+GET  /api/debug/user-info       - Debug user role info (CRITICAL for login redirect)
 POST /api/stripe/customers      - Stripe customer creation
 POST /api/stripe/setup-intent   - Payment method setup
+```
+
+### **CRITICAL API ENDPOINTS - DO NOT DELETE**
+```
+⚠️  /api/debug/user-info        - ESSENTIAL for admin login redirect functionality
+                                - Called by login page to determine user role
+                                - Returns profile data for proper dashboard routing
+                                - Removal causes admin users to redirect to /account instead of /admin/dashboard
 ```
 
 **Key Features**:
