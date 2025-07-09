@@ -1,0 +1,14 @@
+<svg width="32" height="32" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer Star -->
+  <path 
+    d="M20 2l5.878 12.122L38 16l-12.122 1.878L24 30l-4-12.122L8 16l12.122-1.878L20 2z" 
+    fill="#d4af37"
+  />
+  <!-- Inner Islamic Pattern -->
+  <path 
+    d="M20 8l3.5 7.5L31 17l-7.5 1.5L22 26l-2-7.5L13 17l7.5-1.5L20 8z" 
+    fill="white"
+  />
+  <!-- Center Dot -->
+  <circle cx="20" cy="20" r="2" fill="#d4af37" />
+</svg>
