@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Logo from '@/components/ui/Logo';
 import SafeLink from '@/components/ui/SafeLink';
 import OAuthButtons from '@/components/auth/OAuthButtons';
+import SessionRecovery from '@/components/auth/SessionRecovery';
 import toast from 'react-hot-toast';
 
 export default function LoginPage() {
@@ -17,17 +18,58 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const { signIn, user } = useAuth();
+  const { signIn, user, error: authError, clearError, validateSession } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirectTo') || '/account';
 
+  // Clear auth errors when component mounts
+  useEffect(() => {
+    if (clearError) {
+      clearError();
+    }
+  }, [clearError]);
+
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      router.push(redirectTo);
+      // Check role and redirect appropriately
+      const checkRoleAndRedirect = async () => {
+        try {
+          console.log('🔍 Login: User detected, checking role...');
+          
+          // First validate session
+          const isValid = await validateSession();
+          if (!isValid) {
+            console.log('❌ Login: Session invalid, staying on login page');
+            return;
+          }
+          
+          const response = await fetch('/api/debug/user-info');
+          if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Login: User info loaded:', data);
+            
+            if (data.success && data.data.profile?.role === 'admin') {
+              console.log('🔄 Login: Redirecting admin to dashboard');
+              router.push('/admin/dashboard');
+            } else {
+              console.log('🔄 Login: Redirecting customer to account');
+              router.push('/account');
+            }
+          } else {
+            console.log('⚠️ Login: Failed to load user info, defaulting to account');
+            router.push('/account');
+          }
+        } catch (error) {
+          console.error('❌ Login: Error checking user role:', error);
+          router.push('/account');
+        }
+      };
+      
+      checkRoleAndRedirect();
     }
-  }, [user, router, redirectTo]);
+  }, [user, router, validateSession]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -57,11 +99,18 @@ export default function LoginPage() {
 
     setLoading(true);
     setErrors({});
+    if (clearError) {
+      clearError(); // Clear any previous auth errors
+    }
 
     try {
+      console.log('🔍 Login: Starting signin process...');
+      
       const { user, error } = await signIn(email, password);
 
       if (error) {
+        console.error('❌ Login: Signin failed:', error);
+        
         if (error.message.includes('Invalid login credentials')) {
           setErrors({ general: 'Invalid email or password. Please try again.' });
         } else if (error.message.includes('Email not confirmed')) {
@@ -73,11 +122,38 @@ export default function LoginPage() {
       }
 
       if (user) {
+        console.log('✅ Login: Signin successful');
         toast.success('Welcome back!');
-        router.push(redirectTo);
+        
+        // Check role immediately and redirect appropriately
+        (async () => {
+          try {
+            console.log('🔍 Login: Checking user role for redirect...');
+            
+            const response = await fetch('/api/debug/user-info');
+            if (response.ok) {
+              const data = await response.json();
+              console.log('✅ Login: User info loaded:', data);
+              
+              if (data.success && data.data.profile?.role === 'admin') {
+                console.log('🔄 Login: Redirecting admin to dashboard');
+                router.push('/admin/dashboard');
+              } else {
+                console.log('🔄 Login: Redirecting customer to account');
+                router.push('/account');
+              }
+            } else {
+              console.log('⚠️ Login: Failed to fetch user info, defaulting to account');
+              router.push('/account');
+            }
+          } catch (error) {
+            console.error('❌ Login: Error checking user role:', error);
+            router.push('/account');
+          }
+        })();
       }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('❌ Login: Unexpected error:', error);
       setErrors({ general: 'An unexpected error occurred. Please try again.' });
     } finally {
       setLoading(false);
@@ -86,6 +162,9 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-luxury-black via-gray-900 to-luxury-black">
+      {/* Session Recovery Component */}
+      <SessionRecovery />
+      
       {/* White Header Banner */}
       <div className="bg-white border-b border-gray-200">
         <div className="px-4 py-4">

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { db } from '@/lib/supabase';
+import { db } from '@/lib/supabase-client';
 import { WishlistItem, WishlistContextType } from '@/types/wishlist';
 import toast from 'react-hot-toast';
 

@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Logo from '@/components/ui/Logo';
 import SafeLink from '@/components/ui/SafeLink';
 import OAuthButtons from '@/components/auth/OAuthButtons';
+import SessionRecovery from '@/components/auth/SessionRecovery';
 import toast from 'react-hot-toast';
 
 export default function SignUpPage() {
@@ -27,18 +28,22 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const { signUp, user } = useAuth();
+  const { signUp, user, error: authError, clearError } = useAuth();
   const router = useRouter();
   
   // Debug log to check if component mounts
   useEffect(() => {
     console.log('🟢 SignUp page mounted');
     console.log('🟢 signUp function available:', typeof signUp);
-  }, []);
+    if (clearError) {
+      clearError(); // Clear any previous auth errors
+    }
+  }, [clearError]);
 
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
+      console.log('🔄 SignUp: User already logged in, redirecting to account');
       router.push('/account');
     }
   }, [user, router]);
@@ -52,6 +57,10 @@ export default function SignUpPage() {
     // Clear error for this field when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+    // Clear auth error when user starts typing
+    if (authError && clearError) {
+      clearError();
     }
   };
 
@@ -104,6 +113,9 @@ export default function SignUpPage() {
 
     setLoading(true);
     setErrors({});
+    if (clearError) {
+      clearError(); // Clear any previous auth errors
+    }
 
     try {
       console.log('✅ Validation passed - Calling signUp function...');
@@ -115,7 +127,7 @@ export default function SignUpPage() {
       });
 
       if (error) {
-        console.error('Signup error details:', error);
+        console.error('❌ SignUp: Signup error details:', error);
         if (error.message.includes('already registered')) {
           setErrors({ email: 'This email is already registered. Please sign in instead.' });
         } else {
@@ -126,12 +138,13 @@ export default function SignUpPage() {
 
       // Success! User created (profile created by trigger)
       if (user) {
+        console.log('✅ SignUp: Account created successfully');
         toast.success('Account created successfully! Please check your email to verify your account.');
         router.push('/login?message=account-created');
       }
       
     } catch (error) {
-      console.error('Sign up error:', error);
+      console.error('❌ SignUp: Unexpected error:', error);
       setErrors({ general: 'An unexpected error occurred. Please try again.' });
     } finally {
       setLoading(false);
@@ -140,6 +153,9 @@ export default function SignUpPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-luxury-black via-gray-900 to-luxury-black">
+      {/* Session Recovery Component */}
+      <SessionRecovery />
+      
       {/* White Header Banner */}
       <div className="bg-white border-b border-gray-200">
         <div className="px-4 py-4">
