@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { 
   ArrowLeft,
@@ -18,50 +18,263 @@ import {
   MessageSquare,
   Download,
   Plus,
-  MoreHorizontal
+  MoreHorizontal,
+  RefreshCw
 } from 'lucide-react';
-import { useOrderStore } from '@/store/orderStore';
 import { formatPrice } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
+
+interface DatabaseOrder {
+  id: string;
+  orderNumber: string;
+  customerId: string;
+  status: string;
+  paymentStatus: string;
+  paymentMethod: string;
+  total: number;
+  subtotal: number;
+  taxAmount: number;
+  shippingAmount: number;
+  currency: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  shippedAt?: string;
+  deliveredAt?: string;
+  customer: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string;
+  };
+  items: Array<{
+    id: string;
+    productId: string;
+    name: string;
+    arabicName?: string;
+    sku: string;
+    quantity: number;
+    price: number;
+    total: number;
+    image?: string;
+    islamicCategory?: string;
+  }>;
+}
 
 const OrderDetailPage = () => {
   const { id } = useParams();
   const router = useRouter();
-  const {
-    getOrder,
-    updateOrderStatus,
-    updatePaymentStatus,
-    markAsShipped,
-    markAsDelivered,
-    cancelOrder,
-    refundOrder,
-    addOrderNote,
-  } = useOrderStore();
-
+  
+  const [order, setOrder] = useState<DatabaseOrder | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
   const [showAddNote, setShowAddNote] = useState(false);
   const [newNote, setNewNote] = useState('');
-  const [isInternalNote, setIsInternalNote] = useState(false);
   const [trackingNumber, setTrackingNumber] = useState('');
 
-  const order = getOrder(id as string);
+  // Fetch order data from database
+  useEffect(() => {
+    if (id) {
+      fetchOrder();
+    }
+  }, [id]);
 
-  if (!order) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <Package className="h-16 w-16 text-luxury-gray-400 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-luxury-black mb-2">Order not found</h2>
-          <p className="text-luxury-gray-600 mb-4">The order you're looking for doesn't exist.</p>
-          <button
-            onClick={() => router.push('/admin/orders')}
-            className="btn-luxury"
-          >
-            Back to Orders
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const fetchOrder = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/orders/${id}`);
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to fetch order');
+      }
+
+      setOrder(result.data);
+    } catch (error) {
+      console.error('Error fetching order:', error);
+      toast.error('Failed to load order');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateOrderStatus = async (newStatus: string) => {
+    if (!order) return;
+    
+    try {
+      setUpdating(true);
+      const response = await fetch(`/api/orders/${order.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to update order');
+      }
+
+      // Update local state
+      setOrder(prev => prev ? { ...prev, status: newStatus } : null);
+      toast.success(`Order status updated to ${newStatus}`);
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      toast.error('Failed to update order status');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const updatePaymentStatus = async (newStatus: string) => {
+    if (!order) return;
+    
+    try {
+      setUpdating(true);
+      const response = await fetch(`/api/orders/${order.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ paymentStatus: newStatus }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to update payment');
+      }
+
+      // Update local state
+      setOrder(prev => prev ? { ...prev, paymentStatus: newStatus } : null);
+      toast.success(`Payment status updated to ${newStatus}`);
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+      toast.error('Failed to update payment status');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const markAsShipped = async () => {
+    if (!order || !trackingNumber.trim()) {
+      toast.error('Please enter a tracking number');
+      return;
+    }
+    
+    try {
+      setUpdating(true);
+      const response = await fetch(`/api/orders/${order.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          status: 'shipped',
+          shippedAt: new Date().toISOString()
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to mark as shipped');
+      }
+
+      // Update local state
+      setOrder(prev => prev ? { 
+        ...prev, 
+        status: 'shipped',
+        shippedAt: new Date().toISOString()
+      } : null);
+      
+      setTrackingNumber('');
+      toast.success('Order marked as shipped');
+    } catch (error) {
+      console.error('Error marking as shipped:', error);
+      toast.error('Failed to mark as shipped');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const markAsDelivered = async () => {
+    if (!order) return;
+    
+    try {
+      setUpdating(true);
+      const response = await fetch(`/api/orders/${order.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          status: 'delivered',
+          deliveredAt: new Date().toISOString()
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to mark as delivered');
+      }
+
+      // Update local state
+      setOrder(prev => prev ? { 
+        ...prev, 
+        status: 'delivered',
+        deliveredAt: new Date().toISOString()
+      } : null);
+      
+      toast.success('Order marked as delivered');
+    } catch (error) {
+      console.error('Error marking as delivered:', error);
+      toast.error('Failed to mark as delivered');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const addNote = async () => {
+    if (!order || !newNote.trim()) return;
+    
+    try {
+      setUpdating(true);
+      const currentNotes = order.notes || '';
+      const timestamp = new Date().toLocaleString();
+      const noteWithTimestamp = `[${timestamp}] ${newNote}`;
+      const updatedNotes = currentNotes ? `${currentNotes}\n${noteWithTimestamp}` : noteWithTimestamp;
+      
+      const response = await fetch(`/api/orders/${order.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ notes: updatedNotes }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to add note');
+      }
+
+      // Update local state
+      setOrder(prev => prev ? { ...prev, notes: updatedNotes } : null);
+      setNewNote('');
+      setShowAddNote(false);
+      toast.success('Note added successfully');
+    } catch (error) {
+      console.error('Error adding note:', error);
+      toast.error('Failed to add note');
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -82,25 +295,34 @@ const OrderDetailPage = () => {
     }
   };
 
-  const handleAddNote = () => {
-    if (!newNote.trim()) return;
-    
-    addOrderNote(order.id, newNote, isInternalNote);
-    setNewNote('');
-    setShowAddNote(false);
-    toast.success('Note added successfully');
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <RefreshCw className="h-8 w-8 text-luxury-gold mx-auto mb-4 animate-spin" />
+          <p className="text-luxury-gray-600">Loading order details...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const handleMarkAsShipped = () => {
-    if (!trackingNumber.trim()) {
-      toast.error('Please enter a tracking number');
-      return;
-    }
-    
-    markAsShipped(order.id, trackingNumber, 'Standard Shipping');
-    setTrackingNumber('');
-    toast.success('Order marked as shipped');
-  };
+  if (!order) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Package className="h-16 w-16 text-luxury-gray-400 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-luxury-black mb-2">Order not found</h2>
+          <p className="text-luxury-gray-600 mb-4">The order you're looking for doesn't exist.</p>
+          <button
+            onClick={() => router.push('/admin/orders')}
+            className="btn-luxury"
+          >
+            Back to Orders
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -128,12 +350,17 @@ const OrderDetailPage = () => {
           <div className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg border ${getStatusColor(order.status)}`}>
             <span className="capitalize">{order.status.replace('-', ' ')}</span>
           </div>
+          <button 
+            onClick={fetchOrder}
+            className="btn-luxury-ghost"
+            disabled={updating}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${updating ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
           <button className="btn-luxury-ghost">
             <Printer className="h-4 w-4 mr-2" />
             Print
-          </button>
-          <button className="btn-luxury-ghost">
-            <MoreHorizontal className="h-4 w-4" />
           </button>
         </div>
       </div>
@@ -151,7 +378,15 @@ const OrderDetailPage = () => {
                 {order.items.map((item) => (
                   <div key={item.id} className="flex items-center space-x-4 p-4 border border-luxury-gray-100 rounded-lg">
                     <div className="w-16 h-16 bg-luxury-gray-100 rounded-lg flex items-center justify-center">
-                      <Package className="h-8 w-8 text-luxury-gold" />
+                      {item.image ? (
+                        <img 
+                          src={item.image} 
+                          alt={item.name}
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                      ) : (
+                        <Package className="h-8 w-8 text-luxury-gold" />
+                      )}
                     </div>
                     <div className="flex-1">
                       <h4 className="font-medium text-luxury-black">{item.name}</h4>
@@ -159,27 +394,14 @@ const OrderDetailPage = () => {
                         <p className="text-sm text-luxury-gray-600 arabic-text">{item.arabicName}</p>
                       )}
                       <p className="text-sm text-luxury-gray-600">SKU: {item.sku}</p>
-                      {item.customizations.length > 0 && (
-                        <div className="mt-2">
-                          <p className="text-xs font-medium text-luxury-gray-700">Customizations:</p>
-                          {item.customizations.map((custom, index) => (
-                            <p key={index} className="text-xs text-luxury-gray-600">
-                              {custom.name}: {custom.value}
-                            </p>
-                          ))}
-                        </div>
+                      {item.islamicCategory && (
+                        <p className="text-xs text-luxury-gold">{item.islamicCategory}</p>
                       )}
                     </div>
                     <div className="text-right">
                       <p className="font-medium text-luxury-black">Qty: {item.quantity}</p>
-                      <p className="font-semibold text-luxury-gold">{formatPrice(item.totalPrice)}</p>
-                      <div className={`inline-flex items-center px-2 py-1 text-xs rounded-full mt-1 ${
-                        item.printStatus === 'completed' ? 'bg-green-50 text-green-600' :
-                        item.printStatus === 'printing' ? 'bg-blue-50 text-blue-600' :
-                        'bg-gray-50 text-gray-600'
-                      }`}>
-                        {item.printStatus}
-                      </div>
+                      <p className="text-sm text-luxury-gray-600">{formatPrice(item.price)} each</p>
+                      <p className="font-semibold text-luxury-gold">{formatPrice(item.total)}</p>
                     </div>
                   </div>
                 ))}
@@ -194,18 +416,12 @@ const OrderDetailPage = () => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-luxury-gray-600">Shipping:</span>
-                    <span className="text-luxury-black">{formatPrice(order.shippingCost)}</span>
+                    <span className="text-luxury-black">{formatPrice(order.shippingAmount)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-luxury-gray-600">VAT (20%):</span>
-                    <span className="text-luxury-black">{formatPrice(order.vatAmount)}</span>
+                    <span className="text-luxury-black">{formatPrice(order.taxAmount)}</span>
                   </div>
-                  {order.discountAmount > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-luxury-gray-600">Discount:</span>
-                      <span className="text-green-600">-{formatPrice(order.discountAmount)}</span>
-                    </div>
-                  )}
                   <div className="flex justify-between pt-2 border-t border-luxury-gray-100">
                     <span className="font-semibold text-luxury-black">Total:</span>
                     <span className="font-bold text-luxury-gold text-lg">{formatPrice(order.total)}</span>
@@ -234,7 +450,7 @@ const OrderDetailPage = () => {
                   </div>
                 </div>
 
-                {order.paidAt && (
+                {order.paymentStatus === 'paid' && (
                   <div className="flex items-start space-x-3">
                     <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                       <DollarSign className="h-4 w-4 text-green-600" />
@@ -242,7 +458,7 @@ const OrderDetailPage = () => {
                     <div>
                       <p className="font-medium text-luxury-black">Payment received</p>
                       <p className="text-sm text-luxury-gray-600">
-                        {new Date(order.paidAt).toLocaleString()}
+                        {order.paymentMethod} payment processed
                       </p>
                     </div>
                   </div>
@@ -258,11 +474,6 @@ const OrderDetailPage = () => {
                       <p className="text-sm text-luxury-gray-600">
                         {new Date(order.shippedAt).toLocaleString()}
                       </p>
-                      {order.trackingNumber && (
-                        <p className="text-sm text-luxury-gray-600">
-                          Tracking: {order.trackingNumber}
-                        </p>
-                      )}
                     </div>
                   </div>
                 )}
@@ -306,30 +517,20 @@ const OrderDetailPage = () => {
                     rows={3}
                     className="w-full px-3 py-2 border border-luxury-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-gold resize-none"
                   />
-                  <div className="flex items-center justify-between mt-3">
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={isInternalNote}
-                        onChange={(e) => setIsInternalNote(e.target.checked)}
-                        className="rounded border-luxury-gray-300 text-luxury-gold focus:ring-luxury-gold"
-                      />
-                      <span className="text-sm text-luxury-gray-600">Internal note (not visible to customer)</span>
-                    </label>
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => setShowAddNote(false)}
-                        className="btn-luxury-ghost text-sm"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={handleAddNote}
-                        className="btn-luxury text-sm"
-                      >
-                        Add Note
-                      </button>
-                    </div>
+                  <div className="flex items-center justify-end mt-3 space-x-2">
+                    <button
+                      onClick={() => setShowAddNote(false)}
+                      className="btn-luxury-ghost text-sm"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={addNote}
+                      className="btn-luxury text-sm"
+                      disabled={updating}
+                    >
+                      Add Note
+                    </button>
                   </div>
                 </div>
               )}
@@ -337,17 +538,10 @@ const OrderDetailPage = () => {
               <div className="space-y-3">
                 {order.notes ? (
                   <div className="p-3 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-blue-800">{order.notes}</p>
+                    <div className="text-sm text-blue-800 whitespace-pre-wrap">{order.notes}</div>
                   </div>
                 ) : (
-                  <p className="text-luxury-gray-500 text-sm">No customer notes</p>
-                )}
-
-                {order.internalNotes && (
-                  <div className="p-3 bg-yellow-50 rounded-lg">
-                    <p className="text-xs font-medium text-yellow-700 mb-1">Internal Notes:</p>
-                    <p className="text-sm text-yellow-800">{order.internalNotes}</p>
-                  </div>
+                  <p className="text-luxury-gray-500 text-sm">No notes added yet</p>
                 )}
               </div>
             </div>
@@ -362,25 +556,27 @@ const OrderDetailPage = () => {
             <div className="space-y-3">
               {order.status === 'pending' && order.paymentStatus === 'pending' && (
                 <button
-                  onClick={() => updatePaymentStatus(order.id, 'paid')}
+                  onClick={() => updatePaymentStatus('paid')}
                   className="w-full btn-luxury text-sm"
+                  disabled={updating}
                 >
                   <DollarSign className="h-4 w-4 mr-2" />
                   Mark as Paid
                 </button>
               )}
 
-              {order.status === 'confirmed' && order.productionStatus === 'not-started' && (
+              {order.status === 'pending' && order.paymentStatus === 'paid' && (
                 <button
-                  onClick={() => updateOrderStatus(order.id, 'processing')}
+                  onClick={() => updateOrderStatus('processing')}
                   className="w-full btn-luxury text-sm"
+                  disabled={updating}
                 >
                   <Package className="h-4 w-4 mr-2" />
-                  Start Production
+                  Start Processing
                 </button>
               )}
 
-              {order.status === 'ready' && (
+              {order.status === 'processing' && (
                 <div className="space-y-2">
                   <input
                     type="text"
@@ -390,8 +586,9 @@ const OrderDetailPage = () => {
                     className="w-full px-3 py-2 border border-luxury-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-gold text-sm"
                   />
                   <button
-                    onClick={handleMarkAsShipped}
+                    onClick={markAsShipped}
                     className="w-full btn-luxury text-sm"
+                    disabled={updating}
                   >
                     <Truck className="h-4 w-4 mr-2" />
                     Mark as Shipped
@@ -401,27 +598,43 @@ const OrderDetailPage = () => {
 
               {order.status === 'shipped' && (
                 <button
-                  onClick={() => markAsDelivered(order.id)}
+                  onClick={markAsDelivered}
                   className="w-full btn-luxury text-sm"
+                  disabled={updating}
                 >
                   <CheckCircle className="h-4 w-4 mr-2" />
                   Mark as Delivered
                 </button>
               )}
 
-              <button
-                onClick={() => {
-                  const reason = prompt('Cancellation reason:');
-                  if (reason) {
-                    cancelOrder(order.id, reason);
-                    toast.success('Order cancelled');
-                  }
-                }}
-                className="w-full btn-luxury-ghost text-sm text-red-600"
-              >
-                <AlertCircle className="h-4 w-4 mr-2" />
-                Cancel Order
-              </button>
+              {/* Only show cancel button if order hasn't been shipped */}
+              {order.status !== 'shipped' && order.status !== 'delivered' && order.status !== 'cancelled' && (
+                <button
+                  onClick={() => {
+                    const confirmCancel = window.confirm(
+                      'Are you sure you want to cancel this order? This action cannot be undone.'
+                    );
+                    if (confirmCancel) {
+                      updateOrderStatus('cancelled');
+                    }
+                  }}
+                  className="w-full btn-luxury-ghost text-sm text-red-600"
+                  disabled={updating}
+                >
+                  <AlertCircle className="h-4 w-4 mr-2" />
+                  Cancel Order
+                </button>
+              )}
+              
+              {/* Show cancellation notice for shipped orders */}
+              {(order.status === 'shipped' || order.status === 'delivered') && (
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-sm text-blue-800">
+                    <AlertCircle className="h-4 w-4 inline mr-2" />
+                    Order cannot be cancelled after shipping. Please contact customer for returns.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -457,40 +670,6 @@ const OrderDetailPage = () => {
                   </a>
                 </div>
               )}
-
-              <div className="pt-3 border-t border-luxury-gray-100">
-                <p className="text-sm font-medium text-luxury-black mb-1">Order History</p>
-                <p className="text-sm text-luxury-gray-600">
-                  {order.customer.totalOrders} orders • {formatPrice(order.customer.totalSpent)} total
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Shipping Address */}
-          <div className="bg-white rounded-lg shadow-luxury p-6">
-            <h3 className="text-lg font-semibold text-luxury-black mb-4">Shipping Address</h3>
-            <div className="space-y-2">
-              <p className="font-medium text-luxury-black">
-                {order.shipping.firstName} {order.shipping.lastName}
-              </p>
-              {order.shipping.company && (
-                <p className="text-sm text-luxury-gray-600">{order.shipping.company}</p>
-              )}
-              <div className="text-sm text-luxury-gray-600">
-                <p>{order.shipping.addressLine1}</p>
-                {order.shipping.addressLine2 && <p>{order.shipping.addressLine2}</p>}
-                <p>
-                  {order.shipping.city}, {order.shipping.county} {order.shipping.postcode}
-                </p>
-                <p>{order.shipping.country}</p>
-              </div>
-              {order.shipping.instructions && (
-                <div className="pt-2 border-t border-luxury-gray-100">
-                  <p className="text-xs font-medium text-luxury-gray-700">Delivery Instructions:</p>
-                  <p className="text-sm text-luxury-gray-600">{order.shipping.instructions}</p>
-                </div>
-              )}
             </div>
           </div>
 
@@ -510,14 +689,12 @@ const OrderDetailPage = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-luxury-gray-600">Method:</span>
-                <span className="text-sm text-luxury-black">{order.paymentMethod.type}</span>
+                <span className="text-sm text-luxury-black">{order.paymentMethod}</span>
               </div>
-              {order.transactionId && (
-                <div className="flex justify-between">
-                  <span className="text-sm text-luxury-gray-600">Transaction ID:</span>
-                  <span className="text-sm text-luxury-black font-mono">{order.transactionId}</span>
-                </div>
-              )}
+              <div className="flex justify-between">
+                <span className="text-sm text-luxury-gray-600">Currency:</span>
+                <span className="text-sm text-luxury-black">{order.currency}</span>
+              </div>
             </div>
           </div>
         </div>

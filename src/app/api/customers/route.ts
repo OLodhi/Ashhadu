@@ -1,63 +1,141 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { createServerSupabaseClient } from '@/lib/auth-utils-server';
 
 // GET /api/customers - List all customers for admin
 export async function GET(request: NextRequest) {
   try {
+    // Create server-side Supabase client
+    const supabaseAdmin = await createServerSupabaseClient();
+    
+    // Get current user for admin verification
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser();
+    
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    
+    // Check if user is admin
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('role')
+      .eq('user_id', user.id)
+      .single();
+    
+    if (profileError || profile?.role !== 'admin') {
+      return NextResponse.json(
+        { success: false, error: 'Admin access required' },
+        { status: 403 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
     const limit = searchParams.get('limit');
     const offset = searchParams.get('offset');
 
-    let query = supabaseAdmin
-      .from('customers')
-      .select(`
-        *,
-        addresses:addresses(count),
-        payment_methods:payment_methods(count),
-        orders:orders(count)
-      `)
-      .order('created_at', { ascending: false });
+    console.log('Customers API - Fetching admin emails...');
 
-    // Add search filtering
-    if (search) {
-      query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`);
-    }
+    // First get all admin emails to exclude them
+    const { data: adminProfiles, error: adminError } = await supabaseAdmin
+      .from('profiles')
+      .select('email')
+      .eq('role', 'admin');
 
-    // Add pagination
-    if (limit) {
-      query = query.limit(parseInt(limit));
-    }
-    if (offset) {
-      query = query.range(parseInt(offset), parseInt(offset) + (parseInt(limit || '50') - 1));
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error('Database error:', error);
+    if (adminError) {
+      console.error('Error fetching admin emails:', adminError);
       return NextResponse.json(
-        { error: 'Failed to fetch customers', details: error.message },
+        { error: 'Failed to fetch admin data', details: adminError.message },
         { status: 500 }
       );
     }
 
-    // Transform data to match frontend expectations
-    const transformedData = data?.map(customer => ({
-      id: customer.id,
-      email: customer.email,
-      firstName: customer.first_name,
-      lastName: customer.last_name,
-      fullName: `${customer.first_name} ${customer.last_name}`,
-      phone: customer.phone,
-      marketingConsent: customer.marketing_consent,
-      stripeCustomerId: customer.stripe_customer_id,
-      createdAt: customer.created_at,
-      updatedAt: customer.updated_at,
-      addressCount: customer.addresses?.[0]?.count || 0,
-      paymentMethodCount: customer.payment_methods?.[0]?.count || 0,
-      orderCount: customer.orders?.[0]?.count || 0,
-    })) || [];
+    const adminEmails = adminProfiles?.map(profile => profile.email) || [];
+    console.log('Admin emails to exclude:', adminEmails);
+
+    console.log('Customers API - Fetching all customers...');
+
+    // Get all customers
+    const { data: allCustomers, error: customersError } = await supabaseAdmin
+      .from('customers')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (customersError) {
+      console.error('Database error:', customersError);
+      return NextResponse.json(
+        { error: 'Failed to fetch customers', details: customersError.message },
+        { status: 500 }
+      );
+    }
+
+    console.log('Total customers fetched:', allCustomers?.length || 0);
+
+    // Filter out admin emails from the results (client-side filtering for reliability)
+    const filteredCustomers = (allCustomers || []).filter(customer => 
+      !adminEmails.includes(customer.email)
+    );
+
+    console.log('Customers after admin filtering:', filteredCustomers.length);
+
+    // Apply client-side search filtering on the admin-filtered results
+    let finalCustomers = filteredCustomers;
+    
+    if (search) {
+      const searchLower = search.toLowerCase();
+      finalCustomers = filteredCustomers.filter(customer =>
+        customer.first_name.toLowerCase().includes(searchLower) ||
+        customer.last_name.toLowerCase().includes(searchLower) ||
+        customer.email.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Apply pagination on the filtered results
+    let paginatedCustomers = finalCustomers;
+    if (offset || limit) {
+      const startIndex = offset ? parseInt(offset) : 0;
+      const endIndex = limit ? startIndex + parseInt(limit) : finalCustomers.length;
+      paginatedCustomers = finalCustomers.slice(startIndex, endIndex);
+    }
+
+    // Fetch counts separately for each customer with proper filtering
+    const transformedData = await Promise.all(
+      paginatedCustomers.map(async (customer) => {
+        const [addressResult, paymentResult, orderResult] = await Promise.all([
+          supabaseAdmin
+            .from('addresses')
+            .select('id', { count: 'exact' })
+            .eq('customer_id', customer.id),
+          supabaseAdmin
+            .from('payment_methods')
+            .select('id', { count: 'exact' })
+            .eq('customer_id', customer.id)
+            .eq('is_active', true),
+          supabaseAdmin
+            .from('orders')
+            .select('id', { count: 'exact' })
+            .eq('customer_id', customer.id)
+        ]);
+
+        return {
+          id: customer.id,
+          email: customer.email,
+          firstName: customer.first_name,
+          lastName: customer.last_name,
+          fullName: `${customer.first_name} ${customer.last_name}`,
+          phone: customer.phone,
+          marketingConsent: customer.marketing_consent,
+          stripeCustomerId: customer.stripe_customer_id,
+          createdAt: customer.created_at,
+          updatedAt: customer.updated_at,
+          addressCount: addressResult.count || 0,
+          paymentMethodCount: paymentResult.count || 0,
+          orderCount: orderResult.count || 0,
+        };
+      })
+    );
 
     return NextResponse.json({
       success: true,
@@ -77,6 +155,33 @@ export async function GET(request: NextRequest) {
 // POST /api/customers - Create new customer record
 export async function POST(request: NextRequest) {
   try {
+    // Create server-side Supabase client
+    const supabaseAdmin = await createServerSupabaseClient();
+    
+    // Get current user for admin verification
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser();
+    
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    
+    // Check if user is admin
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('role')
+      .eq('user_id', user.id)
+      .single();
+    
+    if (profileError || profile?.role !== 'admin') {
+      return NextResponse.json(
+        { success: false, error: 'Admin access required' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const { email, firstName, lastName, phone, marketingConsent } = body;
 

@@ -226,6 +226,80 @@ const CustomersPage = () => {
     }
   };
 
+  const handleDeleteCustomer = async (customer: Customer) => {
+    // Show different confirmation based on order count
+    let confirmMessage = '';
+    
+    if (customer.orderCount > 0) {
+      confirmMessage = `⚠️  CANNOT DELETE CUSTOMER\n\n` +
+        `${customer.fullName} has ${customer.orderCount} order(s) on file.\n\n` +
+        `Customers with existing orders cannot be deleted for record keeping purposes.\n\n` +
+        `Click OK to acknowledge this limitation.`;
+    } else {
+      confirmMessage = `⚠️  DELETE CUSTOMER ACCOUNT\n\n` +
+        `Are you sure you want to permanently delete ${customer.fullName} (${customer.email})?\n\n` +
+        `This action will:\n` +
+        `• Mark all payment methods as inactive\n` +
+        `• Delete all shipping/billing addresses\n` +
+        `• Remove customer and profile records\n\n` +
+        `⚠️  THIS CANNOT BE UNDONE!\n\n` +
+        `Type "DELETE" in the next prompt to confirm deletion.`;
+    }
+
+    const acknowledged = confirm(confirmMessage);
+    
+    if (!acknowledged) {
+      return;
+    }
+
+    // If customer has orders, just show the warning and exit
+    if (customer.orderCount > 0) {
+      toast.error(`Cannot delete ${customer.fullName} - customer has ${customer.orderCount} order(s) on file`);
+      return;
+    }
+
+    // For customers without orders, require typing "DELETE" to confirm
+    const deleteConfirmation = prompt(
+      `To confirm deletion of ${customer.fullName}, type "DELETE" (all caps):`
+    );
+
+    if (deleteConfirmation !== 'DELETE') {
+      toast.error('Deletion cancelled - confirmation text did not match');
+      return;
+    }
+
+    // Proceed with deletion
+    const deleteToastId = toast.loading(`Deleting ${customer.fullName}...`);
+
+    try {
+      const response = await fetch(`/api/customers/${customer.id}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || data.error || 'Failed to delete customer');
+      }
+
+      // Remove customer from local state
+      setCustomers(prev => prev.filter(c => c.id !== customer.id));
+      
+      toast.success(data.message || `${customer.fullName} has been successfully deleted`, { 
+        id: deleteToastId 
+      });
+
+    } catch (error: any) {
+      console.error('Error deleting customer:', error);
+      
+      if (error.message.includes('order(s) on file')) {
+        toast.error(error.message, { id: deleteToastId });
+      } else {
+        toast.error(error.message || 'Failed to delete customer', { id: deleteToastId });
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -721,7 +795,11 @@ const CustomersPage = () => {
                         >
                           <Edit className="h-4 w-4" />
                         </Link>
-                        <button className="text-red-600 hover:text-red-900 p-1">
+                        <button 
+                          onClick={() => handleDeleteCustomer(customer)}
+                          className="text-red-600 hover:text-red-900 p-1"
+                          title="Delete Customer"
+                        >
                           <Trash2 className="h-4 w-4" />
                         </button>
                         <button className="text-luxury-gray-400 hover:text-luxury-gray-600 p-1">
@@ -854,6 +932,7 @@ const CustomersPage = () => {
                       <Edit className="h-4 w-4" />
                     </Link>
                     <button 
+                      onClick={() => handleDeleteCustomer(customer)}
                       className="text-red-600 hover:text-red-900 p-1 rounded transition-colors"
                       title="Delete Customer"
                     >

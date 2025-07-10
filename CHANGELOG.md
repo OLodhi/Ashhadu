@@ -8,7 +8,154 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Initial changelog documentation
+- Upcoming features and improvements
+
+## [1.0.8] - 2025-07-10
+
+### Added
+- **Complete Inventory Management System**: Comprehensive stock tracking and management functionality
+- **Stock Validation**: Automatic stock availability checking before order creation to prevent overselling
+- **Inventory Movement Tracking**: Complete audit trail of all stock changes with reasons and references
+- **Automatic Stock Deduction**: Stock automatically deducted when orders are placed
+- **Automatic Stock Restoration**: Stock automatically restored when orders are cancelled or refunded
+- **Stock Status Management**: Automatic updates to stock status (in-stock/low-stock/out-of-stock) based on quantities
+- **Manual Stock Adjustments**: Admin interface for manual inventory corrections with audit logging
+- **Inventory Reports API**: Comprehensive reporting endpoints for stock summaries and detailed analysis
+- **Admin Inventory Dashboard**: Full-featured inventory management interface with overview, stock levels, and movement history
+- **Low Stock Monitoring**: Automatic identification and reporting of products below stock thresholds
+- **Stock Value Calculations**: Real-time calculation of total inventory value for business reporting
+
+### Enhanced
+- **Order Creation API**: Enhanced with automatic stock validation and deduction functionality
+- **Order Cancellation**: Now includes automatic stock restoration for cancelled orders
+- **Bulk Order Operations**: Enhanced bulk cancellation to properly restore stock for multiple orders
+- **Database Integration**: All inventory operations properly integrated with existing order management system
+- **Error Handling**: Comprehensive error management with transaction rollback for failed inventory operations
+
+### Fixed
+- **Admin Customer List**: Excluded admin accounts from customer listings using proper email-based filtering
+- **Order Processing**: Prevented creation of orders when insufficient stock is available
+- **Stock Consistency**: Ensured accurate stock levels across all order operations
+- **Customer API Authentication**: Enhanced security with proper admin role verification
+
+### API Enhancements
+- **POST `/api/inventory/adjust`**: Manual stock adjustment endpoint with admin authentication
+- **GET `/api/inventory/movements`**: Inventory movement history with filtering and pagination
+- **GET `/api/inventory/reports`**: Stock reporting with summary, low-stock, and detailed views
+- **Enhanced `/api/orders`**: Integrated stock validation and automatic deduction
+- **Enhanced `/api/orders/[id]`**: Added stock restoration for order cancellations
+- **Enhanced `/api/orders/bulk`**: Added bulk stock restoration for cancelled orders
+- **Enhanced `/api/customers`**: Improved filtering to exclude admin accounts from customer listings
+
+### Islamic Art Business Features
+- **3D Printing Inventory**: Proper stock management for 3D printed Islamic art pieces
+- **Custom Commission Tracking**: Inventory management for personalized Islamic art orders
+- **Material Cost Tracking**: Stock value calculations for production planning and material costs
+- **Seasonal Stock Planning**: Comprehensive reporting for Islamic holiday and seasonal inventory management
+- **Arabic Product Integration**: Full inventory support for products with Arabic names and Islamic categories
+
+### Technical Details
+- **New Library**: `/src/lib/inventory.ts` - Complete inventory management utility functions
+- **Type Safety**: Full TypeScript integration with proper inventory and stock movement interfaces
+- **Database Performance**: Efficient queries with proper indexing for inventory operations
+- **Audit Trail**: Complete logging of all inventory changes with user attribution and timestamps
+- **Error Recovery**: Robust error handling with automatic rollback for failed operations
+- **Real-time Updates**: Live stock status updates across all admin interfaces
+
+### Security & Business Logic
+- **Admin-Only Access**: All inventory management features restricted to admin users
+- **Stock Validation**: Prevents overselling through comprehensive availability checking
+- **Transaction Integrity**: Ensures order and inventory operations remain consistent
+- **Audit Compliance**: Complete trail of all inventory movements for business reporting
+- **Error Prevention**: Multiple safeguards against inventory inconsistencies
+
+## [1.0.7] - 2025-07-10
+
+### Added
+- **Complete Order Management System**: Comprehensive order processing workflow with database integration
+- **Individual Order API**: GET and PUT endpoints for single order management (`/api/orders/[id]`)
+- **Bulk Order Operations**: API for handling multiple orders simultaneously (`/api/orders/bulk`)
+- **Order Statistics API**: Advanced analytics and reporting (`/api/orders/stats`)
+- **Order Detail View**: Fully functional admin order detail page with real-time updates
+- **Order Actions System**: Complete workflow management (mark paid, shipping, delivery, cancellation)
+- **Smart Order Workflow**: Automatic status progression with business logic enforcement
+- **Order Timeline**: Visual order progression with timestamps and status history
+- **Note Management**: Add timestamped notes to orders with admin attribution
+- **Revenue Protection**: Cancelled orders excluded from revenue calculations
+
+### Enhanced
+- **Database Integration**: All order operations now use Supabase instead of localStorage
+- **Admin Order Dashboard**: Real-time statistics and filtering powered by database
+- **Customer Order Visibility**: Admin-created orders now visible in customer dashboards
+- **Order Search & Filtering**: Enhanced search capabilities with status and customer filters
+- **Financial Accuracy**: Revenue widgets exclude cancelled orders for accurate reporting
+- **Bulk Action Safety**: Prevention of invalid bulk operations on shipped orders
+
+### Fixed
+- **Order Storage Architecture**: Resolved disconnect between admin creation and customer visibility
+- **Order Detail Page**: Fixed broken preview/view functionality in admin orders list
+- **Data Consistency**: Unified order data across admin and customer interfaces
+- **Order Actions**: Proper workflow enforcement preventing invalid status changes
+- **Revenue Calculations**: Accurate financial reporting excluding cancelled order values
+
+### Security & Business Logic
+- **Cancellation Protection**: Orders cannot be cancelled once shipped or delivered
+- **Workflow Enforcement**: Smart prevention of invalid order status transitions
+- **Role-Based Access**: Proper admin/customer separation for order operations
+- **Data Validation**: Server-side validation for all order updates and status changes
+- **Audit Trail**: Complete logging of order actions and status changes
+
+### API Enhancements
+- **POST `/api/orders`**: Create orders with automatic customer creation/linking
+- **GET `/api/orders`**: List orders with comprehensive filtering and relationship data
+- **GET `/api/orders/[id]`**: Fetch individual orders with full details and customer information
+- **PUT `/api/orders/[id]`**: Update order status, payment, shipping, and notes
+- **POST `/api/orders/bulk`**: Bulk operations for multiple orders with validation
+- **GET `/api/orders/stats`**: Advanced analytics with time-based filtering
+
+### Islamic Art Business Features
+- **Production Management**: 3D printing workflow with processing status tracking
+- **UK Market Focus**: Proper GBP currency and VAT handling in all calculations
+- **Arabic Product Support**: Order items display Arabic names and Islamic categories
+- **Customer Communication**: Direct email and phone integration for order management
+- **Luxury Experience**: Professional order management interface matching brand aesthetic
+
+### Technical Details
+- **Database Migration**: Complete transition from Zustand store to Supabase database
+- **Type Safety**: Full TypeScript integration with proper database type definitions
+- **Error Handling**: Comprehensive error management with user-friendly messaging
+- **Real-time Updates**: Optimistic UI updates with database synchronization
+- **Performance**: Efficient queries with proper indexing and relationship loading
+- **SSR Compatibility**: Server-side rendering support for all order operations
+
+## [1.0.6] - 2025-07-09
+
+### Added
+- **Customer Edit Page**: Complete customer management interface for admin dashboard at `/admin/customers/[id]/edit`
+- **Customer Information Editing**: Full form to edit customer personal details (name, email, phone, date of birth, marketing consent)
+- **Password Reset Email**: Admin capability to trigger password reset emails to customers with one-click functionality
+- **Customer Password Reset Page**: Dedicated `/reset-password` page for customers to securely reset their passwords via email links
+- **Enhanced Customer API**: Added PUT method to customer API for updating customer information with validation
+- **Customer Statistics Display**: Overview cards showing order count, address count, payment methods, and member since date
+- **Admin Impersonation Integration**: Quick "View as Customer" button on customer edit page
+
+### Enhanced
+- **Customer API Endpoints**: Enhanced GET method to include date of birth and relationship counts (addresses, orders, payments)
+- **Form Validation**: Comprehensive validation for email format, UK phone numbers, and required fields
+- **Security Controls**: Admin role verification for all customer edit operations with audit logging
+- **User Experience**: Loading states, error handling, and success notifications throughout customer management workflow
+
+### Fixed
+- **Header Layout**: Simplified back navigation to arrow-only with improved spacing between navigation and page title
+- **API Data Structure**: Consistent camelCase transformation for frontend compatibility
+- **Error Handling**: Proper error messages for duplicate emails, invalid data, and missing customers
+
+### Technical Details
+- **New Components**: CustomerEditPage with responsive design and luxury Islamic art branding
+- **API Security**: Role-based access control with session validation for all customer operations  
+- **Password Reset Flow**: Secure token-based password reset using Supabase Auth with proper expiration handling
+- **Database Integration**: Full CRUD operations for customer management with relationship counting
+- **Admin Audit Trail**: Logging of all customer modifications performed by admin users
 
 ## [1.0.5] - 2025-07-09
 
@@ -162,6 +309,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History
 
+- **v1.0.8** (2025-07-10): Complete inventory management system with automatic stock tracking and comprehensive admin tools
+- **v1.0.7** (2025-07-10): Complete order management system with database integration and workflow enforcement
+- **v1.0.6** (2025-07-09): Comprehensive customer management system with edit functionality and password reset
 - **v1.0.5** (2025-07-09): Complete favicon system implementation with PWA support
 - **v1.0.4** (2025-07-09): Admin impersonation system overhaul and navigation fixes
 - **v1.0.3** (2025-07-09): Header navigation and account routing improvements
