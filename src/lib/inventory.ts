@@ -1,4 +1,5 @@
 import { createServerSupabaseClient } from '@/lib/auth-utils-server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 export interface StockMovement {
   productId: string;
@@ -27,9 +28,10 @@ export interface StockValidationResult {
  * Check if products are available in requested quantities
  */
 export async function checkStockAvailability(
-  items: Array<{ productId: string; quantity: number }>
+  items: Array<{ productId: string; quantity: number }>,
+  adminClient?: SupabaseClient
 ): Promise<StockValidationResult> {
-  const supabase = await createServerSupabaseClient();
+  const supabase = adminClient || await createServerSupabaseClient();
   
   const productIds = items.map(item => item.productId);
   
@@ -92,12 +94,13 @@ export async function deductStock(
   items: Array<{ productId: string; quantity: number }>,
   reason: string,
   reference: string,
-  performedBy: string
+  performedBy: string,
+  adminClient?: SupabaseClient
 ): Promise<void> {
-  const supabase = await createServerSupabaseClient();
+  const supabase = adminClient || await createServerSupabaseClient();
 
   // First validate stock availability
-  const stockCheck = await checkStockAvailability(items);
+  const stockCheck = await checkStockAvailability(items, adminClient);
   
   if (!stockCheck.isValid) {
     const errors = stockCheck.errors.map(e => 
@@ -115,7 +118,7 @@ export async function deductStock(
       reason,
       reference,
       performedBy
-    });
+    }, adminClient);
   }
 }
 
@@ -126,7 +129,8 @@ export async function addStock(
   items: Array<{ productId: string; quantity: number }>,
   reason: string,
   reference: string,
-  performedBy: string
+  performedBy: string,
+  adminClient?: SupabaseClient
 ): Promise<void> {
   // Process each item
   for (const item of items) {
@@ -137,7 +141,7 @@ export async function addStock(
       reason,
       reference,
       performedBy
-    });
+    }, adminClient);
   }
 }
 
@@ -148,9 +152,10 @@ export async function adjustStock(
   productId: string,
   newQuantity: number,
   reason: string,
-  performedBy: string
+  performedBy: string,
+  adminClient?: SupabaseClient
 ): Promise<void> {
-  const supabase = await createServerSupabaseClient();
+  const supabase = adminClient || await createServerSupabaseClient();
 
   // Get current stock
   const { data: product, error: fetchError } = await supabase
@@ -173,15 +178,15 @@ export async function adjustStock(
       reason: `${reason} (${difference > 0 ? '+' : '-'}${Math.abs(difference)})`,
       reference: `adjustment-${Date.now()}`,
       performedBy
-    });
+    }, adminClient);
   }
 }
 
 /**
  * Core function to process a single stock movement
  */
-async function processStockMovement(movement: StockMovement): Promise<void> {
-  const supabase = await createServerSupabaseClient();
+async function processStockMovement(movement: StockMovement, adminClient?: SupabaseClient): Promise<void> {
+  const supabase = adminClient || await createServerSupabaseClient();
 
   try {
     // Start transaction by getting current product data

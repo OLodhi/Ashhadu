@@ -28,7 +28,6 @@ interface Address {
 }
 
 interface AddressFormData {
-  type: 'billing' | 'shipping';
   label: string;
   firstName: string;
   lastName: string;
@@ -58,7 +57,6 @@ export default function AddressesPage() {
   });
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [formData, setFormData] = useState<AddressFormData>({
-    type: 'shipping',
     label: '',
     firstName: '',
     lastName: '',
@@ -167,7 +165,6 @@ export default function AddressesPage() {
 
   const resetForm = () => {
     setFormData({
-      type: 'shipping',
       label: '',
       firstName: '',
       lastName: '',
@@ -192,7 +189,6 @@ export default function AddressesPage() {
 
   const handleEditAddress = (address: Address) => {
     setFormData({
-      type: address.type,
       label: address.label || '',
       firstName: address.first_name,
       lastName: address.last_name,
@@ -243,7 +239,7 @@ export default function AddressesPage() {
     try {
       const addressData = {
         customer_id: customer.id, // ✅ CRITICAL FIX: Using customer.id instead of user.id
-        type: formData.type,
+        type: 'shipping',
         label: formData.label || null,
         first_name: formData.firstName,
         last_name: formData.lastName,
@@ -280,10 +276,10 @@ export default function AddressesPage() {
         toast.success('Address added successfully');
       }
 
-      // If this is set as default, unset other defaults of the same type
+      // If this is set as default, unset other defaults
       if (formData.isDefault) {
         const otherAddresses = addresses.filter(addr => 
-          addr.type === formData.type && 
+          addr.type === 'shipping' && 
           (!editingAddress || addr.id !== editingAddress.id)
         );
         
@@ -322,11 +318,11 @@ export default function AddressesPage() {
     }
   };
 
-  const handleSetDefault = async (addressId: string, type: 'billing' | 'shipping') => {
+  const handleSetDefault = async (addressId: string) => {
     try {
-      // First, unset all defaults of this type
-      const addressesOfType = addresses.filter(addr => addr.type === type);
-      for (const addr of addressesOfType) {
+      // First, unset all defaults
+      const shippingAddresses = addresses.filter(addr => addr.type === 'shipping');
+      for (const addr of shippingAddresses) {
         if (addr.is_default) {
           await db.addresses.update(addr.id, { is_default: false });
         }
@@ -336,7 +332,7 @@ export default function AddressesPage() {
       const { error } = await db.addresses.update(addressId, { is_default: true });
       if (error) throw error;
 
-      toast.success(`Default ${type} address updated`);
+      toast.success('Default address updated');
       await loadAddresses();
     } catch (error: any) {
       console.error('Error setting default address:', error);
@@ -368,7 +364,6 @@ export default function AddressesPage() {
     return <MapPin className="h-5 w-5" />;
   };
 
-  const billingAddresses = addresses.filter(addr => addr.type === 'billing');
   const shippingAddresses = addresses.filter(addr => addr.type === 'shipping');
 
   return (
@@ -434,7 +429,7 @@ export default function AddressesPage() {
             <div>
               <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
                 <MapPin className="mr-2 h-5 w-5 text-blue-600" />
-                Shipping Addresses
+                Addresses
               </h3>
               {shippingAddresses.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -452,7 +447,7 @@ export default function AddressesPage() {
                           </div>
                           <div>
                             <h4 className="font-medium text-gray-900">
-                              {address.label || 'Shipping Address'}
+                              {address.label || 'Address'}
                               {address.is_default && (
                                 <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-luxury-gold text-luxury-black">
                                   <Star className="mr-1 h-3 w-3" />
@@ -491,7 +486,7 @@ export default function AddressesPage() {
 
                       {!address.is_default && (
                         <button
-                          onClick={() => handleSetDefault(address.id, 'shipping')}
+                          onClick={() => handleSetDefault(address.id)}
                           className="mt-4 text-sm text-luxury-gold hover:text-yellow-600 font-medium"
                         >
                           Set as default
@@ -504,10 +499,10 @@ export default function AddressesPage() {
                 <div className="bg-gray-50 rounded-xl p-8 text-center">
                   <MapPin className="mx-auto h-12 w-12 text-gray-400" />
                   <h4 className="mt-4 text-lg font-medium text-gray-900">
-                    No Shipping Addresses
+                    No Addresses
                   </h4>
                   <p className="mt-2 text-gray-600">
-                    Add a shipping address to get your Islamic art delivered
+                    Add an address to get your Islamic art delivered
                   </p>
                   <button
                     onClick={handleAddAddress}
@@ -515,98 +510,7 @@ export default function AddressesPage() {
                     className="mt-4 inline-flex items-center px-4 py-2 bg-luxury-gold text-luxury-black font-medium rounded-lg hover:bg-yellow-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Plus className="mr-2 h-4 w-4" />
-                    Add Shipping Address
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Billing Addresses */}
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                <Building className="mr-2 h-5 w-5 text-green-600" />
-                Billing Addresses
-              </h3>
-              {billingAddresses.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {billingAddresses.map((address) => (
-                    <div
-                      key={address.id}
-                      className={`bg-white rounded-xl border p-6 ${
-                        address.is_default ? 'border-luxury-gold bg-luxury-gold/5' : 'border-gray-200'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center">
-                          <div className="p-2 bg-green-100 rounded-lg mr-3">
-                            {getAddressIcon(address.label)}
-                          </div>
-                          <div>
-                            <h4 className="font-medium text-gray-900">
-                              {address.label || 'Billing Address'}
-                              {address.is_default && (
-                                <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-luxury-gold text-luxury-black">
-                                  <Star className="mr-1 h-3 w-3" />
-                                  Default
-                                </span>
-                              )}
-                            </h4>
-                            <p className="text-sm text-gray-600">
-                              {address.first_name} {address.last_name}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleEditAddress(address)}
-                            className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteAddress(address.id)}
-                            className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                      
-                      <div className="text-sm text-gray-600 space-y-1">
-                        {address.company && (
-                          <p className="font-medium">{address.company}</p>
-                        )}
-                        <p>{formatAddress(address)}</p>
-                        {address.phone && <p>Phone: {address.phone}</p>}
-                      </div>
-
-                      {!address.is_default && (
-                        <button
-                          onClick={() => handleSetDefault(address.id, 'billing')}
-                          className="mt-4 text-sm text-luxury-gold hover:text-yellow-600 font-medium"
-                        >
-                          Set as default
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="bg-gray-50 rounded-xl p-8 text-center">
-                  <Building className="mx-auto h-12 w-12 text-gray-400" />
-                  <h4 className="mt-4 text-lg font-medium text-gray-900">
-                    No Billing Addresses
-                  </h4>
-                  <p className="mt-2 text-gray-600">
-                    Add a billing address for payment processing
-                  </p>
-                  <button
-                    onClick={handleAddAddress}
-                    disabled={!customer}
-                    className="mt-4 inline-flex items-center px-4 py-2 bg-luxury-gold text-luxury-black font-medium rounded-lg hover:bg-yellow-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Billing Address
+                    Add Address
                   </button>
                 </div>
               )}
@@ -632,22 +536,6 @@ export default function AddressesPage() {
                   </div>
 
                   <div className="space-y-4">
-                    {/* Address Type */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Address Type *
-                      </label>
-                      <select
-                        name="type"
-                        value={formData.type}
-                        onChange={handleInputChange}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-gold focus:border-luxury-gold"
-                      >
-                        <option value="shipping">Shipping Address</option>
-                        <option value="billing">Billing Address</option>
-                      </select>
-                    </div>
-
                     {/* Label */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -851,7 +739,7 @@ export default function AddressesPage() {
                       </div>
                       <div className="ml-3 text-sm">
                         <label htmlFor="isDefault" className="text-gray-700">
-                          Set as default {formData.type} address
+                          Set as default address
                         </label>
                       </div>
                     </div>

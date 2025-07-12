@@ -10,6 +10,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Upcoming features and improvements
 
+## [1.0.9] - 2025-07-12
+
+### Added
+- **Complete Guest Checkout System**: Full e-commerce checkout flow supporting guest customers without authentication
+- **Guest Order Management**: Automatic customer record creation for guest orders with proper tracking
+- **Enhanced Shopping Cart**: Complete cart implementation with VAT calculation, item management, and persistence
+- **Multi-Step Checkout Process**: Professional checkout workflow with address selection, payment methods, and order confirmation
+- **Customer Order Creation API**: New `/api/orders/create` endpoint enabling customer-initiated orders with stock validation
+- **Centralized Payment Processing**: New `/api/payments/process` endpoint supporting multiple payment gateways
+- **Dynamic Address Management**: Simplified address system with modal creation forms and improved UI
+- **Shipping Threshold System**: Free shipping over £50 with dynamic shipping cost calculation
+- **Checkout Confirmation Pages**: Complete order confirmation system with guest order tracking
+- **Enhanced Address API**: New `/api/addresses` endpoint for customer address management
+
+### Enhanced
+- **E-commerce Workflow**: Complete customer-facing order process from cart to confirmation
+- **Guest User Experience**: Streamlined checkout for non-registered customers
+- **Address Management**: Simplified address types removing billing/shipping distinction
+- **Order Integration**: Full integration between customer orders and existing inventory system
+- **Payment Gateway Support**: Enhanced payment processing with guest support
+- **Cart Persistence**: Improved cart state management with Zustand
+
+### Fixed
+- **Guest Order Tracking**: Proper order visibility for guest customers
+- **Address Form UX**: Improved address creation with modal interface
+- **Checkout Validation**: Enhanced form validation throughout checkout process
+- **Payment Integration**: Streamlined payment processing for both guest and authenticated users
+
+### API Enhancements
+- **POST `/api/orders/create`**: Customer order creation with inventory integration
+- **POST `/api/payments/process`**: Centralized payment processing with multi-gateway support
+- **GET/POST `/api/addresses`**: Customer address management with authentication awareness
+- **Enhanced Cart APIs**: Improved cart management with VAT and shipping calculations
+
+### E-commerce Features
+- **Guest Checkout Support**: Complete anonymous purchase workflow
+- **Address Selection UI**: Enhanced address picker with creation modal
+- **Payment Method Selection**: Streamlined payment method choice interface
+- **Order Confirmation**: Professional post-purchase confirmation system
+- **VAT Calculation**: Proper UK VAT handling throughout checkout process
+- **Shipping Management**: Dynamic shipping costs with free threshold
+
+### Islamic Art Business Features
+- **Guest Commission Orders**: Anonymous customers can place custom Islamic art orders
+- **UK Market Integration**: Enhanced VAT and shipping for UK Islamic art market
+- **Guest Customer Conversion**: System to convert guest orders to registered customers
+- **Arabic Product Support**: Full guest checkout support for Arabic-named products
+
+### Technical Details
+- **New Components**: AddressFormModal, CheckoutConfirmation, enhanced Cart system
+- **API Modernization**: RESTful customer order creation with proper validation
+- **Guest Session Management**: Secure guest order tracking without authentication
+- **Enhanced Type Safety**: Full TypeScript integration for new checkout features
+- **Database Integration**: Guest orders properly integrated with existing schema
+- **Error Handling**: Comprehensive error management throughout checkout process
+
+### Security & Business Logic
+- **Guest Data Protection**: Secure handling of guest customer information
+- **Order Validation**: Enhanced validation for guest and authenticated orders
+- **Payment Security**: Secure payment processing for anonymous customers
+- **Inventory Integration**: Proper stock management for guest orders
+
 ## [1.0.8] - 2025-07-10
 
 ### Added
@@ -309,6 +371,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History
 
+- **v1.0.9** (2025-07-12): Complete guest checkout system with enhanced e-commerce workflow and customer order management
 - **v1.0.8** (2025-07-10): Complete inventory management system with automatic stock tracking and comprehensive admin tools
 - **v1.0.7** (2025-07-10): Complete order management system with database integration and workflow enforcement
 - **v1.0.6** (2025-07-09): Comprehensive customer management system with edit functionality and password reset

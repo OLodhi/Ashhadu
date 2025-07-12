@@ -166,6 +166,10 @@ CREATE TABLE orders (
   payment_method TEXT,
   stripe_payment_intent_id TEXT,
   
+  -- Addresses
+  billing_address_id UUID REFERENCES addresses(id) ON DELETE SET NULL,
+  shipping_address_id UUID REFERENCES addresses(id) ON DELETE SET NULL,
+  
   -- Additional info
   notes TEXT,
   
@@ -279,6 +283,8 @@ CREATE INDEX idx_products_stock_status ON products(stock_status);
 CREATE INDEX idx_product_images_product_id ON product_images(product_id);
 CREATE INDEX idx_orders_customer_id ON orders(customer_id);
 CREATE INDEX idx_orders_status ON orders(status);
+CREATE INDEX idx_orders_billing_address_id ON orders(billing_address_id);
+CREATE INDEX idx_orders_shipping_address_id ON orders(shipping_address_id);
 CREATE INDEX idx_order_items_order_id ON order_items(order_id);
 CREATE INDEX idx_order_items_product_id ON order_items(product_id);
 CREATE INDEX idx_reviews_product_id ON reviews(product_id);
@@ -412,6 +418,20 @@ CREATE POLICY "Admins can manage all addresses" ON addresses FOR ALL USING (
 -- Orders: Users can only see their own orders, admins can see all
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own orders" ON orders FOR SELECT USING (
+  customer_id IN (
+    SELECT id FROM customers WHERE email = (
+      SELECT email FROM profiles WHERE user_id = auth.uid()
+    )
+  )
+);
+CREATE POLICY "Users can create orders for themselves" ON orders FOR INSERT WITH CHECK (
+  customer_id IN (
+    SELECT id FROM customers WHERE email = (
+      SELECT email FROM profiles WHERE user_id = auth.uid()
+    )
+  )
+);
+CREATE POLICY "Users can update own orders" ON orders FOR UPDATE USING (
   customer_id IN (
     SELECT id FROM customers WHERE email = (
       SELECT email FROM profiles WHERE user_id = auth.uid()
