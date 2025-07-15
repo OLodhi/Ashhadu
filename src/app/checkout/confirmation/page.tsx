@@ -10,26 +10,64 @@ import Logo from '@/components/ui/Logo';
 import SafeLink from '@/components/ui/SafeLink';
 
 interface OrderDetails {
+  id: string;
   orderNumber: string;
   orderDate: string;
-  customerName: string;
-  customerEmail: string;
-  total: number;
-  paymentMethod: string;
   status: string;
-  items: Array<{
+  paymentStatus: string;
+  paymentMethod: string;
+  stripePaymentIntentId?: string;
+  total: number;
+  subtotal: number;
+  taxAmount: number;
+  shippingAmount: number;
+  currency: string;
+  notes?: string;
+  estimatedDelivery: string;
+  customer: {
     id: string;
-    name: string;
-    quantity: number;
-    price: number;
-  }>;
-  shipping: {
-    address: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string;
+  } | null;
+  billingAddress?: {
+    firstName: string;
+    lastName: string;
+    company?: string;
+    addressLine1: string;
+    addressLine2?: string;
     city: string;
+    county?: string;
     postcode: string;
     country: string;
+    phone?: string;
   };
-  estimatedDelivery: string;
+  shippingAddress?: {
+    firstName: string;
+    lastName: string;
+    company?: string;
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    county?: string;
+    postcode: string;
+    country: string;
+    phone?: string;
+  };
+  items: Array<{
+    id: string;
+    productId: string;
+    name: string;
+    arabicName?: string;
+    sku: string;
+    quantity: number;
+    price: number;
+    total: number;
+    image?: string;
+    islamicCategory?: string;
+    slug?: string;
+  }>;
 }
 
 export default function OrderConfirmationPage() {
@@ -39,45 +77,33 @@ export default function OrderConfirmationPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate fetching order details
     const fetchOrderDetails = async () => {
-      // In a real app, you would fetch from your API
-      // For now, we'll use mock data
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const mockOrderDetails: OrderDetails = {
-        orderNumber: orderNumber || 'ASH-123456',
-        orderDate: new Date().toISOString(),
-        customerName: 'John Doe',
-        customerEmail: 'john@example.com',
-        total: 249.97,
-        paymentMethod: 'Credit Card',
-        status: 'confirmed',
-        items: [
-          {
-            id: '1',
-            name: 'Ayat al-Kursi Calligraphy Model',
-            quantity: 1,
-            price: 89.99
-          },
-          {
-            id: '2',
-            name: 'Masjid al-Haram Scale Model',
-            quantity: 1,
-            price: 159.99
-          }
-        ],
-        shipping: {
-          address: '123 Main Street',
-          city: 'London',
-          postcode: 'SW1A 1AA',
-          country: 'United Kingdom'
-        },
-        estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-      };
-      
-      setOrderDetails(mockOrderDetails);
-      setIsLoading(false);
+      if (!orderNumber) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        
+        const response = await fetch(`/api/orders/confirmation/${orderNumber}`);
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to fetch order details');
+        }
+
+        if (result.success && result.data) {
+          setOrderDetails(result.data);
+        } else {
+          throw new Error('Order not found');
+        }
+      } catch (error) {
+        console.error('Error fetching order details:', error);
+        setOrderDetails(null);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     fetchOrderDetails();
@@ -277,26 +303,63 @@ export default function OrderConfirmationPage() {
                 {orderDetails.items.map((item, index) => (
                   <div key={item.id} className="flex items-center space-x-4 p-3 bg-luxury-gray-50 rounded-lg">
                     <div className="w-12 h-12 bg-luxury-gray-100 rounded flex items-center justify-center flex-shrink-0">
-                      <div className="w-6 h-6 bg-luxury-gold/20 rounded-full flex items-center justify-center">
-                        <svg width="12" height="12" viewBox="0 0 16 16" className="text-luxury-gold">
-                          <path d="M8 1l2.36 4.78L16 6.5l-3.82.56L11 12l-3-5.22L3 6.5l5.64-.72L8 1z" 
-                                fill="currentColor"/>
-                        </svg>
-                      </div>
+                      {item.image ? (
+                        <img 
+                          src={item.image} 
+                          alt={item.name}
+                          className="w-full h-full object-cover rounded"
+                        />
+                      ) : (
+                        <div className="w-6 h-6 bg-luxury-gold/20 rounded-full flex items-center justify-center">
+                          <svg width="12" height="12" viewBox="0 0 16 16" className="text-luxury-gold">
+                            <path d="M8 1l2.36 4.78L16 6.5l-3.82.56L11 12l-3-5.22L3 6.5l5.64-.72L8 1z" 
+                                  fill="currentColor"/>
+                          </svg>
+                        </div>
+                      )}
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-luxury-black">{item.name}</p>
-                      <p className="text-sm text-luxury-gray-600">Quantity: {item.quantity}</p>
+                      {item.arabicName && (
+                        <p className="text-sm text-luxury-gray-500 font-amiri">{item.arabicName}</p>
+                      )}
+                      <p className="text-sm text-luxury-gray-600">
+                        Quantity: {item.quantity} | SKU: {item.sku}
+                      </p>
+                      {item.islamicCategory && (
+                        <p className="text-xs text-luxury-gold">{item.islamicCategory}</p>
+                      )}
                     </div>
-                    <p className="font-semibold text-luxury-gold">
-                      {formatPrice(item.price * item.quantity)}
-                    </p>
+                    <div className="text-right">
+                      <p className="font-semibold text-luxury-gold">
+                        {formatPrice(item.total)}
+                      </p>
+                      <p className="text-sm text-luxury-gray-600">
+                        {formatPrice(item.price)} each
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
 
-              <div className="mt-6 pt-6 border-t border-luxury-gray-200">
-                <div className="flex justify-between font-playfair text-lg font-semibold text-luxury-black">
+              <div className="mt-6 pt-6 border-t border-luxury-gray-200 space-y-2">
+                <div className="flex justify-between text-sm text-luxury-gray-600">
+                  <span>Subtotal</span>
+                  <span>{formatPrice(orderDetails.subtotal)}</span>
+                </div>
+                {orderDetails.taxAmount > 0 && (
+                  <div className="flex justify-between text-sm text-luxury-gray-600">
+                    <span>VAT (20%)</span>
+                    <span>{formatPrice(orderDetails.taxAmount)}</span>
+                  </div>
+                )}
+                {orderDetails.shippingAmount > 0 && (
+                  <div className="flex justify-between text-sm text-luxury-gray-600">
+                    <span>Shipping</span>
+                    <span>{formatPrice(orderDetails.shippingAmount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-playfair text-lg font-semibold text-luxury-black pt-2 border-t border-luxury-gray-200">
                   <span>Total</span>
                   <span className="text-luxury-gold">{formatPrice(orderDetails.total)}</span>
                 </div>
@@ -317,10 +380,35 @@ export default function OrderConfirmationPage() {
                 Shipping Address
               </h3>
               <div className="text-luxury-gray-700">
-                <p>{orderDetails.customerName}</p>
-                <p>{orderDetails.shipping.address}</p>
-                <p>{orderDetails.shipping.city}, {orderDetails.shipping.postcode}</p>
-                <p>{orderDetails.shipping.country}</p>
+                {orderDetails.shippingAddress ? (
+                  <>
+                    <p className="font-medium">
+                      {orderDetails.shippingAddress.firstName} {orderDetails.shippingAddress.lastName}
+                    </p>
+                    {orderDetails.shippingAddress.company && (
+                      <p>{orderDetails.shippingAddress.company}</p>
+                    )}
+                    <p>{orderDetails.shippingAddress.addressLine1}</p>
+                    {orderDetails.shippingAddress.addressLine2 && (
+                      <p>{orderDetails.shippingAddress.addressLine2}</p>
+                    )}
+                    <p>
+                      {orderDetails.shippingAddress.city}
+                      {orderDetails.shippingAddress.county && `, ${orderDetails.shippingAddress.county}`}
+                    </p>
+                    <p>{orderDetails.shippingAddress.postcode}</p>
+                    <p>{orderDetails.shippingAddress.country}</p>
+                    {orderDetails.shippingAddress.phone && (
+                      <p className="text-sm text-luxury-gray-600 mt-2">
+                        Phone: {orderDetails.shippingAddress.phone}
+                      </p>
+                    )}
+                  </>
+                ) : orderDetails.customer ? (
+                  <p>{orderDetails.customer.firstName} {orderDetails.customer.lastName}</p>
+                ) : (
+                  <p>Address not available</p>
+                )}
               </div>
             </div>
 
@@ -424,7 +512,7 @@ export default function OrderConfirmationPage() {
           className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4 text-center"
         >
           <p className="text-sm text-blue-700">
-            📧 A confirmation email has been sent to <strong>{orderDetails.customerEmail}</strong>
+            📧 A confirmation email has been sent to <strong>{orderDetails.customer?.email}</strong>
           </p>
         </motion.div>
         </div>

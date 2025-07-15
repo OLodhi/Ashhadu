@@ -18,6 +18,13 @@ export async function POST(request: NextRequest) {
     const isGuestCheckout = !user;
     
     console.log(`Processing ${isGuestCheckout ? 'guest' : 'authenticated'} order for email: ${orderData.customer?.email}`);
+    console.log('Order data received:', {
+      paymentMethod: orderData.paymentMethod,
+      paymentStatus: orderData.paymentStatus,
+      paymentIntentId: orderData.paymentIntentId,
+      total: orderData.total,
+      customerEmail: orderData.customer?.email
+    });
 
     // Create admin client for order operations (bypasses RLS)
     const supabaseAdmin = createClient(
@@ -159,19 +166,24 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // Generate order number first (we'll use a temporary one, then update after getting the ID)
+    const tempOrderNumber = `ASH-${Date.now().toString().slice(-6)}`;
+    
     // Create the order
     const { data: newOrder, error: orderError } = await supabaseAdmin
       .from('orders')
       .insert({
         customer_id: customerId,
-        status: 'pending',
+        order_number: tempOrderNumber, // Temporary order number
+        status: orderData.paymentStatus === 'paid' ? 'processing' : 'pending',
         total: orderData.total,
         subtotal: orderData.subtotal || orderData.total,
         tax_amount: orderData.vatAmount || 0,
         shipping_amount: orderData.shippingAmount || 0,
         currency: orderData.currency || 'GBP',
-        payment_status: 'pending',
+        payment_status: orderData.paymentStatus || 'pending',
         payment_method: orderData.paymentMethod || null,
+        stripe_payment_intent_id: orderData.paymentIntentId || null,
         billing_address_id: billingAddressId,
         shipping_address_id: shippingAddressId,
         notes: orderData.notes || null
@@ -251,14 +263,22 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Generate order number
+    // Generate proper order number based on UUID
     const orderNumber = `ASH-${newOrder.id.slice(-6).toUpperCase()}`;
+    console.log(`🔍 Order Creation: Order ID: ${newOrder.id}`);
+    console.log(`🔍 Order Creation: Generated order number: ${orderNumber}`);
+    console.log(`🔍 Order Creation: Last 6 chars: ${newOrder.id.slice(-6).toUpperCase()}`);
     
-    // Update order with order number
-    await supabaseAdmin
+    // Update order with proper order number
+    const { error: updateError } = await supabaseAdmin
       .from('orders')
-      .update({ notes: `Order Number: ${orderNumber}` })
+      .update({ order_number: orderNumber })
       .eq('id', newOrder.id);
+    
+    if (updateError) {
+      console.error('Error updating order number:', updateError);
+      // Don't fail the entire order creation for this
+    }
     
     // Return success response
     return NextResponse.json({

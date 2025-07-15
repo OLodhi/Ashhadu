@@ -48,6 +48,32 @@ interface DatabaseOrder {
     email: string;
     phone?: string;
   };
+  billingAddress?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    company?: string;
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    county?: string;
+    postcode: string;
+    country: string;
+    phone?: string;
+  };
+  shippingAddress?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    company?: string;
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    county?: string;
+    postcode: string;
+    country: string;
+    phone?: string;
+  };
   items: Array<{
     id: string;
     productId: string;
@@ -641,7 +667,7 @@ const OrderDetailPage = () => {
           {/* Customer Information */}
           <div className="bg-white rounded-lg shadow-luxury p-6">
             <h3 className="text-lg font-semibold text-luxury-black mb-4">Customer</h3>
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
                 <p className="font-medium text-luxury-black">
                   {order.customer.firstName} {order.customer.lastName}
@@ -668,6 +694,75 @@ const OrderDetailPage = () => {
                   >
                     {order.customer.phone}
                   </a>
+                </div>
+              )}
+              
+              {/* Shipping Address */}
+              {order.shippingAddress && (
+                <div className="pt-4 border-t border-luxury-gray-200">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <MapPin className="h-4 w-4 text-luxury-gray-400" />
+                    <span className="text-sm font-medium text-luxury-black">Shipping Address</span>
+                  </div>
+                  <div className="text-sm text-luxury-gray-600 space-y-1">
+                    <p className="font-medium">
+                      {order.shippingAddress.firstName} {order.shippingAddress.lastName}
+                    </p>
+                    {order.shippingAddress.company && (
+                      <p>{order.shippingAddress.company}</p>
+                    )}
+                    <p>{order.shippingAddress.addressLine1}</p>
+                    {order.shippingAddress.addressLine2 && (
+                      <p>{order.shippingAddress.addressLine2}</p>
+                    )}
+                    <p>
+                      {order.shippingAddress.city}
+                      {order.shippingAddress.county && `, ${order.shippingAddress.county}`}
+                    </p>
+                    <p>{order.shippingAddress.postcode}</p>
+                    <p>{order.shippingAddress.country}</p>
+                    {order.shippingAddress.phone && (
+                      <p className="pt-1">
+                        <span className="text-luxury-gray-500">Phone: </span>
+                        {order.shippingAddress.phone}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {/* Billing Address (if different from shipping) */}
+              {order.billingAddress && 
+               order.billingAddress.id !== order.shippingAddress?.id && (
+                <div className="pt-4 border-t border-luxury-gray-200">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <DollarSign className="h-4 w-4 text-luxury-gray-400" />
+                    <span className="text-sm font-medium text-luxury-black">Billing Address</span>
+                  </div>
+                  <div className="text-sm text-luxury-gray-600 space-y-1">
+                    <p className="font-medium">
+                      {order.billingAddress.firstName} {order.billingAddress.lastName}
+                    </p>
+                    {order.billingAddress.company && (
+                      <p>{order.billingAddress.company}</p>
+                    )}
+                    <p>{order.billingAddress.addressLine1}</p>
+                    {order.billingAddress.addressLine2 && (
+                      <p>{order.billingAddress.addressLine2}</p>
+                    )}
+                    <p>
+                      {order.billingAddress.city}
+                      {order.billingAddress.county && `, ${order.billingAddress.county}`}
+                    </p>
+                    <p>{order.billingAddress.postcode}</p>
+                    <p>{order.billingAddress.country}</p>
+                    {order.billingAddress.phone && (
+                      <p className="pt-1">
+                        <span className="text-luxury-gray-500">Phone: </span>
+                        {order.billingAddress.phone}
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

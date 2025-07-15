@@ -13,6 +13,7 @@ import Logo from '@/components/ui/Logo';
 import SafeLink from '@/components/ui/SafeLink';
 import AddressFormModal from '@/components/checkout/AddressFormModal';
 import AddPaymentMethodModal from '@/components/payments/AddPaymentMethodModal';
+import StripeCardForm from '@/components/checkout/StripeCardForm';
 
 interface CheckoutFormData {
   customer: {
@@ -62,6 +63,9 @@ export default function CheckoutPage() {
   const [allPaymentMethods, setAllPaymentMethods] = useState<any[]>([]);
   const [showPaymentSelection, setShowPaymentSelection] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [stripePaymentResult, setStripePaymentResult] = useState<any>(null);
+  const [showStripeForm, setShowStripeForm] = useState(false);
+  const [orderCompleting, setOrderCompleting] = useState(false);
 
   const [formData, setFormData] = useState<CheckoutFormData>({
     customer: {
@@ -104,12 +108,23 @@ export default function CheckoutPage() {
   const shippingCost = totalPrice >= freeShippingThreshold ? 0 : 8.99;
   const finalTotal = totalPrice + shippingCost;
 
-  // Redirect to cart if empty
+  // Debug state changes
   useEffect(() => {
-    if (!isLoading && items.length === 0) {
+    console.log('Checkout state updated:', {
+      showStripeForm,
+      isProcessing,
+      orderCompleting,
+      paymentMethod: formData.payment.method,
+      isLoggedIn: !!user
+    });
+  }, [showStripeForm, isProcessing, orderCompleting, formData.payment.method, user]);
+
+  // Redirect to cart if empty (but not during order completion)
+  useEffect(() => {
+    if (!isLoading && items.length === 0 && !orderCompleting) {
       router.push('/cart');
     }
-  }, [items.length, isLoading, router]);
+  }, [items.length, isLoading, orderCompleting, router]);
 
   // Update form data when user is loaded and fetch default address
   useEffect(() => {
@@ -191,6 +206,8 @@ export default function CheckoutPage() {
         
         // Find the default payment method, or use the first one
         const defaultPM = result.data.find((pm: any) => pm.isDefault) || result.data[0];
+        console.log('Default payment method loaded:', defaultPM);
+        console.log('Customer data:', customer);
         setDefaultPaymentMethod(defaultPM);
         
         // Update form data with default payment method
@@ -271,6 +288,105 @@ export default function CheckoutPage() {
     setShowPaymentSelection(true);
   };
 
+  const handleStripePaymentSuccess = (result: { paymentIntentId: string; status: string }) => {
+    console.log('Stripe payment successful:', result);
+    setStripePaymentResult(result);
+    // Complete the order with the successful payment
+    completeOrderWithStripePayment(result);
+  };
+
+  const handleStripePaymentError = (error: string) => {
+    console.error('Stripe payment error:', error);
+    
+    // Reset form states to show the button again
+    setShowStripeForm(false);
+    setIsProcessing(false);
+    setOrderCompleting(false);
+    setProcessingMessage('');
+    
+    // Set error message to display to user
+    setErrors(prev => ({ ...prev, general: error }));
+  };
+
+  const completeOrderWithStripePayment = async (paymentResult: { paymentIntentId: string; status: string }) => {
+    try {
+      console.log('Completing order with Stripe payment:', paymentResult);
+      setOrderCompleting(true);
+      setProcessingMessage('Completing your order...');
+      
+      // Create order with payment confirmation
+      const orderData = {
+        customer: formData.customer,
+        billing: showAddressForm || !defaultAddress ? formData.billing : {
+          address: defaultAddress.address,
+          address2: defaultAddress.address2,
+          city: defaultAddress.city,
+          postcode: defaultAddress.postcode,
+          country: defaultAddress.country,
+        },
+        shipping: formData.shipping.sameAsBilling ? 
+          (showAddressForm || !defaultAddress ? formData.billing : {
+            address: defaultAddress.address,
+            address2: defaultAddress.address2,
+            city: defaultAddress.city,
+            postcode: defaultAddress.postcode,
+            country: defaultAddress.country,
+          }) : formData.shipping,
+        items: items.map(item => ({
+          productId: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          total: item.price * item.quantity,
+        })),
+        subtotal,
+        vatAmount,
+        shippingAmount: shippingCost,
+        total: finalTotal,
+        currency: 'GBP',
+        paymentMethod: 'card',
+        paymentIntentId: paymentResult.paymentIntentId,
+        paymentStatus: 'paid',
+        marketing: formData.marketing,
+      };
+
+      console.log('Creating order with data:', orderData);
+
+      const orderResponse = await fetch('/api/orders/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      const orderResult = await orderResponse.json();
+      console.log('Order creation response:', orderResult);
+
+      if (!orderResult.success) {
+        throw new Error(orderResult.error || 'Failed to create order');
+      }
+
+      // Success - clear cart and redirect
+      setProcessingMessage('Order completed successfully!');
+      clearCart();
+      console.log('Redirecting to confirmation page with order:', orderResult.data.orderNumber);
+      router.push(`/checkout/confirmation?order=${orderResult.data.orderNumber}`);
+      
+    } catch (error: any) {
+      console.error('Error completing order:', error);
+      
+      // Reset form states to show the button again
+      setShowStripeForm(false);
+      setOrderCompleting(false);
+      setIsProcessing(false);
+      setProcessingMessage('');
+      
+      // Set error message instead of redirecting
+      setErrors(prev => ({ ...prev, general: 'Payment successful, but failed to complete order. Please contact support.' }));
+    }
+  };
+
   const updateFormData = (section: keyof CheckoutFormData, field: string, value: string | boolean) => {
     setFormData(prev => ({
       ...prev,
@@ -330,13 +446,38 @@ export default function CheckoutPage() {
   };
 
   const handleSubmitOrder = async () => {
-    if (!validateForm()) return;
+    console.log('handleSubmitOrder called with payment method:', formData.payment.method);
+    
+    // Clear any previous errors
+    setErrors(prev => ({ ...prev, general: '' }));
+    
+    if (!validateForm()) {
+      console.log('Form validation failed');
+      return;
+    }
 
+    // For card payments - different flow for logged-in vs guest users
+    if (formData.payment.method === 'card') {
+      // For logged-in customers with saved payment method, process directly
+      if (user && defaultPaymentMethod?.type === 'card') {
+        console.log('Logged-in user with saved card: processing payment directly');
+        await processStripePaymentWithSavedMethod();
+        return;
+      } else {
+        // For guest users or users without saved method, show Stripe form
+        console.log('Guest user or no saved method: showing Stripe form for card payment');
+        setShowStripeForm(true);
+        return;
+      }
+    }
+
+    // For non-card payment methods, process the order
+    setOrderCompleting(true);
     setIsProcessing(true);
     setProcessingMessage('Processing your order...');
 
     try {
-      // Prepare order data
+      // Prepare order data for non-card payment methods
       const orderData = {
         customer: formData.customer,
         billing: showAddressForm || !defaultAddress ? formData.billing : {
@@ -370,11 +511,10 @@ export default function CheckoutPage() {
         marketing: formData.marketing,
       };
 
-      // Process payment based on method
-      if (formData.payment.method === 'card') {
-        setProcessingMessage('Processing card payment...');
-        await processStripePayment(orderData);
-      } else if (formData.payment.method === 'paypal') {
+      console.log('Processing order with payment method:', formData.payment.method);
+
+      // Process payment based on method (non-card methods)
+      if (formData.payment.method === 'paypal') {
         setProcessingMessage('Redirecting to PayPal...');
         await processPayPalPayment(orderData);
       } else if (formData.payment.method === 'apple_pay') {
@@ -383,14 +523,141 @@ export default function CheckoutPage() {
       } else if (formData.payment.method === 'google_pay') {
         setProcessingMessage('Processing Google Pay...');
         await processGooglePayPayment(orderData);
+      } else {
+        throw new Error('Invalid payment method selected');
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Order processing error:', error);
-      setErrors({ general: 'Failed to process order. Please try again.' });
-    } finally {
+      
+      // Set general error instead of redirecting immediately
+      setErrors(prev => ({ ...prev, general: error?.message || 'Failed to process order. Please try again.' }));
+      
+      setOrderCompleting(false);
       setIsProcessing(false);
       setProcessingMessage('');
+    }
+  };
+
+  const processStripePaymentWithSavedMethod = async () => {
+    try {
+      setOrderCompleting(true);
+      setIsProcessing(true);
+      setProcessingMessage('Processing payment with saved card...');
+
+      // Prepare order data
+      const orderData = {
+        customer: formData.customer,
+        billing: showAddressForm || !defaultAddress ? formData.billing : {
+          address: defaultAddress.address,
+          address2: defaultAddress.address2,
+          city: defaultAddress.city,
+          postcode: defaultAddress.postcode,
+          country: defaultAddress.country,
+        },
+        shipping: formData.shipping.sameAsBilling ? 
+          (showAddressForm || !defaultAddress ? formData.billing : {
+            address: defaultAddress.address,
+            address2: defaultAddress.address2,
+            city: defaultAddress.city,
+            postcode: defaultAddress.postcode,
+            country: defaultAddress.country,
+          }) : formData.shipping,
+        items: items.map(item => ({
+          productId: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          total: item.price * item.quantity,
+        })),
+        subtotal,
+        vatAmount,
+        shippingAmount: shippingCost,
+        total: finalTotal,
+        currency: 'GBP',
+        paymentMethod: 'card',
+        paymentMethodId: defaultPaymentMethod?.providerPaymentMethodId, // Use saved payment method
+        marketing: formData.marketing,
+      };
+
+      console.log('Processing order with saved payment method:', orderData);
+
+      // Create order first
+      const orderResponse = await fetch('/api/orders/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      const orderResult = await orderResponse.json();
+      console.log('Order creation result:', orderResult);
+
+      if (!orderResult.success) {
+        throw new Error(orderResult.error || 'Failed to create order');
+      }
+
+      // Process payment with saved payment method
+      setProcessingMessage('Processing payment...');
+      
+      const paymentData = {
+        orderId: orderResult.data.orderId,
+        paymentMethodId: defaultPaymentMethod?.providerPaymentMethodId,
+        amount: finalTotal,
+        currency: 'gbp',
+        customerId: defaultPaymentMethod?.providerCustomerId,
+      };
+
+      console.log('Sending payment data:', paymentData);
+      console.log('Default payment method:', defaultPaymentMethod);
+      console.log('Customer data:', customer);
+
+      // Validate required fields before sending request
+      if (!paymentData.orderId) {
+        throw new Error('Order ID is missing');
+      }
+      if (!paymentData.paymentMethodId) {
+        throw new Error('Payment method ID is missing');
+      }
+      if (!paymentData.amount || paymentData.amount <= 0) {
+        throw new Error('Valid amount is required');
+      }
+      if (!paymentData.customerId) {
+        throw new Error('Customer ID is missing');
+      }
+
+      const paymentResponse = await fetch('/api/stripe/process-saved-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(paymentData),
+      });
+
+      const paymentResult = await paymentResponse.json();
+      console.log('Payment result:', paymentResult);
+
+      if (!paymentResult.success) {
+        throw new Error(paymentResult.error || 'Payment failed');
+      }
+
+      // Success - clear cart and redirect
+      setProcessingMessage('Order completed successfully!');
+      clearCart();
+      console.log('Redirecting to confirmation page with order:', orderResult.data.orderNumber);
+      router.push(`/checkout/confirmation?order=${orderResult.data.orderNumber}`);
+      
+    } catch (error: any) {
+      console.error('Error processing payment with saved method:', error);
+      
+      // Reset form states
+      setOrderCompleting(false);
+      setIsProcessing(false);
+      setProcessingMessage('');
+      
+      // Set error message
+      setErrors(prev => ({ ...prev, general: error?.message || 'Payment failed. Please try again.' }));
     }
   };
 
@@ -408,6 +675,37 @@ export default function CheckoutPage() {
 
   const processGooglePayPayment = async (orderData: any) => {
     await processPaymentMethod(orderData, 'google_pay');
+  };
+
+  const checkPaymentStatus = async (orderId: string) => {
+    try {
+      const response = await fetch(`/api/orders/${orderId}/status`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+      
+      if (result.success && result.data.paymentStatus === 'paid') {
+        // Payment was completed successfully
+        setProcessingMessage('Payment completed successfully!');
+        clearCart();
+        router.push(`/checkout/confirmation?order=${result.data.orderNumber}`);
+      } else {
+        // Payment not completed - reset form
+        setProcessingMessage('Payment was not completed. Please try again.');
+        setOrderCompleting(false);
+        setIsProcessing(false);
+        setTimeout(() => setProcessingMessage(''), 3000);
+      }
+    } catch (error) {
+      console.error('Error checking payment status:', error);
+      setProcessingMessage('Error checking payment status. Please contact support.');
+      setOrderCompleting(false);
+      setIsProcessing(false);
+    }
   };
 
   const processPaymentMethod = async (orderData: any, paymentMethod: PaymentMethodType) => {
@@ -432,6 +730,16 @@ export default function CheckoutPage() {
       setProcessingMessage('Processing payment...');
       
       // Step 2: Process payment
+      const paymentData: any = {
+        amount: orderData.total,
+        currency: orderData.currency,
+      };
+
+      // Add saved PayPal email for pre-fill if using PayPal
+      if (paymentMethod === 'paypal' && defaultPaymentMethod?.type === 'paypal' && defaultPaymentMethod?.details?.email) {
+        paymentData.payerEmail = defaultPaymentMethod.details.email;
+      }
+
       const paymentResponse = await fetch('/api/payments/process', {
         method: 'POST',
         headers: {
@@ -440,26 +748,71 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           orderId: orderResult.data.orderId,
           paymentMethod: paymentMethod,
-          paymentData: {
-            amount: orderData.total,
-            currency: orderData.currency,
-          }
+          paymentData: paymentData
         }),
       });
 
       const paymentResult = await paymentResponse.json();
 
-      if (!paymentResult.success) {
+      if (paymentResult.success) {
+        // Payment completed successfully
+        setProcessingMessage('Order completed successfully!');
+        clearCart();
+        router.push(`/checkout/confirmation?order=${paymentResult.data.orderNumber}`);
+      } else if (paymentResult.requiresApproval) {
+        // PayPal requires user approval - open PayPal in popup
+        setProcessingMessage('Opening PayPal window...');
+        
+        // Open PayPal in a popup window - perfectly centered
+        const popupWidth = 450;
+        const popupHeight = 600;
+        
+        // Calculate center position considering available screen space
+        const screenWidth = window.screen.availWidth || window.screen.width;
+        const screenHeight = window.screen.availHeight || window.screen.height;
+        const left = Math.max(0, (screenWidth / 2) - (popupWidth / 2));
+        const top = Math.max(0, (screenHeight / 2) - (popupHeight / 2));
+        
+        const popup = window.open(
+          paymentResult.approvalUrl,
+          'paypal-checkout',
+          `width=${popupWidth},height=${popupHeight},left=${left},top=${top},resizable=yes,scrollbars=yes,status=no,menubar=no,toolbar=no,location=no`
+        );
+        
+        if (popup) {
+          // Monitor popup for completion
+          const checkClosed = setInterval(() => {
+            if (popup.closed) {
+              clearInterval(checkClosed);
+              setProcessingMessage('Checking payment status...');
+              
+              // Check if payment was completed by polling our API
+              setTimeout(() => {
+                checkPaymentStatus(paymentResult.orderId);
+              }, 1000);
+            }
+          }, 1000);
+        } else {
+          // Fallback to redirect if popup was blocked
+          window.location.href = paymentResult.approvalUrl;
+        }
+      } else {
+        // Payment failed
         throw new Error(paymentResult.error || 'Payment failed');
       }
-
-      // Step 3: Success - clear cart and redirect
-      setProcessingMessage('Order completed successfully!');
-      clearCart();
-      router.push(`/checkout/confirmation?order=${paymentResult.data.orderNumber}`);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Payment processing error:', error);
+      
+      // Route to failure page for payment processing issues
+      const errorMessage = error?.message || 'Payment processing failed. Please try again.';
+      if (errorMessage.includes('declined') || errorMessage.includes('insufficient')) {
+        router.push(`/checkout/failure?reason=payment_declined&message=${encodeURIComponent(errorMessage)}`);
+      } else {
+        router.push(`/checkout/failure?reason=payment_failed&message=${encodeURIComponent(errorMessage)}`);
+      }
+      
+      setOrderCompleting(false);
       throw error;
     }
   };
@@ -487,7 +840,7 @@ export default function CheckoutPage() {
     );
   }
 
-  if (items.length === 0) {
+  if (items.length === 0 && !orderCompleting) {
     return null; // Will redirect to cart
   }
 
@@ -851,6 +1204,42 @@ export default function CheckoutPage() {
                       </div>
                     </div>
 
+                    {/* Stripe Card Form for logged-in users */}
+                    {defaultPaymentMethod?.type === 'card' && showStripeForm && (
+                      <div className="mt-6 pt-6 border-t border-luxury-gray-200">
+                        <h3 className="font-medium text-luxury-black mb-4">Complete Payment</h3>
+                        <StripeCardForm
+                          amount={finalTotal}
+                          currency="gbp"
+                          onSuccess={handleStripePaymentSuccess}
+                          onError={handleStripePaymentError}
+                          disabled={isProcessing}
+                          className="border-0 p-0 bg-transparent"
+                          billingDetails={{
+                            name: `${formData.customer.firstName} ${formData.customer.lastName}`.trim(),
+                            email: formData.customer.email,
+                            phone: formData.customer.phone || undefined,
+                            address: {
+                              line1: showAddressForm || !defaultAddress ? formData.billing.address : defaultAddress.address,
+                              line2: showAddressForm || !defaultAddress ? formData.billing.address2 || undefined : defaultAddress.address2 || undefined,
+                              city: showAddressForm || !defaultAddress ? formData.billing.city : defaultAddress.city,
+                              postal_code: showAddressForm || !defaultAddress ? formData.billing.postcode : defaultAddress.postcode,
+                              country: showAddressForm || !defaultAddress ? formData.billing.country : defaultAddress.country,
+                            }
+                          }}
+                        />
+                        <div className="mt-4 flex space-x-3">
+                          <button
+                            type="button"
+                            onClick={() => setShowStripeForm(false)}
+                            className="px-4 py-2 text-sm font-medium text-luxury-gray-700 bg-white border border-luxury-gray-300 rounded-md hover:bg-luxury-gray-50 transition-colors"
+                          >
+                            Back to Payment Methods
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Marketing Preferences */}
                     <div className="pt-6 border-t border-luxury-gray-200">
                       <h3 className="font-medium text-luxury-black mb-4">Marketing Preferences</h3>
@@ -1087,8 +1476,63 @@ export default function CheckoutPage() {
                       </div>
                     </div>
 
+                    {/* Stripe Card Form */}
+                    {formData.payment.method === 'card' && showStripeForm && (
+                      <div className="mt-6">
+                        <StripeCardForm
+                          amount={finalTotal}
+                          currency="gbp"
+                          onSuccess={handleStripePaymentSuccess}
+                          onError={handleStripePaymentError}
+                          disabled={isProcessing}
+                          className="border-0 p-0 bg-transparent"
+                          billingDetails={{
+                            name: `${formData.customer.firstName} ${formData.customer.lastName}`.trim(),
+                            email: formData.customer.email,
+                            phone: formData.customer.phone || undefined,
+                            address: {
+                              line1: showAddressForm || !defaultAddress ? formData.billing.address : defaultAddress.address,
+                              line2: showAddressForm || !defaultAddress ? formData.billing.address2 || undefined : defaultAddress.address2 || undefined,
+                              city: showAddressForm || !defaultAddress ? formData.billing.city : defaultAddress.city,
+                              postal_code: showAddressForm || !defaultAddress ? formData.billing.postcode : defaultAddress.postcode,
+                              country: showAddressForm || !defaultAddress ? formData.billing.country : defaultAddress.country,
+                            }
+                          }}
+                        />
+                        <div className="mt-4 flex space-x-3">
+                          <button
+                            type="button"
+                            onClick={() => setShowStripeForm(false)}
+                            className="px-4 py-2 text-sm font-medium text-luxury-gray-700 bg-white border border-luxury-gray-300 rounded-md hover:bg-luxury-gray-50 transition-colors"
+                          >
+                            Back to Payment Methods
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Error Messages */}
+                    {errors.general && (
+                      <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                        <div className="flex items-center">
+                          <AlertCircle size={16} className="text-red-600 mr-2" />
+                          <span className="text-sm text-red-700">{errors.general}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Validation Errors */}
+                    {errors['payment.method'] && (
+                      <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                        <div className="flex items-center">
+                          <AlertCircle size={16} className="text-red-600 mr-2" />
+                          <span className="text-sm text-red-700">{errors['payment.method']}</span>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Save Card Option */}
-                    {formData.payment.method === 'card' && (
+                    {formData.payment.method === 'card' && !showStripeForm && (
                       <div className="flex items-center">
                         <input
                           type="checkbox"
@@ -1146,27 +1590,41 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
-                {/* Submit Button */}
-                <div className="mt-8 pt-6 border-t border-luxury-gray-200">
-                  <button
-                    type="button"
-                    onClick={handleSubmitOrder}
-                    disabled={isProcessing}
-                    className="w-full px-6 py-3 bg-luxury-gold text-luxury-black rounded-md hover:bg-luxury-gold/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-luxury-black mr-2"></div>
-                        {processingMessage}
-                      </>
-                    ) : (
-                      <>
-                        <ShieldCheck size={18} className="mr-2" />
-                        Place Order
-                      </>
-                    )}
-                  </button>
-                </div>
+                {/* Submit Button - Always show unless Stripe form is active */}
+                {!showStripeForm && (
+                  <div className="mt-8 pt-6 border-t border-luxury-gray-200">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        console.log('Button clicked! State:', {
+                          paymentMethod: formData.payment.method,
+                          isLoggedIn: !!user,
+                          showStripeForm,
+                          isProcessing,
+                          orderCompleting
+                        });
+                        handleSubmitOrder();
+                      }}
+                      disabled={isProcessing || orderCompleting}
+                      className="w-full px-6 py-3 bg-luxury-gold text-luxury-black rounded-md hover:bg-luxury-gold/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    >
+                      {isProcessing || orderCompleting ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-luxury-black mr-2"></div>
+                          {processingMessage || 'Processing...'}
+                        </>
+                      ) : (
+                        <>
+                          <ShieldCheck size={18} className="mr-2" />
+                          {formData.payment.method === 'card' ? 
+                            (user ? `Pay ${formatPrice(finalTotal)}` : 'Continue to Payment') : 
+                            'Place Order'}
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>

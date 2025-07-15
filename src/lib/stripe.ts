@@ -223,22 +223,33 @@ export const stripePaymentHelpers = {
     paymentMethodId?: string;
     automaticPaymentMethods?: boolean;
     metadata?: Record<string, string>;
+    returnUrl?: string;
   }) => {
     try {
-      const paymentIntent = await stripe.paymentIntents.create({
+      const paymentIntentParams: Stripe.PaymentIntentCreateParams = {
         amount: formatStripeAmount(params.amount),
         currency: params.currency || 'gbp',
         customer: params.customerId,
         payment_method: params.paymentMethodId,
-        automatic_payment_methods: params.automaticPaymentMethods ? {
-          enabled: true,
-          allow_redirects: 'never', // Keep it simple for now
-        } : undefined,
         metadata: {
           source: 'ashhadu_checkout',
           ...params.metadata,
         },
-      });
+      };
+
+      // If we have a specific payment method, don't use automatic payment methods
+      if (params.paymentMethodId) {
+        paymentIntentParams.payment_method_types = ['card'];
+        paymentIntentParams.confirm = true;
+        paymentIntentParams.return_url = params.returnUrl || `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/checkout/confirmation`;
+      } else if (params.automaticPaymentMethods) {
+        paymentIntentParams.automatic_payment_methods = {
+          enabled: true,
+          allow_redirects: 'never',
+        };
+      }
+
+      const paymentIntent = await stripe.paymentIntents.create(paymentIntentParams);
       return { paymentIntent, error: null };
     } catch (error) {
       console.error('Error creating payment intent:', error);

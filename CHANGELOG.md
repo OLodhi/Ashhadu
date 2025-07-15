@@ -10,6 +10,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Upcoming features and improvements
 
+## [1.0.10] - 2025-07-15
+
+### Added
+- **PayPal Email Pre-fill**: Saved PayPal email addresses now pre-fill during checkout for faster payment processing
+- **PayPal Popup Window**: PayPal authentication opens in centered popup window instead of full redirect
+- **Payment Status API**: New `/api/orders/[id]/status` endpoint for checking order payment status
+- **PayPal Cart Clearing**: Cart automatically clears after successful PayPal payments
+- **Enhanced Sign Out**: Complete sign out functionality with user feedback and automatic redirect
+
+### Enhanced
+- **PayPal Integration**: Enhanced PayPal Orders API v2 integration with `payment_source.paypal.email_address` field
+- **Checkout User Experience**: Streamlined PayPal flow with popup window (450x600px) centered on screen
+- **Payment Processing**: Enhanced payment data handling to include saved PayPal email for returning customers
+- **Navigation Feedback**: Added toast notifications for sign out success/failure with proper state cleanup
+- **Cross-Platform Popup**: PayPal popup positioning accounts for taskbars, docks, and multi-monitor setups
+
+### Fixed
+- **Sign Out Functionality**: Fixed non-functional sign out button in navigation header
+- **PayPal Cart State**: Resolved issue where cart didn't clear after successful PayPal payments
+- **Popup Window Centering**: Enhanced popup centering logic with edge case protection and screen detection
+- **State Management**: Proper cleanup of UI state (menus, modals, cart) during sign out process
+- **User Feedback**: Added missing success confirmation and automatic redirect after sign out
+
+### Technical Enhancements
+- **PayPal API Parameters**: Added `payerEmail` parameter to PayPal order creation for email pre-fill
+- **Popup Window Management**: Sophisticated popup monitoring with automatic closure detection
+- **Payment Flow Optimization**: Popup-based PayPal flow with fallback to full redirect if blocked
+- **Toast Integration**: Enhanced user feedback with react-hot-toast notifications
+- **Order Status Polling**: Automatic payment verification after popup window closure
+
+### PayPal Improvements
+- **Email Pre-fill Logic**: Extracts saved email from `defaultPaymentMethod.details.email`
+- **Popup Window Specs**: 450×600 pixel window with proper browser chrome removal
+- **Success Page Enhancement**: Detects popup context and closes window vs redirects appropriately
+- **Cancel Page Enhancement**: Popup-aware button text and behavior modifications
+- **Fallback Compatibility**: Graceful degradation to full redirect if popup blocked
+
+### User Experience Enhancements
+- **Reduced Checkout Friction**: PayPal users only need to enter password, email pre-filled
+- **Professional Payment Flow**: Clean popup window with centered positioning
+- **Clear Navigation**: Sign out provides immediate feedback and redirects to homepage
+- **Consistent Cart Behavior**: Cart clearing works identically across all payment methods
+- **Cross-Device Compatibility**: Popup centering works on all screen sizes and operating systems
+
+### Security & Reliability
+- **Authentication Session Cleanup**: Complete session termination during sign out
+- **Popup Security**: PayPal authentication maintains security while improving UX
+- **Error Handling**: Comprehensive error management for popup blocked scenarios
+- **Payment Verification**: Automatic verification of payment completion after popup closure
+- **State Consistency**: Proper state management across popup and parent windows
+
+### API Enhancements
+- **GET `/api/orders/[id]/status`**: Real-time order and payment status checking
+- **Enhanced PayPal Flow**: Improved payment data structure with email pre-fill support
+- **Payment Processing**: Enhanced payment API to handle saved PayPal email addresses
+- **Order Status Verification**: Automatic payment confirmation after popup-based flows
+
+### Islamic Art Business Features
+- **Streamlined Customer Experience**: Faster checkout for returning Islamic art customers
+- **Professional Payment Interface**: Clean, branded payment experience maintaining luxury aesthetic
+- **UK Market Optimization**: Enhanced payment flow for British Islamic art market
+- **Customer Retention**: Improved user experience encouraging repeat purchases
+
 ## [1.0.9] - 2025-07-12
 
 ### Added
@@ -371,6 +434,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History
 
+- **v1.0.10** (2025-07-15): PayPal email pre-fill, popup checkout window, enhanced sign out functionality, and improved payment UX
 - **v1.0.9** (2025-07-12): Complete guest checkout system with enhanced e-commerce workflow and customer order management
 - **v1.0.8** (2025-07-10): Complete inventory management system with automatic stock tracking and comprehensive admin tools
 - **v1.0.7** (2025-07-10): Complete order management system with database integration and workflow enforcement

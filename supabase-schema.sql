@@ -23,6 +23,7 @@ CREATE TABLE profiles (
   full_name TEXT,
   avatar_url TEXT,
   role user_role DEFAULT 'customer' NOT NULL,
+  stripe_customer_id TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
@@ -285,6 +286,7 @@ CREATE INDEX idx_orders_customer_id ON orders(customer_id);
 CREATE INDEX idx_orders_status ON orders(status);
 CREATE INDEX idx_orders_billing_address_id ON orders(billing_address_id);
 CREATE INDEX idx_orders_shipping_address_id ON orders(shipping_address_id);
+CREATE INDEX idx_orders_stripe_payment_intent_id ON orders(stripe_payment_intent_id);
 CREATE INDEX idx_order_items_order_id ON order_items(order_id);
 CREATE INDEX idx_order_items_product_id ON order_items(product_id);
 CREATE INDEX idx_reviews_product_id ON reviews(product_id);

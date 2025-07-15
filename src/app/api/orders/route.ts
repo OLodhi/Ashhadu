@@ -240,12 +240,12 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const searchTerm = searchParams.get('search');
     
-    // Build the base query
+    // Build the base query to fetch ALL orders (both admin and customer created)
     let query = supabaseAdmin
       .from('orders')
       .select(`
         *,
-        customer:customers!inner (
+        customer:customers (
           id,
           first_name,
           last_name,
@@ -289,6 +289,21 @@ export async function GET(request: NextRequest) {
         { success: false, error: 'Failed to fetch orders' },
         { status: 500 }
       );
+    }
+    
+    // Add debugging to check what orders are being returned
+    console.log(`Admin orders API: Found ${orders?.length || 0} orders`);
+    if (orders && orders.length > 0) {
+      console.log('Sample order data:', {
+        id: orders[0].id,
+        customer_id: orders[0].customer_id,
+        status: orders[0].status,
+        payment_status: orders[0].payment_status,
+        total: orders[0].total,
+        created_at: orders[0].created_at,
+        hasCustomer: !!orders[0].customer,
+        customerData: orders[0].customer
+      });
     }
     
     return NextResponse.json({

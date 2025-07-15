@@ -48,6 +48,32 @@ export async function GET(
           email,
           phone
         ),
+        billing_address:addresses!billing_address_id (
+          id,
+          first_name,
+          last_name,
+          company,
+          address_line_1,
+          address_line_2,
+          city,
+          county,
+          postcode,
+          country,
+          phone
+        ),
+        shipping_address:addresses!shipping_address_id (
+          id,
+          first_name,
+          last_name,
+          company,
+          address_line_1,
+          address_line_2,
+          city,
+          county,
+          postcode,
+          country,
+          phone
+        ),
         order_items (
           *,
           product:products (
@@ -122,6 +148,32 @@ export async function GET(
         email: order.customer.email,
         phone: order.customer.phone
       },
+      billingAddress: order.billing_address ? {
+        id: order.billing_address.id,
+        firstName: order.billing_address.first_name,
+        lastName: order.billing_address.last_name,
+        company: order.billing_address.company,
+        addressLine1: order.billing_address.address_line_1,
+        addressLine2: order.billing_address.address_line_2,
+        city: order.billing_address.city,
+        county: order.billing_address.county,
+        postcode: order.billing_address.postcode,
+        country: order.billing_address.country,
+        phone: order.billing_address.phone
+      } : null,
+      shippingAddress: order.shipping_address ? {
+        id: order.shipping_address.id,
+        firstName: order.shipping_address.first_name,
+        lastName: order.shipping_address.last_name,
+        company: order.shipping_address.company,
+        addressLine1: order.shipping_address.address_line_1,
+        addressLine2: order.shipping_address.address_line_2,
+        city: order.shipping_address.city,
+        county: order.shipping_address.county,
+        postcode: order.shipping_address.postcode,
+        country: order.shipping_address.country,
+        phone: order.shipping_address.phone
+      } : null,
       items: order.order_items.map((item: any) => ({
         id: item.id,
         productId: item.product_id,

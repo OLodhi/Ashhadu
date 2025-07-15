@@ -5,7 +5,7 @@ import { PaymentMethodType } from '@/types/payment';
 
 export async function POST(request: NextRequest) {
   try {
-    const { orderId, paymentMethod, paymentData } = await request.json();
+    const { orderId, paymentMethod, paymentData, paymentIntentId } = await request.json();
     
     // Create server-side Supabase client
     const supabase = await createServerSupabaseClient();
@@ -66,7 +66,10 @@ export async function POST(request: NextRequest) {
       // Process payment based on method
       switch (paymentMethod as PaymentMethodType) {
         case 'card':
-          paymentResult = await processStripePayment(order, paymentData);
+          paymentResult = await processStripePayment(order, { 
+            ...paymentData, 
+            paymentIntentId: paymentIntentId || paymentData?.paymentIntentId 
+          });
           break;
         case 'paypal':
           paymentResult = await processPayPalPayment(order, paymentData);
@@ -84,15 +87,17 @@ export async function POST(request: NextRequest) {
           );
       }
       
-      // Update order with payment result
+      // Handle different payment result types
       if (paymentResult.success) {
+        // Payment completed successfully
         const { error: updateError } = await supabaseAdmin
           .from('orders')
           .update({
             payment_status: 'paid',
             status: 'processing',
             payment_method: paymentMethod,
-            notes: `${order.notes || ''}\nPayment ID: ${paymentResult.paymentId}`
+            stripe_payment_intent_id: paymentMethod === 'card' ? paymentResult.paymentId : null,
+            notes: `${order.notes || ''}\nPayment ID: ${paymentResult.paymentId}${paymentResult.status ? `\nStatus: ${paymentResult.status}` : ''}`
           })
           .eq('id', orderId);
         
@@ -115,7 +120,18 @@ export async function POST(request: NextRequest) {
             message: `Payment successful!${isGuestPayment ? ' (guest payment)' : ''}`
           }
         });
+      } else if (paymentResult.requiresApproval) {
+        // Payment requires user approval (PayPal redirect)
+        return NextResponse.json({
+          success: false,
+          requiresApproval: true,
+          approvalUrl: paymentResult.approvalUrl,
+          paypalOrderId: paymentResult.paypalOrderId,
+          orderId,
+          error: 'Payment requires user approval'
+        });
       } else {
+        // Payment failed
         return NextResponse.json(
           { success: false, error: paymentResult.error || 'Payment failed' },
           { status: 400 }
@@ -143,37 +159,170 @@ export async function POST(request: NextRequest) {
 // In a real application, these would integrate with actual payment providers
 
 async function processStripePayment(order: any, paymentData: any) {
-  // Simulate Stripe payment processing
   console.log('Processing Stripe payment for order:', order.id);
   
-  // Mock payment processing delay
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  
-  // Simulate successful payment
-  return {
-    success: true,
-    paymentId: `stripe_pi_${Date.now()}`,
-    transactionId: `txn_${Date.now()}`,
-    amount: order.total,
-    currency: order.currency
-  };
+  try {
+    // Import Stripe helpers
+    const { stripePaymentHelpers } = await import('@/lib/stripe');
+    
+    // Check if this order already has a payment intent
+    if (paymentData.paymentIntentId) {
+      // Retrieve the existing payment intent to confirm it was successful
+      const { paymentIntent, error } = await stripePaymentHelpers.getPaymentIntent(paymentData.paymentIntentId);
+      
+      if (error) {
+        console.error('Error retrieving payment intent:', error);
+        return {
+          success: false,
+          error: error.message || 'Failed to verify payment'
+        };
+      }
+      
+      if (paymentIntent?.status === 'succeeded') {
+        console.log('Payment already succeeded:', paymentIntent.id);
+        return {
+          success: true,
+          paymentId: paymentIntent.id,
+          transactionId: paymentIntent.id,
+          amount: paymentIntent.amount / 100, // Convert from pence to pounds
+          currency: paymentIntent.currency.toUpperCase(),
+          status: paymentIntent.status
+        };
+      } else {
+        return {
+          success: false,
+          error: `Payment not completed. Status: ${paymentIntent?.status || 'unknown'}`
+        };
+      }
+    } else {
+      // Legacy: Create a new payment intent (shouldn't happen with new flow)
+      console.warn('Creating new payment intent in process endpoint - this should use the checkout flow');
+      
+      const { paymentIntent, error } = await stripePaymentHelpers.createPaymentIntent({
+        amount: order.total,
+        currency: order.currency?.toLowerCase() || 'gbp',
+        customerId: undefined, // Guest payment
+        automaticPaymentMethods: true,
+        metadata: {
+          orderId: order.id,
+          source: 'legacy_payment_process'
+        }
+      });
+      
+      if (error || !paymentIntent) {
+        console.error('Error creating payment intent:', error);
+        return {
+          success: false,
+          error: error?.message || 'Failed to create payment intent'
+        };
+      }
+      
+      return {
+        success: false,
+        error: 'Payment intent created but requires client-side confirmation',
+        paymentIntentId: paymentIntent.id,
+        clientSecret: paymentIntent.client_secret
+      };
+    }
+  } catch (error: any) {
+    console.error('Error in Stripe payment processing:', error);
+    return {
+      success: false,
+      error: error.message || 'Stripe payment processing failed'
+    };
+  }
 }
 
 async function processPayPalPayment(order: any, paymentData: any) {
-  // Simulate PayPal payment processing
   console.log('Processing PayPal payment for order:', order.id);
   
-  // Mock payment processing delay
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  
-  // Simulate successful payment
-  return {
-    success: true,
-    paymentId: `paypal_${Date.now()}`,
-    transactionId: `pp_txn_${Date.now()}`,
-    amount: order.total,
-    currency: order.currency
-  };
+  try {
+    // Check if this is a PayPal order capture (user returned from PayPal)
+    if (paymentData.paypalOrderId) {
+      console.log('Capturing PayPal order:', paymentData.paypalOrderId);
+      
+      // Import PayPal helpers
+      const { paypalHelpers } = await import('@/lib/paypal');
+      
+      // Capture the existing PayPal order
+      const { order: capturedOrder, error: captureError } = await paypalHelpers.captureOrder(paymentData.paypalOrderId);
+      
+      if (captureError || !capturedOrder) {
+        console.error('PayPal order capture failed:', captureError);
+        return {
+          success: false,
+          error: captureError || 'Failed to capture PayPal payment'
+        };
+      }
+      
+      // Check if capture was successful
+      if (capturedOrder.status === 'COMPLETED') {
+        const capture = capturedOrder.purchase_units[0]?.payments?.captures?.[0];
+        return {
+          success: true,
+          paymentId: capturedOrder.id,
+          transactionId: capture?.id || capturedOrder.id,
+          amount: parseFloat(capture?.amount?.value || order.total),
+          currency: capture?.amount?.currency_code || order.currency,
+          status: 'completed'
+        };
+      } else {
+        return {
+          success: false,
+          error: `PayPal payment not completed. Status: ${capturedOrder.status}`
+        };
+      }
+    } else {
+      // Create a new PayPal order for immediate payment
+      console.log('Creating PayPal order for immediate payment');
+      
+      // Import PayPal helpers
+      const { paypalHelpers } = await import('@/lib/paypal');
+      
+      // Create PayPal order
+      const { order: paypalOrder, error: orderError } = await paypalHelpers.createOrder({
+        amount: order.total,
+        currency: order.currency || 'GBP',
+        orderId: order.id,
+        description: `Order ${order.id} - Islamic Art Purchase`,
+        items: paymentData.items || [],
+        payerEmail: paymentData.payerEmail // Pass saved PayPal email for pre-fill
+      });
+      
+      if (orderError || !paypalOrder) {
+        console.error('PayPal order creation failed:', orderError);
+        return {
+          success: false,
+          error: orderError || 'Failed to create PayPal order'
+        };
+      }
+      
+      // Get the approval URL
+      const approvalUrl = paypalOrder.links?.find((link: any) => link.rel === 'approve')?.href;
+      
+      if (!approvalUrl) {
+        return {
+          success: false,
+          error: 'PayPal approval URL not found'
+        };
+      }
+      
+      // Return the approval URL for user to complete payment
+      return {
+        success: false, // Not completed yet - user needs to approve
+        requiresApproval: true,
+        approvalUrl: approvalUrl,
+        paypalOrderId: paypalOrder.id,
+        error: 'PayPal payment requires user approval'
+      };
+    }
+  } catch (error: any) {
+    console.error('Error in PayPal payment processing:', error);
+    return {
+      success: false,
+      error: error.message || 'PayPal payment processing failed'
+    };
+  }
 }
 
 async function processApplePayPayment(order: any, paymentData: any) {

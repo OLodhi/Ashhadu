@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Menu, X, ShoppingBag, Search, User, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { useCartStore } from '@/store/cartStore';
 import { useWishlist } from '@/contexts/WishlistContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -42,6 +43,7 @@ const Header = () => {
   const [hydrated, setHydrated] = useState(false);
   
   const pathname = usePathname();
+  const router = useRouter();
   const { items, getTotalItems } = useCartStore();
   const { wishlistCount } = useWishlist();
   const { user, profile, signOut, isAdmin } = useAuth();
@@ -87,10 +89,32 @@ const Header = () => {
 
   const handleSignOut = async () => {
     try {
-      await signOut();
+      console.log('🔍 Header: Starting sign out process...');
       setIsAccountDropdownOpen(false);
+      
+      const result = await signOut();
+      
+      if (result.error) {
+        console.error('❌ Header: Sign out failed:', result.error);
+        toast.error('Failed to sign out. Please try again.');
+        return;
+      }
+      
+      console.log('✅ Header: Sign out successful, redirecting to home...');
+      
+      // Show success message
+      toast.success('Successfully signed out');
+      
+      // Close any open menus/modals
+      setIsMenuOpen(false);
+      setIsSearchOpen(false);
+      setIsCartOpen(false);
+      
+      // Redirect to home page after successful logout
+      router.push('/');
+      
     } catch (error) {
-      console.error('Sign out error:', error);
+      console.error('❌ Header: Unexpected sign out error:', error);
     }
   };
 
