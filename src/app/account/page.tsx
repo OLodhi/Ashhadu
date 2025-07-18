@@ -73,11 +73,30 @@ export default function AccountDashboard() {
     try {
       setLoading(true);
       
-      // Load orders
+      // First get the customer record using the authenticated user's email
+      const { data: customerData, error: customerError } = await supabase
+        .from('customers')
+        .select('id')
+        .eq('email', user?.email)
+        .single();
+
+      if (customerError) {
+        console.error('Error loading customer data:', customerError);
+        // If no customer record found, continue with empty stats
+        setStats({
+          totalOrders: 0,
+          totalSpent: 0,
+          wishlistItems: wishlistCount,
+          recentOrders: []
+        });
+        return;
+      }
+
+      // Load orders using the customer's ID
       const { data: orders, error: ordersError } = await supabase
         .from('orders')
         .select('id, total, status, created_at, currency')
-        .eq('customer_id', user?.id)
+        .eq('customer_id', customerData.id)
         .order('created_at', { ascending: false })
         .limit(5);
 
@@ -86,10 +105,22 @@ export default function AccountDashboard() {
         // Continue with empty orders if there's an error
       }
 
+      // Load all orders for total calculations (not just recent ones)
+      const { data: allOrders, error: allOrdersError } = await supabase
+        .from('orders')
+        .select('total, status')
+        .eq('customer_id', customerData.id)
+        .neq('status', 'cancelled'); // Exclude cancelled orders from totals
+
+      if (allOrdersError) {
+        console.error('Error loading all orders:', allOrdersError);
+      }
+
       // Calculate stats (ensure orders is always an array)
       const ordersList = orders || [];
-      const totalOrders = ordersList.length;
-      const totalSpent = ordersList.reduce((sum, order) => sum + order.total, 0);
+      const allOrdersList = allOrders || [];
+      const totalOrders = allOrdersList.length;
+      const totalSpent = allOrdersList.reduce((sum, order) => sum + order.total, 0);
 
       setStats({
         totalOrders,

@@ -318,6 +318,8 @@ export default function CheckoutPage() {
       const orderData = {
         customer: formData.customer,
         billing: showAddressForm || !defaultAddress ? formData.billing : {
+          // Use existing address ID to prevent duplication
+          existingAddressId: defaultAddress.id,
           address: defaultAddress.address,
           address2: defaultAddress.address2,
           city: defaultAddress.city,
@@ -326,6 +328,8 @@ export default function CheckoutPage() {
         },
         shipping: formData.shipping.sameAsBilling ? 
           (showAddressForm || !defaultAddress ? formData.billing : {
+            // Use existing address ID to prevent duplication
+            existingAddressId: defaultAddress.id,
             address: defaultAddress.address,
             address2: defaultAddress.address2,
             city: defaultAddress.city,
@@ -383,7 +387,7 @@ export default function CheckoutPage() {
       setProcessingMessage('');
       
       // Set error message instead of redirecting
-      setErrors(prev => ({ ...prev, general: 'Payment successful, but failed to complete order. Please contact support.' }));
+      setErrors(prev => ({ ...prev, general: 'Payment successful, but failed to complete order. Please contact support with your payment ID: ' + paymentResult.paymentIntentId }));
     }
   };
 
@@ -481,6 +485,8 @@ export default function CheckoutPage() {
       const orderData = {
         customer: formData.customer,
         billing: showAddressForm || !defaultAddress ? formData.billing : {
+          // Use existing address ID to prevent duplication
+          existingAddressId: defaultAddress.id,
           address: defaultAddress.address,
           address2: defaultAddress.address2,
           city: defaultAddress.city,
@@ -489,6 +495,8 @@ export default function CheckoutPage() {
         },
         shipping: formData.shipping.sameAsBilling ? 
           (showAddressForm || !defaultAddress ? formData.billing : {
+            // Use existing address ID to prevent duplication
+            existingAddressId: defaultAddress.id,
             address: defaultAddress.address,
             address2: defaultAddress.address2,
             city: defaultAddress.city,
@@ -540,6 +548,8 @@ export default function CheckoutPage() {
   };
 
   const processStripePaymentWithSavedMethod = async () => {
+    let orderResult: any = null;
+    
     try {
       setOrderCompleting(true);
       setIsProcessing(true);
@@ -549,6 +559,8 @@ export default function CheckoutPage() {
       const orderData = {
         customer: formData.customer,
         billing: showAddressForm || !defaultAddress ? formData.billing : {
+          // Use existing address ID to prevent duplication
+          existingAddressId: defaultAddress.id,
           address: defaultAddress.address,
           address2: defaultAddress.address2,
           city: defaultAddress.city,
@@ -557,6 +569,8 @@ export default function CheckoutPage() {
         },
         shipping: formData.shipping.sameAsBilling ? 
           (showAddressForm || !defaultAddress ? formData.billing : {
+            // Use existing address ID to prevent duplication
+            existingAddressId: defaultAddress.id,
             address: defaultAddress.address,
             address2: defaultAddress.address2,
             city: defaultAddress.city,
@@ -591,7 +605,7 @@ export default function CheckoutPage() {
         body: JSON.stringify(orderData),
       });
 
-      const orderResult = await orderResponse.json();
+      orderResult = await orderResponse.json();
       console.log('Order creation result:', orderResult);
 
       if (!orderResult.success) {
@@ -651,6 +665,11 @@ export default function CheckoutPage() {
     } catch (error: any) {
       console.error('Error processing payment with saved method:', error);
       
+      // Cancel the order if it was created but payment failed
+      if (orderResult?.data?.orderId) {
+        await cancelOrderDueToPaymentFailure(orderResult.data.orderId, 'Stripe payment with saved method failed');
+      }
+      
       // Reset form states
       setOrderCompleting(false);
       setIsProcessing(false);
@@ -693,6 +712,12 @@ export default function CheckoutPage() {
         setProcessingMessage('Payment completed successfully!');
         clearCart();
         router.push(`/checkout/confirmation?order=${result.data.orderNumber}`);
+      } else if (result.success && result.data.orderStatus === 'cancelled') {
+        // Order was cancelled (e.g., via PayPal cancel page)
+        setProcessingMessage('Payment was cancelled. Your order has been cancelled.');
+        setOrderCompleting(false);
+        setIsProcessing(false);
+        setTimeout(() => setProcessingMessage(''), 3000);
       } else {
         // Payment not completed - reset form
         setProcessingMessage('Payment was not completed. Please try again.');
@@ -708,7 +733,37 @@ export default function CheckoutPage() {
     }
   };
 
+  const cancelOrderDueToPaymentFailure = async (orderId: string, reason: string) => {
+    try {
+      console.log(`Cancelling order ${orderId} due to payment failure: ${reason}`);
+      
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: 'cancelled',
+          payment_status: 'failed',
+          notes: `Order cancelled due to payment failure: ${reason}`
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        console.error('Failed to cancel order:', result.error);
+      } else {
+        console.log('Order cancelled successfully:', orderId);
+      }
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+    }
+  };
+
   const processPaymentMethod = async (orderData: any, paymentMethod: PaymentMethodType) => {
+    let orderResult: any = null;
+    
     try {
       setProcessingMessage('Creating your order...');
       
@@ -721,7 +776,7 @@ export default function CheckoutPage() {
         body: JSON.stringify(orderData),
       });
 
-      const orderResult = await orderResponse.json();
+      orderResult = await orderResponse.json();
 
       if (!orderResult.success) {
         throw new Error(orderResult.error || 'Failed to create order');
@@ -803,6 +858,11 @@ export default function CheckoutPage() {
       
     } catch (error: any) {
       console.error('Payment processing error:', error);
+      
+      // Cancel the order if it was created but payment failed
+      if (orderResult?.data?.orderId) {
+        await cancelOrderDueToPaymentFailure(orderResult.data.orderId, `${paymentMethod} payment failed`);
+      }
       
       // Route to failure page for payment processing issues
       const errorMessage = error?.message || 'Payment processing failed. Please try again.';

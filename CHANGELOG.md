@@ -10,6 +10,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Upcoming features and improvements
 
+## [1.0.11] - 2025-07-18
+
+### Added
+- **Order Cancellation Utility**: New `cancelOrderDueToPaymentFailure` function for systematic order cancellation on payment failures
+- **Customer Order Cancellation Permissions**: Customers can now cancel their own pending orders through API
+- **Enhanced PayPal Cancel Page**: Automatic order cancellation when PayPal payments are cancelled
+- **Stripe Payment Failure Handling**: Comprehensive order cancellation for failed Stripe payments
+- **Address Deduplication Logic**: System now reuses existing addresses instead of creating duplicates
+
+### Enhanced
+- **Customer Dashboard Data Loading**: Fixed incorrect order counts and spending amounts using proper customer ID relationships
+- **Address Management**: Enhanced checkout flow to use existing address IDs when available, preventing duplication
+- **Payment Error Handling**: Comprehensive error handling across all payment methods (Stripe, PayPal, Apple Pay, Google Pay)
+- **Order Lifecycle Management**: Proper order status management throughout payment flows
+- **API Security**: Enhanced permissions allowing customers to cancel their own orders while maintaining admin privileges
+
+### Fixed
+- **Customer Dashboard Issues**: Fixed 0 orders, £0.00 spent, and empty recent orders displaying incorrect data
+- **Address Duplication**: Eliminated duplicate address creation during checkout when using existing default addresses
+- **PayPal Cancellation**: Resolved orphaned orders when PayPal payments are cancelled
+- **Stripe Payment Failures**: Fixed orphaned orders when Stripe payments fail
+- **Order Cancellation Permissions**: Customers can now successfully cancel their own pending orders
+- **PayPal Cancel Page Errors**: Fixed "Failed to cancel order" error for customers without default payment methods
+
+### Technical Enhancements
+- **Database Relationships**: Fixed customer-order relationship lookup through email-based connections
+- **Inventory Integration**: Proper stock restoration when orders are cancelled due to payment failures
+- **Error Recovery**: Robust error handling with automatic cleanup for failed payment scenarios
+- **Payment Processing**: Enhanced payment flow with proper order status tracking
+- **API Error Messages**: More specific error messages for better debugging and user feedback
+
+### Customer Experience Improvements
+- **Accurate Dashboards**: Customers now see correct order history and spending amounts
+- **Clean Checkout**: No more duplicate addresses cluttering customer accounts
+- **Reliable Cancellation**: Can cancel payments without leaving orphaned orders in system
+- **Clear Feedback**: Better error messages and success notifications throughout payment flows
+- **Seamless Experience**: Consistent behavior across all payment methods
+
+### Admin Experience Improvements
+- **Clean Order Management**: No more orphaned orders from cancelled payments in admin dashboard
+- **Accurate Inventory**: Proper stock levels maintained across all payment scenarios
+- **Data Integrity**: Consistent order statuses across all payment methods
+- **Efficient Support**: Better error tracking and payment IDs for customer support resolution
+
+### Security & Business Logic
+- **Customer Permissions**: Allow customers to cancel their own pending orders with proper validation
+- **Admin Privileges**: Maintain full administrative control over all orders
+- **Security Validation**: Proper ownership and status checks before allowing order modifications
+- **Payment Integrity**: Orders accurately reflect payment status across all scenarios
+- **Inventory Accuracy**: Stock properly managed with automatic restoration on cancellations
+
+### API Enhancements
+- **Enhanced PUT `/api/orders/[id]`**: Improved permissions allowing customer order cancellations
+- **Enhanced `/api/orders/create`**: Added address deduplication logic to prevent duplicate creation
+- **Improved Error Handling**: More specific error messages and better network error handling
+- **Payment Status Tracking**: Better order status management throughout payment lifecycle
+
+### Files Modified
+- `/src/app/account/page.tsx` - Fixed customer dashboard data loading with correct customer ID lookup
+- `/src/app/checkout/page.tsx` - Enhanced address handling and comprehensive payment error handling
+- `/src/app/api/orders/create/route.ts` - Added address deduplication logic for existing addresses
+- `/src/app/checkout/paypal/cancel/page.tsx` - Added automatic order cancellation and improved error handling
+- `/src/lib/paypal.ts` - Enhanced PayPal cancel URL to include order ID for proper cancellation
+- `/src/app/api/orders/[id]/route.ts` - Enhanced customer cancellation permissions and security validation
+
 ## [1.0.10] - 2025-07-15
 
 ### Added
@@ -434,6 +499,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History
 
+- **v1.0.11** (2025-07-18): Critical customer experience fixes - dashboard data accuracy, address deduplication, payment cancellation improvements, and enhanced error handling
 - **v1.0.10** (2025-07-15): PayPal email pre-fill, popup checkout window, enhanced sign out functionality, and improved payment UX
 - **v1.0.9** (2025-07-12): Complete guest checkout system with enhanced e-commerce workflow and customer order management
 - **v1.0.8** (2025-07-10): Complete inventory management system with automatic stock tracking and comprehensive admin tools

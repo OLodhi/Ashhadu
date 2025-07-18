@@ -1,14 +1,61 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { XCircle } from 'lucide-react';
 import Logo from '@/components/ui/Logo';
 
 export default function PayPalCancelPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState('');
 
   // Check if we're in a popup window
   const isPopup = typeof window !== 'undefined' && window.opener && window.opener !== window;
+
+  useEffect(() => {
+    // Get the order ID from URL parameters
+    const orderId = searchParams.get('orderId');
+    
+    if (orderId) {
+      // Cancel the order when the component loads
+      cancelOrder(orderId);
+    }
+  }, [searchParams]);
+
+  const cancelOrder = async (orderId: string) => {
+    try {
+      setIsProcessing(true);
+      
+      // Cancel the order in the database
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: 'cancelled',
+          payment_status: 'failed',
+          notes: 'Order cancelled due to PayPal payment cancellation'
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        console.error('Failed to cancel order:', result.error);
+        setError(`Failed to cancel order: ${result.error}. Please contact support.`);
+      } else {
+        console.log('Order cancelled successfully:', orderId);
+      }
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+      setError(`Error cancelling order: ${error instanceof Error ? error.message : 'Network error'}. Please contact support.`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const handleReturnToCheckout = () => {
     if (isPopup) {
@@ -44,6 +91,13 @@ export default function PayPalCancelPage() {
             </h2>
             <p className="text-luxury-gray-600 mb-6">
               Your PayPal payment was cancelled. No charges have been made to your account.
+              {isProcessing && " We're cancelling your order..."}
+              {error && (
+                <span className="block text-red-600 mt-2 text-sm">{error}</span>
+              )}
+              {!isProcessing && !error && (
+                <span className="block text-green-600 mt-2 text-sm">Your order has been cancelled successfully.</span>
+              )}
             </p>
             <div className="space-y-3">
               <button

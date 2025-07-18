@@ -224,18 +224,71 @@ export async function PUT(
       );
     }
     
-    // Check if user is admin
+    // Check if user is admin or if this is a customer cancelling their own order
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('role')
       .eq('user_id', user.id)
       .single();
     
-    if (profileError || profile?.role !== 'admin') {
+    if (profileError) {
       return NextResponse.json(
-        { success: false, error: 'Admin access required' },
+        { success: false, error: 'Failed to verify user role' },
         { status: 403 }
       );
+    }
+    
+    // Allow admins to update any order, or customers to cancel their own pending orders
+    if (profile.role !== 'admin') {
+      // For non-admin users, only allow order cancellation of their own pending orders
+      if (updates.status !== 'cancelled') {
+        return NextResponse.json(
+          { success: false, error: 'Customers can only cancel their own orders' },
+          { status: 403 }
+        );
+      }
+      
+      // Verify this is the customer's order and it's still pending
+      const { data: customer, error: customerError } = await supabaseAdmin
+        .from('customers')
+        .select('id')
+        .eq('email', user.email)
+        .single();
+      
+      if (customerError || !customer) {
+        return NextResponse.json(
+          { success: false, error: 'Customer not found' },
+          { status: 404 }
+        );
+      }
+      
+      // Check if this order belongs to the customer and is still pending
+      const { data: orderCheck, error: orderCheckError } = await supabaseAdmin
+        .from('orders')
+        .select('customer_id, status')
+        .eq('id', id)
+        .single();
+      
+      if (orderCheckError || !orderCheck) {
+        return NextResponse.json(
+          { success: false, error: 'Order not found' },
+          { status: 404 }
+        );
+      }
+      
+      if (orderCheck.customer_id !== customer.id) {
+        return NextResponse.json(
+          { success: false, error: 'Access denied' },
+          { status: 403 }
+        );
+      }
+      
+      if (orderCheck.status !== 'pending') {
+        return NextResponse.json(
+          { success: false, error: 'Only pending orders can be cancelled' },
+          { status: 400 }
+        );
+      }
     }
     
     // First get the current order to check if we can make the requested changes

@@ -197,7 +197,7 @@ export const paypalHelpers = {
           shipping_preference: 'NO_SHIPPING',
           user_action: 'PAY_NOW',
           return_url: `${process.env.NEXT_PUBLIC_SITE_URL}/checkout/paypal/success`,
-          cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/checkout/paypal/cancel`
+          cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/checkout/paypal/cancel?orderId=${orderData.orderId}`
         },
         purchase_units: [{
           reference_id: orderData.orderId,

@@ -87,50 +87,62 @@ export async function POST(request: NextRequest) {
     // Create billing address if provided
     let billingAddressId = null;
     if (orderData.billing && orderData.billing.address) {
-      const { data: billingAddress, error: billingError } = await supabaseAdmin
-        .from('addresses')
-        .insert({
-          customer_id: customerId,
-          type: 'billing',
-          first_name: orderData.customer.firstName || '',
-          last_name: orderData.customer.lastName || '',
-          address_line_1: orderData.billing.address,
-          address_line_2: orderData.billing.address2 || null,
-          city: orderData.billing.city,
-          county: orderData.billing.county || null,
-          postcode: orderData.billing.postcode,
-          country: orderData.billing.country || 'GB'
-        })
-        .select('id')
-        .single();
-      
-      if (!billingError) {
-        billingAddressId = billingAddress.id;
+      // Check if we should use an existing address
+      if (orderData.billing.existingAddressId) {
+        billingAddressId = orderData.billing.existingAddressId;
+      } else {
+        // Create new address only if not using existing one
+        const { data: billingAddress, error: billingError } = await supabaseAdmin
+          .from('addresses')
+          .insert({
+            customer_id: customerId,
+            type: 'billing',
+            first_name: orderData.customer.firstName || '',
+            last_name: orderData.customer.lastName || '',
+            address_line_1: orderData.billing.address,
+            address_line_2: orderData.billing.address2 || null,
+            city: orderData.billing.city,
+            county: orderData.billing.county || null,
+            postcode: orderData.billing.postcode,
+            country: orderData.billing.country || 'GB'
+          })
+          .select('id')
+          .single();
+        
+        if (!billingError) {
+          billingAddressId = billingAddress.id;
+        }
       }
     }
     
     // Create shipping address if different from billing
     let shippingAddressId = billingAddressId;
     if (orderData.shipping && !orderData.shipping.sameAsBilling && orderData.shipping.address) {
-      const { data: shippingAddress, error: shippingError } = await supabaseAdmin
-        .from('addresses')
-        .insert({
-          customer_id: customerId,
-          type: 'shipping',
-          first_name: orderData.customer.firstName || '',
-          last_name: orderData.customer.lastName || '',
-          address_line_1: orderData.shipping.address,
-          address_line_2: orderData.shipping.address2 || null,
-          city: orderData.shipping.city,
-          county: orderData.shipping.county || null,
-          postcode: orderData.shipping.postcode,
-          country: orderData.shipping.country || 'GB'
-        })
-        .select('id')
-        .single();
-      
-      if (!shippingError) {
-        shippingAddressId = shippingAddress.id;
+      // Check if we should use an existing address
+      if (orderData.shipping.existingAddressId) {
+        shippingAddressId = orderData.shipping.existingAddressId;
+      } else {
+        // Create new address only if not using existing one
+        const { data: shippingAddress, error: shippingError } = await supabaseAdmin
+          .from('addresses')
+          .insert({
+            customer_id: customerId,
+            type: 'shipping',
+            first_name: orderData.customer.firstName || '',
+            last_name: orderData.customer.lastName || '',
+            address_line_1: orderData.shipping.address,
+            address_line_2: orderData.shipping.address2 || null,
+            city: orderData.shipping.city,
+            county: orderData.shipping.county || null,
+            postcode: orderData.shipping.postcode,
+            country: orderData.shipping.country || 'GB'
+          })
+          .select('id')
+          .single();
+        
+        if (!shippingError) {
+          shippingAddressId = shippingAddress.id;
+        }
       }
     }
     
