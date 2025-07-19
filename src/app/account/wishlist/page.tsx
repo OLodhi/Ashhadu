@@ -439,7 +439,7 @@ export default function WishlistPage() {
                     {/* Product Info */}
                     <div className={`${viewMode === 'list' ? 'flex-1' : ''}`}>
                       <Link
-                        href={`/products/${item.product.slug}`}
+                        href={`/products/${item.product.id}`}
                         className="block group"
                       >
                         <h3 className="font-medium text-gray-900 group-hover:text-luxury-gold transition-colors line-clamp-2">

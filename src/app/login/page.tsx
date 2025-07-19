@@ -22,6 +22,7 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirectTo') || '/account';
+  const message = searchParams.get('message');
 
   // Clear auth errors when component mounts
   useEffect(() => {
@@ -29,6 +30,17 @@ export default function LoginPage() {
       clearError();
     }
   }, [clearError]);
+
+  // Show success message if password was updated
+  useEffect(() => {
+    if (message === 'password-updated') {
+      toast.success('Password updated successfully! Please sign in with your new password.');
+      // Clean up URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete('message');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [message]);
 
   // Redirect if already logged in
   useEffect(() => {

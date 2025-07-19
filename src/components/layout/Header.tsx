@@ -9,8 +9,10 @@ import toast from 'react-hot-toast';
 import { useCartStore } from '@/store/cartStore';
 import { useWishlist } from '@/contexts/WishlistContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { useImpersonation } from '@/hooks/useImpersonation';
 import { getUserRedirectPath } from '@/lib/auth-utils-shared';
+import { SETTING_KEYS } from '@/types/settings';
 import Logo from '@/components/ui/Logo';
 import SearchModal from '@/components/modals/SearchModal';
 import CartSidebar from '@/components/cart/CartSidebar';
@@ -47,8 +49,13 @@ const Header = () => {
   const { items, getTotalItems } = useCartStore();
   const { wishlistCount } = useWishlist();
   const { user, profile, signOut, isAdmin } = useAuth();
+  const { getSetting } = useSettings();
   const { impersonationSession } = useImpersonation();
   const totalItems = getTotalItems();
+
+  // Get feature settings
+  const isSearchEnabled = getSetting(SETTING_KEYS.FEATURE_SEARCH);
+  const isWishlistEnabled = getSetting(SETTING_KEYS.FEATURE_WISHLIST);
 
   // Fix hydration mismatch for cart count
   useEffect(() => {
@@ -209,27 +216,31 @@ const Header = () => {
             {/* Desktop Actions */}
             <div className="hidden lg:flex items-center space-x-4">
               {/* Search */}
-              <button
-                onClick={() => setIsSearchOpen(true)}
-                className="p-2 text-luxury-black hover:text-luxury-gold transition-colors duration-200"
-                aria-label="Search products"
-              >
-                <Search size={20} />
-              </button>
+              {isSearchEnabled && (
+                <button
+                  onClick={() => setIsSearchOpen(true)}
+                  className="p-2 text-luxury-black hover:text-luxury-gold transition-colors duration-200"
+                  aria-label="Search products"
+                >
+                  <Search size={20} />
+                </button>
+              )}
 
               {/* Wishlist */}
-              <Link
-                href={getWishlistUrl()}
-                className="relative p-2 text-luxury-black hover:text-luxury-gold transition-colors duration-200"
-                aria-label={`View wishlist with ${wishlistCount} items`}
-              >
-                <Heart size={20} />
-                {wishlistCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 text-xs font-medium text-luxury-black bg-luxury-gold rounded-full flex items-center justify-center">
-                    {wishlistCount > 99 ? '99+' : wishlistCount}
-                  </span>
-                )}
-              </Link>
+              {isWishlistEnabled && (
+                <Link
+                  href={getWishlistUrl()}
+                  className="relative p-2 text-luxury-black hover:text-luxury-gold transition-colors duration-200"
+                  aria-label={`View wishlist with ${wishlistCount} items`}
+                >
+                  <Heart size={20} />
+                  {wishlistCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-5 w-5 text-xs font-medium text-luxury-black bg-luxury-gold rounded-full flex items-center justify-center">
+                      {wishlistCount > 99 ? '99+' : wishlistCount}
+                    </span>
+                  )}
+                </Link>
+              )}
 
               {/* Account */}
               {user ? (
@@ -360,16 +371,18 @@ const Header = () => {
                 <div className="flex flex-col space-y-4">
                   {/* Mobile Actions */}
                   <div className="flex items-center space-x-4 pb-4 border-b border-luxury-gray-100">
-                    <button
-                      onClick={() => {
-                        setIsSearchOpen(true);
-                        setIsMenuOpen(false);
-                      }}
-                      className="flex items-center space-x-2 p-2 text-luxury-black hover:text-luxury-gold transition-colors duration-200"
-                    >
-                      <Search size={20} />
-                      <span className="text-sm font-medium">Search</span>
-                    </button>
+                    {isSearchEnabled && (
+                      <button
+                        onClick={() => {
+                          setIsSearchOpen(true);
+                          setIsMenuOpen(false);
+                        }}
+                        className="flex items-center space-x-2 p-2 text-luxury-black hover:text-luxury-gold transition-colors duration-200"
+                      >
+                        <Search size={20} />
+                        <span className="text-sm font-medium">Search</span>
+                      </button>
+                    )}
                     
                     <Link
                       href={getAccountUrl()}
@@ -379,20 +392,22 @@ const Header = () => {
                       <span className="text-sm font-medium">Account</span>
                     </Link>
                     
-                    <Link
-                      href={getWishlistUrl()}
-                      className="flex items-center space-x-2 p-2 text-luxury-black hover:text-luxury-gold transition-colors duration-200"
-                    >
-                      <div className="relative">
-                        <Heart size={20} />
-                        {wishlistCount > 0 && (
-                          <span className="absolute -top-1 -right-1 h-4 w-4 text-xs font-medium text-luxury-black bg-luxury-gold rounded-full flex items-center justify-center">
-                            {wishlistCount > 9 ? '9+' : wishlistCount}
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-sm font-medium">Wishlist ({wishlistCount})</span>
-                    </Link>
+                    {isWishlistEnabled && (
+                      <Link
+                        href={getWishlistUrl()}
+                        className="flex items-center space-x-2 p-2 text-luxury-black hover:text-luxury-gold transition-colors duration-200"
+                      >
+                        <div className="relative">
+                          <Heart size={20} />
+                          {wishlistCount > 0 && (
+                            <span className="absolute -top-1 -right-1 h-4 w-4 text-xs font-medium text-luxury-black bg-luxury-gold rounded-full flex items-center justify-center">
+                              {wishlistCount > 9 ? '9+' : wishlistCount}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-sm font-medium">Wishlist ({wishlistCount})</span>
+                      </Link>
+                    )}
                   </div>
 
                   {/* Mobile Navigation Links */}
@@ -433,7 +448,9 @@ const Header = () => {
       </header>
 
       {/* Search Modal */}
-      <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+      {isSearchEnabled && (
+        <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+      )}
 
       {/* Cart Sidebar */}
       <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />

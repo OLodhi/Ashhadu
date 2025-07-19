@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/auth-utils-server';
+import { sendWelcomeEmail } from '@/lib/email';
 
 // GET /api/customers - List all customers for admin
 export async function GET(request: NextRequest) {
@@ -55,12 +56,13 @@ export async function GET(request: NextRequest) {
     const adminEmails = adminProfiles?.map(profile => profile.email) || [];
     console.log('Admin emails to exclude:', adminEmails);
 
-    console.log('Customers API - Fetching all customers...');
+    console.log('Customers API - Fetching registered customers (excluding guests)...');
 
-    // Get all customers
+    // Get all customers (excluding guest customers)
     const { data: allCustomers, error: customersError } = await supabaseAdmin
       .from('customers')
       .select('*')
+      .eq('is_guest', false) // Only show registered customers, not guest checkouts
       .order('created_at', { ascending: false });
 
     if (customersError) {
@@ -71,7 +73,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('Total customers fetched:', allCustomers?.length || 0);
+    console.log('Total registered customers fetched:', allCustomers?.length || 0);
 
     // Filter out admin emails from the results (client-side filtering for reliability)
     const filteredCustomers = (allCustomers || []).filter(customer => 
@@ -107,7 +109,8 @@ export async function GET(request: NextRequest) {
           supabaseAdmin
             .from('addresses')
             .select('id', { count: 'exact' })
-            .eq('customer_id', customer.id),
+            .eq('customer_id', customer.id)
+            .eq('type', 'shipping'), // Only count shipping addresses
           supabaseAdmin
             .from('payment_methods')
             .select('id', { count: 'exact' })
@@ -130,7 +133,7 @@ export async function GET(request: NextRequest) {
           stripeCustomerId: customer.stripe_customer_id,
           createdAt: customer.created_at,
           updatedAt: customer.updated_at,
-          addressCount: addressResult.count || 0,
+          addressCount: addressResult.count || 0, // Shipping addresses only
           paymentMethodCount: paymentResult.count || 0,
           orderCount: orderResult.count || 0,
         };
@@ -168,22 +171,30 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Check if user is admin
+    // Get user profile 
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('role')
+      .select('role, email')
       .eq('user_id', user.id)
       .single();
     
-    if (profileError || profile?.role !== 'admin') {
+    if (profileError) {
       return NextResponse.json(
-        { success: false, error: 'Admin access required' },
+        { success: false, error: 'Profile not found' },
         { status: 403 }
       );
     }
 
     const body = await request.json();
     const { email, firstName, lastName, phone, marketingConsent } = body;
+
+    // Allow users to create customer records for their own email OR admins to create any
+    if (profile.role !== 'admin' && profile.email !== email) {
+      return NextResponse.json(
+        { success: false, error: 'You can only create customer records for your own email address' },
+        { status: 403 }
+      );
+    }
 
     console.log('Creating customer with data:', { email, firstName, lastName, phone, marketingConsent });
 
@@ -247,6 +258,23 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('Customer created successfully:', newCustomer.id);
+
+    // Send welcome email to new customers (but not for admin-created customers)
+    if (profile.role !== 'admin') {
+      try {
+        const customerName = `${firstName} ${lastName}`.trim();
+        const welcomeEmailResult = await sendWelcomeEmail(email, customerName);
+        
+        if (welcomeEmailResult.success) {
+          console.log('✅ Welcome email sent to new customer:', email);
+        } else {
+          console.error('❌ Failed to send welcome email:', welcomeEmailResult.error);
+        }
+      } catch (emailError) {
+        console.error('❌ Error sending welcome email:', emailError);
+        // Don't fail customer creation if email fails
+      }
+    }
 
     // Transform to camelCase for frontend
     const transformedCustomer = {

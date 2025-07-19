@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/cartStore';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { formatPrice } from '@/lib/utils';
 import { PaymentMethodType } from '@/types/payment';
 import Logo from '@/components/ui/Logo';
@@ -41,15 +42,12 @@ interface CheckoutFormData {
     method: PaymentMethodType | '';
     saveCard: boolean;
   };
-  marketing: {
-    consent: boolean;
-    newsletter: boolean;
-  };
 }
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { user, customer, isLoading } = useAuth();
+  const { isStripeEnabled, isPayPalEnabled, isApplePayEnabled, isGooglePayEnabled } = useSettings();
   const { items, getTotalPrice, getTotalItems, clearCart } = useCartStore();
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingMessage, setProcessingMessage] = useState('');
@@ -92,10 +90,6 @@ export default function CheckoutPage() {
     payment: {
       method: '',
       saveCard: false,
-    },
-    marketing: {
-      consent: false,
-      newsletter: false,
     },
   });
 
@@ -317,6 +311,7 @@ export default function CheckoutPage() {
       // Create order with payment confirmation
       const orderData = {
         customer: formData.customer,
+        userId: user?.id || null, // Include user ID to distinguish guest vs registered
         billing: showAddressForm || !defaultAddress ? formData.billing : {
           // Use existing address ID to prevent duplication
           existingAddressId: defaultAddress.id,
@@ -351,7 +346,6 @@ export default function CheckoutPage() {
         paymentMethod: 'card',
         paymentIntentId: paymentResult.paymentIntentId,
         paymentStatus: 'paid',
-        marketing: formData.marketing,
       };
 
       console.log('Creating order with data:', orderData);
@@ -484,6 +478,7 @@ export default function CheckoutPage() {
       // Prepare order data for non-card payment methods
       const orderData = {
         customer: formData.customer,
+        userId: user?.id || null, // Include user ID to distinguish guest vs registered
         billing: showAddressForm || !defaultAddress ? formData.billing : {
           // Use existing address ID to prevent duplication
           existingAddressId: defaultAddress.id,
@@ -516,7 +511,6 @@ export default function CheckoutPage() {
         total: finalTotal,
         currency: 'GBP',
         paymentMethod: formData.payment.method,
-        marketing: formData.marketing,
       };
 
       console.log('Processing order with payment method:', formData.payment.method);
@@ -558,6 +552,7 @@ export default function CheckoutPage() {
       // Prepare order data
       const orderData = {
         customer: formData.customer,
+        userId: user?.id || null, // Include user ID to distinguish guest vs registered
         billing: showAddressForm || !defaultAddress ? formData.billing : {
           // Use existing address ID to prevent duplication
           existingAddressId: defaultAddress.id,
@@ -591,7 +586,6 @@ export default function CheckoutPage() {
         currency: 'GBP',
         paymentMethod: 'card',
         paymentMethodId: defaultPaymentMethod?.providerPaymentMethodId, // Use saved payment method
-        marketing: formData.marketing,
       };
 
       console.log('Processing order with saved payment method:', orderData);
@@ -1300,36 +1294,6 @@ export default function CheckoutPage() {
                       </div>
                     )}
 
-                    {/* Marketing Preferences */}
-                    <div className="pt-6 border-t border-luxury-gray-200">
-                      <h3 className="font-medium text-luxury-black mb-4">Marketing Preferences</h3>
-                      <div className="space-y-3">
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            id="marketingConsent"
-                            checked={formData.marketing.consent}
-                            onChange={(e) => updateFormData('marketing', 'consent', e.target.checked)}
-                            className="h-4 w-4 text-luxury-gold focus:ring-luxury-gold border-luxury-gray-300 rounded"
-                          />
-                          <label htmlFor="marketingConsent" className="ml-2 block text-sm text-luxury-gray-700">
-                            I agree to receive marketing communications from Ashhadu Islamic Art
-                          </label>
-                        </div>
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            id="newsletter"
-                            checked={formData.marketing.newsletter}
-                            onChange={(e) => updateFormData('marketing', 'newsletter', e.target.checked)}
-                            className="h-4 w-4 text-luxury-gold focus:ring-luxury-gold border-luxury-gray-300 rounded"
-                          />
-                          <label htmlFor="newsletter" className="ml-2 block text-sm text-luxury-gray-700">
-                            Subscribe to our newsletter for exclusive offers and new arrivals
-                          </label>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 ) : showPaymentSelection ? (
                   /* Show payment method selection tiles */
@@ -1402,138 +1366,116 @@ export default function CheckoutPage() {
                       </div>
                     </div>
 
-                    {/* Marketing Preferences */}
-                    <div className="pt-6 border-t border-luxury-gray-200">
-                      <h3 className="font-medium text-luxury-black mb-4">Marketing Preferences</h3>
-                      <div className="space-y-3">
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            id="marketingConsent"
-                            checked={formData.marketing.consent}
-                            onChange={(e) => updateFormData('marketing', 'consent', e.target.checked)}
-                            className="h-4 w-4 text-luxury-gold focus:ring-luxury-gold border-luxury-gray-300 rounded"
-                          />
-                          <label htmlFor="marketingConsent" className="ml-2 block text-sm text-luxury-gray-700">
-                            I agree to receive marketing communications from Ashhadu Islamic Art
-                          </label>
-                        </div>
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            id="newsletter"
-                            checked={formData.marketing.newsletter}
-                            onChange={(e) => updateFormData('marketing', 'newsletter', e.target.checked)}
-                            className="h-4 w-4 text-luxury-gold focus:ring-luxury-gold border-luxury-gray-300 rounded"
-                          />
-                          <label htmlFor="newsletter" className="ml-2 block text-sm text-luxury-gray-700">
-                            Subscribe to our newsletter for exclusive offers and new arrivals
-                          </label>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 ) : (
                   /* Default payment method selection for non-logged in users or no saved methods */
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div
-                        onClick={() => updateFormData('payment', 'method', 'card')}
-                        className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                          formData.payment.method === 'card' 
-                            ? 'border-luxury-gold bg-luxury-gold/5' 
-                            : 'border-luxury-gray-200 hover:border-luxury-gold/50'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <CreditCard size={20} className="text-luxury-gold mr-3" />
-                            <div>
-                              <p className="font-medium text-luxury-black">Credit Card</p>
-                              <p className="text-sm text-luxury-gray-600">Visa, Mastercard, Amex</p>
-                            </div>
-                          </div>
-                          <div className={`w-4 h-4 rounded-full border-2 transition-all ${
+                      {isStripeEnabled && (
+                        <div
+                          onClick={() => updateFormData('payment', 'method', 'card')}
+                          className={`p-4 border rounded-lg cursor-pointer transition-all ${
                             formData.payment.method === 'card' 
-                              ? 'border-luxury-gold bg-luxury-gold' 
-                              : 'border-luxury-gray-300'
-                          }`} />
-                        </div>
-                      </div>
-
-                      <div
-                        onClick={() => updateFormData('payment', 'method', 'paypal')}
-                        className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                          formData.payment.method === 'paypal' 
-                            ? 'border-luxury-gold bg-luxury-gold/5' 
-                            : 'border-luxury-gray-200 hover:border-luxury-gold/50'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <div className="w-5 h-5 bg-blue-600 rounded mr-3 flex items-center justify-center">
-                              <span className="text-white text-xs font-bold">P</span>
+                              ? 'border-luxury-gold bg-luxury-gold/5' 
+                              : 'border-luxury-gray-200 hover:border-luxury-gold/50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <CreditCard size={20} className="text-luxury-gold mr-3" />
+                              <div>
+                                <p className="font-medium text-luxury-black">Credit Card</p>
+                                <p className="text-sm text-luxury-gray-600">Visa, Mastercard, Amex</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-medium text-luxury-black">PayPal</p>
-                              <p className="text-sm text-luxury-gray-600">Pay with PayPal</p>
-                            </div>
+                            <div className={`w-4 h-4 rounded-full border-2 transition-all ${
+                              formData.payment.method === 'card' 
+                                ? 'border-luxury-gold bg-luxury-gold' 
+                                : 'border-luxury-gray-300'
+                            }`} />
                           </div>
-                          <div className={`w-4 h-4 rounded-full border-2 transition-all ${
+                        </div>
+                      )}
+
+                      {isPayPalEnabled && (
+                        <div
+                          onClick={() => updateFormData('payment', 'method', 'paypal')}
+                          className={`p-4 border rounded-lg cursor-pointer transition-all ${
                             formData.payment.method === 'paypal' 
-                              ? 'border-luxury-gold bg-luxury-gold' 
-                              : 'border-luxury-gray-300'
-                          }`} />
-                        </div>
-                      </div>
-
-                      <div
-                        onClick={() => updateFormData('payment', 'method', 'apple_pay')}
-                        className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                          formData.payment.method === 'apple_pay' 
-                            ? 'border-luxury-gold bg-luxury-gold/5' 
-                            : 'border-luxury-gray-200 hover:border-luxury-gold/50'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <Smartphone size={20} className="text-luxury-gold mr-3" />
-                            <div>
-                              <p className="font-medium text-luxury-black">Apple Pay</p>
-                              <p className="text-sm text-luxury-gray-600">Pay with Touch ID</p>
+                              ? 'border-luxury-gold bg-luxury-gold/5' 
+                              : 'border-luxury-gray-200 hover:border-luxury-gold/50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <div className="w-5 h-5 bg-blue-600 rounded mr-3 flex items-center justify-center">
+                                <span className="text-white text-xs font-bold">P</span>
+                              </div>
+                              <div>
+                                <p className="font-medium text-luxury-black">PayPal</p>
+                                <p className="text-sm text-luxury-gray-600">Pay with PayPal</p>
+                              </div>
                             </div>
+                            <div className={`w-4 h-4 rounded-full border-2 transition-all ${
+                              formData.payment.method === 'paypal' 
+                                ? 'border-luxury-gold bg-luxury-gold' 
+                                : 'border-luxury-gray-300'
+                            }`} />
                           </div>
-                          <div className={`w-4 h-4 rounded-full border-2 transition-all ${
+                        </div>
+                      )}
+
+                      {isApplePayEnabled && (
+                        <div
+                          onClick={() => updateFormData('payment', 'method', 'apple_pay')}
+                          className={`p-4 border rounded-lg cursor-pointer transition-all ${
                             formData.payment.method === 'apple_pay' 
-                              ? 'border-luxury-gold bg-luxury-gold' 
-                              : 'border-luxury-gray-300'
-                          }`} />
-                        </div>
-                      </div>
-
-                      <div
-                        onClick={() => updateFormData('payment', 'method', 'google_pay')}
-                        className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                          formData.payment.method === 'google_pay' 
-                            ? 'border-luxury-gold bg-luxury-gold/5' 
-                            : 'border-luxury-gray-200 hover:border-luxury-gold/50'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <Smartphone size={20} className="text-luxury-gold mr-3" />
-                            <div>
-                              <p className="font-medium text-luxury-black">Google Pay</p>
-                              <p className="text-sm text-luxury-gray-600">Pay with Google</p>
+                              ? 'border-luxury-gold bg-luxury-gold/5' 
+                              : 'border-luxury-gray-200 hover:border-luxury-gold/50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <Smartphone size={20} className="text-luxury-gold mr-3" />
+                              <div>
+                                <p className="font-medium text-luxury-black">Apple Pay</p>
+                                <p className="text-sm text-luxury-gray-600">Pay with Touch ID</p>
+                              </div>
                             </div>
+                            <div className={`w-4 h-4 rounded-full border-2 transition-all ${
+                              formData.payment.method === 'apple_pay' 
+                                ? 'border-luxury-gold bg-luxury-gold' 
+                                : 'border-luxury-gray-300'
+                            }`} />
                           </div>
-                          <div className={`w-4 h-4 rounded-full border-2 transition-all ${
-                            formData.payment.method === 'google_pay' 
-                              ? 'border-luxury-gold bg-luxury-gold' 
-                              : 'border-luxury-gray-300'
-                          }`} />
                         </div>
-                      </div>
+                      )}
+
+                      {isGooglePayEnabled && (
+                        <div
+                          onClick={() => updateFormData('payment', 'method', 'google_pay')}
+                          className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                            formData.payment.method === 'google_pay' 
+                              ? 'border-luxury-gold bg-luxury-gold/5' 
+                              : 'border-luxury-gray-200 hover:border-luxury-gold/50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <Smartphone size={20} className="text-luxury-gold mr-3" />
+                              <div>
+                                <p className="font-medium text-luxury-black">Google Pay</p>
+                                <p className="text-sm text-luxury-gray-600">Pay with Google</p>
+                              </div>
+                            </div>
+                            <div className={`w-4 h-4 rounded-full border-2 transition-all ${
+                              formData.payment.method === 'google_pay' 
+                                ? 'border-luxury-gold bg-luxury-gold' 
+                                : 'border-luxury-gray-300'
+                            }`} />
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Stripe Card Form */}
@@ -1607,36 +1549,6 @@ export default function CheckoutPage() {
                       </div>
                     )}
 
-                    {/* Marketing Preferences */}
-                    <div className="pt-6 border-t border-luxury-gray-200">
-                      <h3 className="font-medium text-luxury-black mb-4">Marketing Preferences</h3>
-                      <div className="space-y-3">
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            id="marketingConsent"
-                            checked={formData.marketing.consent}
-                            onChange={(e) => updateFormData('marketing', 'consent', e.target.checked)}
-                            className="h-4 w-4 text-luxury-gold focus:ring-luxury-gold border-luxury-gray-300 rounded"
-                          />
-                          <label htmlFor="marketingConsent" className="ml-2 block text-sm text-luxury-gray-700">
-                            I agree to receive marketing communications from Ashhadu Islamic Art
-                          </label>
-                        </div>
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            id="newsletter"
-                            checked={formData.marketing.newsletter}
-                            onChange={(e) => updateFormData('marketing', 'newsletter', e.target.checked)}
-                            className="h-4 w-4 text-luxury-gold focus:ring-luxury-gold border-luxury-gray-300 rounded"
-                          />
-                          <label htmlFor="newsletter" className="ml-2 block text-sm text-luxury-gray-700">
-                            Subscribe to our newsletter for exclusive offers and new arrivals
-                          </label>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 )}
 

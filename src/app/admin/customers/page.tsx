@@ -38,7 +38,7 @@ interface Customer {
   stripeCustomerId?: string;
   createdAt: string;
   updatedAt: string;
-  addressCount: number;
+  addressCount: number; // Count of shipping addresses only
   paymentMethodCount: number;
   orderCount: number;
 }
@@ -184,7 +184,7 @@ const CustomersPage = () => {
 
   const exportCustomers = () => {
     const csvContent = [
-      ['Name', 'Email', 'Phone', 'Addresses', 'Payment Methods', 'Orders', 'Marketing Consent', 'Joined'],
+      ['Name', 'Email', 'Phone', 'Shipping Addresses', 'Payment Methods', 'Orders', 'Marketing Consent', 'Joined'],
       ...customers.map(customer => [
         customer.fullName,
         customer.email,
@@ -878,7 +878,7 @@ const CustomersPage = () => {
                       <MapPin className="h-3 w-3 text-luxury-gray-400" />
                     </div>
                     <p className="text-xs font-medium text-luxury-black">{customer.addressCount}</p>
-                    <p className="text-xs text-luxury-gray-500">Addresses</p>
+                    <p className="text-xs text-luxury-gray-500">Shipping</p>
                   </div>
                   <div className="text-center">
                     <div className="flex items-center justify-center mb-1">

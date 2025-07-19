@@ -293,9 +293,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const resetPassword = async (email: string) => {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+    // Use the auth confirm route which will handle the token and redirect to reset-password
+    const redirectUrl = `${siteUrl}/auth/confirm?next=/reset-password`;
+    
+    console.log('🔍 AuthContext: Sending password reset email');
+    console.log('Email:', email);
+    console.log('Redirect URL:', redirectUrl);
+    
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`
+      redirectTo: redirectUrl,
+      captchaToken: undefined // Ensure we don't require captcha for password reset
     });
+    
+    if (error) {
+      console.error('❌ Password reset error:', error);
+    } else {
+      console.log('✅ Password reset email sent successfully');
+      console.log('🔍 Email should contain a link to:', redirectUrl);
+    }
+    
     return { error };
   };
 

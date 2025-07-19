@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import Logo from '@/components/ui/Logo';
 import { useAuth } from '@/contexts/AuthContext';
+import NotificationDropdown from '@/components/admin/NotificationDropdown';
 import toast from 'react-hot-toast';
 
 interface AdminLayoutClientProps {
@@ -36,6 +37,7 @@ export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
     { name: 'Products', href: '/admin/products', icon: Package },
     { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
     { name: 'Customers', href: '/admin/customers', icon: Users },
+    { name: 'Notifications', href: '/admin/notifications', icon: Bell },
     { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
     { name: 'Settings', href: '/admin/settings', icon: Settings },
   ];
@@ -258,12 +260,7 @@ export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
               </div>
 
               {/* Notifications */}
-              <button className="relative p-2 text-luxury-black hover:text-luxury-gold transition-colors">
-                <Bell className="h-5 w-5" />
-                <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                  3
-                </span>
-              </button>
+              <NotificationDropdown />
 
               {/* Quick Actions */}
               <Link

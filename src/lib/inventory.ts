@@ -1,4 +1,5 @@
 import { createServerSupabaseClient } from '@/lib/auth-utils-server';
+import { sendAdminLowStockNotification } from '@/lib/email';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export interface StockMovement {
@@ -264,6 +265,9 @@ async function processStockMovement(movement: StockMovement, adminClient?: Supab
 
     console.log(`Stock movement processed: ${product.name} ${movement.type} ${movement.quantity} (${product.stock} → ${newStock})`);
 
+    // Check for low stock or out of stock alerts
+    await checkStockAlerts(movement.productId, product.name, product.stock, newStock, product.low_stock_threshold || 5);
+
   } catch (error) {
     console.error('Error processing stock movement:', error);
     throw error;
@@ -386,4 +390,72 @@ export async function getStockSummary(): Promise<{
   });
 
   return summary;
+}
+
+/**
+ * Check for stock alerts and send email notifications if needed
+ */
+async function checkStockAlerts(
+  productId: string,
+  productName: string,
+  previousStock: number,
+  currentStock: number,
+  threshold: number
+): Promise<void> {
+  try {
+    // Check if we crossed a threshold that warrants an alert
+    const wasInStock = previousStock > threshold;
+    const wasLowStock = previousStock > 0 && previousStock <= threshold;
+    const isNowOutOfStock = currentStock <= 0;
+    const isNowLowStock = currentStock > 0 && currentStock <= threshold;
+
+    let shouldSendAlert = false;
+    let alertType = '';
+
+    // Send alert if:
+    // 1. Product went from in-stock to low-stock
+    // 2. Product went out of stock
+    // 3. Product went from any state to low-stock (if not already low)
+    if (wasInStock && isNowLowStock) {
+      shouldSendAlert = true;
+      alertType = 'low-stock';
+    } else if (currentStock <= 0 && previousStock > 0) {
+      shouldSendAlert = true;
+      alertType = 'out-of-stock';
+    }
+
+    if (!shouldSendAlert) {
+      return;
+    }
+
+    console.log(`📧 Stock alert triggered for ${productName}: ${alertType} (${previousStock} → ${currentStock})`);
+
+    // Get admin emails from site settings
+    const supabase = await createServerSupabaseClient();
+    const { data: adminEmailsSetting } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'admin_notification_emails')
+      .single();
+
+    const adminEmails = adminEmailsSetting?.value || ['admin@ashhadu.co.uk'];
+
+    // Send low stock notification email
+    const emailResult = await sendAdminLowStockNotification(
+      Array.isArray(adminEmails) ? adminEmails : [adminEmails],
+      productName,
+      currentStock,
+      threshold
+    );
+
+    if (emailResult.success) {
+      console.log('✅ Stock alert email sent successfully');
+    } else {
+      console.error('❌ Failed to send stock alert email:', emailResult.error);
+    }
+
+  } catch (error) {
+    console.error('❌ Error checking stock alerts:', error);
+    // Don't throw error as this shouldn't fail stock operations
+  }
 }

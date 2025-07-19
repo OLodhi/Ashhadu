@@ -4,6 +4,8 @@ import './globals.css';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { WishlistProvider } from '@/contexts/WishlistContext';
+import { SettingsProvider } from '@/contexts/SettingsContext';
+import { NotificationProvider } from '@/contexts/NotificationContext';
 import { ImpersonationBanner } from '@/components/admin/ImpersonationBanner';
 
 // Font configurations
@@ -68,10 +70,14 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${playfairDisplay.variable}`}>
       <body className="font-inter antialiased">
         <AuthProvider>
-          <WishlistProvider>
-            <ImpersonationBanner />
-            {children}
-          </WishlistProvider>
+          <SettingsProvider>
+            <WishlistProvider>
+              <NotificationProvider>
+                <ImpersonationBanner />
+                {children}
+              </NotificationProvider>
+            </WishlistProvider>
+          </SettingsProvider>
           <Toaster
             position="top-right"
             toastOptions={{

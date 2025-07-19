@@ -1,73 +1,54 @@
-import { createServerClient } from '@supabase/ssr';
-import { NextResponse } from 'next/server';
-import { NextRequest } from 'next/server';
-import { Database } from '@/types/database';
+import { NextRequest, NextResponse } from 'next/server';
+import { createServerSupabaseClient } from '@/lib/auth-utils-server';
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/account';
-  const error = searchParams.get('error');
-  const errorDescription = searchParams.get('error_description');
-
+  const requestUrl = new URL(request.url);
+  const code = requestUrl.searchParams.get('code');
+  const next = requestUrl.searchParams.get('next') || '/';
+  const error = requestUrl.searchParams.get('error');
+  const error_description = requestUrl.searchParams.get('error_description');
+  
+  console.log('🔄 Auth callback received:', { 
+    code: code?.substring(0, 10) + '...', 
+    next,
+    error,
+    error_description 
+  });
+  
+  // If there's an error, redirect to the error page with details
   if (error) {
-    console.error('OAuth error:', error, errorDescription);
-    return NextResponse.redirect(
-      `${origin}/login?error=${encodeURIComponent(errorDescription || error)}`
-    );
+    console.error('❌ Auth callback error:', error, error_description);
+    const errorUrl = new URL('/auth/auth-code-error', request.url);
+    errorUrl.searchParams.set('error', error);
+    if (error_description) {
+      errorUrl.searchParams.set('error_description', error_description);
+    }
+    return NextResponse.redirect(errorUrl);
   }
 
   if (code) {
-    const supabase = createServerClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
-          },
-          set(name: string, value: string, options: any) {
-            // This will be handled by the response
-          },
-          remove(name: string, options: any) {
-            // This will be handled by the response
-          },
-        },
-      }
-    );
-
     try {
-      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-
+      const supabase = await createServerSupabaseClient();
+      
+      // Exchange the code for a session
+      const { data: { session }, error } = await supabase.auth.exchangeCodeForSession(code);
+      
       if (error) {
-        console.error('Code exchange error:', error);
-        return NextResponse.redirect(
-          `${origin}/login?error=${encodeURIComponent(error.message)}`
-        );
+        console.error('❌ Auth callback error:', error);
+        return NextResponse.redirect(new URL('/auth/auth-code-error', request.url));
       }
-
-      if (data.session) {
-        // Set cookies and redirect
-        const response = NextResponse.redirect(`${origin}${next}`);
-        
-        // Set session cookies
-        response.cookies.set('supabase-auth-token', data.session.access_token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          maxAge: 60 * 60 * 24 * 7, // 1 week
-        });
-
-        return response;
+      
+      if (session) {
+        console.log('✅ Auth callback successful, redirecting to:', next);
+        return NextResponse.redirect(new URL(next, request.url));
       }
     } catch (error) {
-      console.error('OAuth callback error:', error);
-      return NextResponse.redirect(
-        `${origin}/login?error=${encodeURIComponent('Authentication failed')}`
-      );
+      console.error('❌ Auth callback exception:', error);
+      return NextResponse.redirect(new URL('/auth/auth-code-error', request.url));
     }
   }
 
-  // No code found, redirect to login
-  return NextResponse.redirect(`${origin}/login`);
+  // If no code, redirect to login
+  console.log('❌ No auth code found, redirecting to login');
+  return NextResponse.redirect(new URL('/login', request.url));
 }

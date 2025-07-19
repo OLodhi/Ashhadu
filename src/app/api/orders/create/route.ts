@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createServerSupabaseClient } from '@/lib/auth-utils-server';
 import { checkStockAvailability, deductStock } from '@/lib/inventory';
+import { sendOrderConfirmationEmail, sendAdminNewOrderNotification } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -60,6 +61,9 @@ export async function POST(request: NextRequest) {
       customerId = existingCustomer.id;
     } else {
       // Create new customer
+      // Determine if this is a guest customer (no authenticated user)
+      const isGuest = !orderData.userId; // If no userId provided, it's a guest checkout
+      
       const { data: newCustomer, error: customerError } = await supabaseAdmin
         .from('customers')
         .insert({
@@ -68,7 +72,8 @@ export async function POST(request: NextRequest) {
           last_name: orderData.customer.lastName || '',
           phone: orderData.customer.phone || null,
           date_of_birth: null,
-          marketing_consent: orderData.marketing?.consent || false
+          marketing_consent: false,
+          is_guest: isGuest
         })
         .select('id')
         .single();
@@ -292,6 +297,18 @@ export async function POST(request: NextRequest) {
       // Don't fail the entire order creation for this
     }
     
+    // Send email notifications for paid orders
+    console.log('🔍 Order Creation: Payment Status:', orderData.paymentStatus);
+    if (orderData.paymentStatus === 'paid') {
+      console.log('📧 Sending email notifications for paid order:', orderNumber);
+      await sendEmailNotifications(newOrder, orderNumber, orderData, orderItems, supabaseAdmin);
+    } else {
+      console.log('⏳ Skipping email notifications - order not paid yet:', orderNumber, 'Status:', orderData.paymentStatus);
+      // TEMPORARY: Send emails for all orders during testing
+      console.log('🧪 TEST MODE: Sending email notifications anyway for testing');
+      await sendEmailNotifications(newOrder, orderNumber, orderData, orderItems, supabaseAdmin);
+    }
+    
     // Return success response
     return NextResponse.json({
       success: true,
@@ -313,5 +330,151 @@ export async function POST(request: NextRequest) {
       { success: false, error: 'Internal server error. Please try again.' },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Send email notifications for new orders
+ */
+async function sendEmailNotifications(
+  order: any, 
+  orderNumber: string, 
+  orderData: any, 
+  orderItems: any[], 
+  supabaseAdmin: any
+) {
+  try {
+    console.log('📧 Sending email notifications for order:', orderNumber);
+
+    // Get customer information
+    const customerName = `${orderData.customer.firstName || ''} ${orderData.customer.lastName || ''}`.trim() || orderData.customer.email;
+
+    // Get product details for order items
+    const productIds = orderData.items.map((item: any) => item.productId);
+    const { data: products } = await supabaseAdmin
+      .from('products')
+      .select('id, name, arabic_name, image_url')
+      .in('id', productIds);
+
+    // Get address details
+    const { data: shippingAddress } = await supabaseAdmin
+      .from('addresses')
+      .select('*')
+      .eq('id', order.shipping_address_id)
+      .single();
+
+    const { data: billingAddress } = await supabaseAdmin
+      .from('addresses')
+      .select('*')
+      .eq('id', order.billing_address_id)
+      .single();
+
+    // Prepare order items with product details
+    const enrichedOrderItems = orderData.items.map((item: any) => {
+      const product = products?.find(p => p.id === item.productId);
+      return {
+        id: item.productId,
+        name: item.name || product?.name || 'Unknown Product',
+        arabic_name: product?.arabic_name,
+        price: item.price,
+        quantity: item.quantity,
+        image_url: product?.image_url,
+      };
+    });
+
+    // Send customer order confirmation email
+    const customerEmailResult = await sendOrderConfirmationEmail(
+      orderData.customer.email,
+      customerName,
+      orderNumber,
+      {
+        orderDate: new Date().toLocaleDateString('en-GB', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        }),
+        orderItems: enrichedOrderItems,
+        subtotal: orderData.subtotal || order.subtotal,
+        shipping: orderData.shippingAmount || order.shipping_amount,
+        tax: orderData.vatAmount || order.tax_amount,
+        total: order.total,
+        shippingAddress: shippingAddress ? {
+          name: `${shippingAddress.first_name} ${shippingAddress.last_name}`,
+          address: shippingAddress.address_line_1,
+          city: shippingAddress.city,
+          postalCode: shippingAddress.postcode,
+          country: shippingAddress.country,
+        } : null,
+        orderId: order.id,
+      }
+    );
+
+    if (customerEmailResult.success) {
+      console.log('✅ Customer order confirmation email sent successfully');
+    } else {
+      console.error('❌ Failed to send customer order confirmation email:', customerEmailResult.error);
+    }
+
+    // Get admin emails from site settings
+    const { data: adminEmailsSetting, error: adminEmailsError } = await supabaseAdmin
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'admin_notification_emails')
+      .single();
+
+    console.log('🔍 Admin Email Setting Debug:', {
+      adminEmailsSetting,
+      adminEmailsError,
+      settingValue: adminEmailsSetting?.value,
+      settingType: typeof adminEmailsSetting?.value
+    });
+
+    const adminEmails = adminEmailsSetting?.value || ['admin@ashhadu.co.uk'];
+    console.log('🔍 Final Admin Emails:', adminEmails);
+
+    // Send admin notification email
+    const adminEmailResult = await sendAdminNewOrderNotification(
+      Array.isArray(adminEmails) ? adminEmails : [adminEmails],
+      orderNumber,
+      {
+        orderDate: new Date().toLocaleDateString('en-GB'),
+        customerName,
+        customerEmail: orderData.customer.email,
+        customerPhone: orderData.customer.phone,
+        orderItems: enrichedOrderItems,
+        subtotal: orderData.subtotal || order.subtotal,
+        shipping: orderData.shippingAmount || order.shipping_amount,
+        tax: orderData.vatAmount || order.tax_amount,
+        total: order.total,
+        paymentMethod: orderData.paymentMethod,
+        paymentStatus: order.payment_status,
+        shippingAddress: shippingAddress ? {
+          name: `${shippingAddress.first_name} ${shippingAddress.last_name}`,
+          address: shippingAddress.address_line_1,
+          city: shippingAddress.city,
+          postalCode: shippingAddress.postcode,
+          country: shippingAddress.country,
+        } : null,
+        billingAddress: billingAddress ? {
+          name: `${billingAddress.first_name} ${billingAddress.last_name}`,
+          address: billingAddress.address_line_1,
+          city: billingAddress.city,
+          postalCode: billingAddress.postcode,
+          country: billingAddress.country,
+        } : null,
+        orderId: order.id,
+        urgent: order.total > 200, // Mark as urgent for large orders
+      }
+    );
+
+    if (adminEmailResult.success) {
+      console.log('✅ Admin order notification email sent successfully');
+    } else {
+      console.error('❌ Failed to send admin order notification email:', adminEmailResult.error);
+    }
+
+  } catch (error) {
+    console.error('❌ Error sending email notifications:', error);
+    // Don't fail the order creation if email fails
   }
 }

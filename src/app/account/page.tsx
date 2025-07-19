@@ -468,7 +468,7 @@ export default function AccountDashboard() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <Link
-                        href={`/products/${item.product.slug}`}
+                        href={`/products/${item.product.id}`}
                         className="text-sm font-medium text-gray-900 hover:text-luxury-gold transition-colors truncate block"
                       >
                         {item.product.name}

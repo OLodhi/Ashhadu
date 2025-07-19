@@ -19,8 +19,11 @@ export default function PayPalCancelPage() {
     const orderId = searchParams.get('orderId');
     
     if (orderId) {
-      // Cancel the order when the component loads
+      // Cancel the order immediately when the component loads
       cancelOrder(orderId);
+    } else {
+      // If no order ID is provided, still show an error
+      setError('No order ID provided. If you have an active order, please contact support.');
     }
   }, [searchParams]);
 
@@ -28,36 +31,33 @@ export default function PayPalCancelPage() {
     try {
       setIsProcessing(true);
       
-      // Cancel the order in the database
-      const response = await fetch(`/api/orders/${orderId}`, {
-        method: 'PUT',
+      console.log(`🔍 Cancelling PayPal order: ${orderId}`);
+      
+      // Cancel the order using the PayPal-specific endpoint (no auth required)
+      const response = await fetch(`/api/orders/${orderId}/cancel-paypal`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          status: 'cancelled',
-          payment_status: 'failed',
-          notes: 'Order cancelled due to PayPal payment cancellation'
-        }),
       });
 
       const result = await response.json();
       
       if (!result.success) {
-        console.error('Failed to cancel order:', result.error);
-        setError(`Failed to cancel order: ${result.error}. Please contact support.`);
+        console.error('Failed to cancel PayPal order:', result.error);
+        setError(`Failed to cancel order: ${result.error}. Please contact support if this order should be cancelled.`);
       } else {
-        console.log('Order cancelled successfully:', orderId);
+        console.log('✅ PayPal order cancelled successfully:', orderId);
       }
     } catch (error) {
-      console.error('Error cancelling order:', error);
-      setError(`Error cancelling order: ${error instanceof Error ? error.message : 'Network error'}. Please contact support.`);
+      console.error('Error cancelling PayPal order:', error);
+      setError(`Error cancelling order: ${error instanceof Error ? error.message : 'Network error'}. Please contact support if this order should be cancelled.`);
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleReturnToCheckout = () => {
+  const handleCloseOrReturn = () => {
     if (isPopup) {
       window.close();
     } else {
@@ -66,11 +66,7 @@ export default function PayPalCancelPage() {
   };
 
   const handleReturnToCart = () => {
-    if (isPopup) {
-      window.close();
-    } else {
-      router.push('/cart');
-    }
+    router.push('/cart');
   };
 
   return (
@@ -101,17 +97,19 @@ export default function PayPalCancelPage() {
             </p>
             <div className="space-y-3">
               <button
-                onClick={handleReturnToCheckout}
+                onClick={handleCloseOrReturn}
                 className="w-full px-6 py-3 bg-luxury-gold text-luxury-black rounded-md hover:bg-luxury-gold/90 transition-colors font-medium"
               >
                 {isPopup ? 'Close Window' : 'Return to Checkout'}
               </button>
-              <button
-                onClick={handleReturnToCart}
-                className="w-full px-6 py-3 bg-white text-luxury-gray-700 border border-luxury-gray-300 rounded-md hover:bg-luxury-gray-50 transition-colors font-medium"
-              >
-                {isPopup ? 'Close Window' : 'Return to Cart'}
-              </button>
+              {!isPopup && (
+                <button
+                  onClick={handleReturnToCart}
+                  className="w-full px-6 py-3 bg-white text-luxury-gray-700 border border-luxury-gray-300 rounded-md hover:bg-luxury-gray-50 transition-colors font-medium"
+                >
+                  Return to Cart
+                </button>
+              )}
             </div>
           </div>
         </div>

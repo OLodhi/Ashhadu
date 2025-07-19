@@ -10,6 +10,135 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Upcoming features and improvements
 
+## [1.0.13] - 2025-01-19
+
+### Fixed
+- **Email System Overhaul**: Complete resolution of newsletter subscription and order confirmation email issues
+- **Newsletter API Route**: Fixed 404 "Page Not Found" error by restarting Next.js development server after configuration changes
+- **Email Domain Configuration**: Updated email configuration from sandbox domain (`onboarding@resend.dev`) to verified domain (`orders@ashhadu.co.uk`, `newsletter@ashhadu.co.uk`)
+- **React Email Async Rendering**: Fixed "The 'html' field must be a string" Resend error by adding proper `await` to `render()` calls in all email functions
+- **Admin Email Configuration**: Fixed database key mismatch where code looked for `email_admin_notification_emails` but schema used `admin_notification_emails`
+
+### Enhanced
+- **Guest Customer Separation**: Implemented comprehensive system to distinguish guest checkouts from registered customers
+- **Customer Management**: Enhanced admin dashboard to only show registered customers, hiding one-time guest purchases
+- **Address Filtering**: Updated admin customer list to show shipping address count only (excluding billing addresses)
+- **Email Template Integration**: Proper integration with React Email templates using verified domain configuration
+
+### Added
+- **Guest Customer Database Flag**: Added `is_guest` boolean field to customers table to track customer type
+- **Customer Type Detection**: Automatic guest customer identification based on authenticated user status during checkout
+- **Admin Customer Filtering**: Enhanced customer API to filter out guest customers from admin dashboard
+- **Shipping Address Filtering**: Updated address counting logic to only include shipping addresses in admin statistics
+
+### Technical Enhancements
+- **Email Service Architecture**: SSR-compatible email sending with proper async/await patterns
+- **Database Schema Evolution**: Added guest customer flag with proper indexing and constraints
+- **Type Safety Improvements**: Enhanced TypeScript interfaces with clear documentation for address filtering
+- **API Security**: Maintained proper role-based access control while adding customer filtering
+
+### Database Changes
+- **Guest Customer Field**: `ALTER TABLE customers ADD COLUMN is_guest BOOLEAN DEFAULT false NOT NULL;`
+- **Order Creation Logic**: Updated to set guest flag based on authenticated user presence
+- **Customer Queries**: Enhanced to filter guest customers from admin views
+
+### Email System Improvements
+- **Domain Verification**: All emails now use verified `ashhadu.co.uk` domain instead of Resend sandbox
+- **Template Rendering**: Fixed Promise-based rendering issues in React Email templates
+- **Admin Notifications**: Corrected email routing to use proper database setting keys
+- **Newsletter Integration**: Complete newsletter subscription workflow with verified domain
+
+### Customer Experience Improvements
+- **Clean Admin Dashboard**: Only registered customers appear in admin customer management
+- **Accurate Statistics**: Address counts reflect shipping addresses only for clearer logistics data
+- **Proper Email Delivery**: Order confirmations and newsletters delivered from verified business domain
+- **Guest Checkout Functionality**: Maintains seamless guest checkout while properly categorizing customers
+
+### Admin Experience Improvements
+- **Focused Customer List**: Clear separation between registered customers and one-time guest purchases
+- **Shipping Address Focus**: Address statistics relevant to fulfillment operations only
+- **Email Management**: Proper admin notification routing with correct email addresses
+- **Customer Segmentation**: Enhanced ability to target marketing to registered customers only
+
+### API Enhancements
+- **Enhanced Customer API**: Added guest filtering and shipping address filtering with proper permissions
+- **Order Creation API**: Enhanced to detect and flag guest customers automatically
+- **Email API**: Fixed React Email template rendering with proper async handling
+- **Settings Integration**: Improved email setting key lookup consistency
+
+### Files Modified
+- `/src/lib/email/resend-client.ts` - Updated email addresses to use verified domain
+- `/src/lib/email/index.ts` - Fixed async render calls in all email template functions
+- `/src/app/api/orders/create/route.ts` - Added guest customer detection and fixed admin email key lookup
+- `/src/app/checkout/page.tsx` - Enhanced to include userId in all order creation flows
+- `/src/app/api/customers/route.ts` - Added guest customer filtering and shipping address filtering
+- `/src/app/admin/customers/page.tsx` - Updated UI labels to reflect shipping address filtering
+- `/src/lib/inventory.ts` - Fixed admin email setting key for consistency
+- `add-guest-customer-field.sql` - Database migration script for guest customer flag
+
+### Technical Details
+- **React Email Integration**: Proper async/await patterns for server-side email template rendering
+- **Database Key Consistency**: Unified setting key naming between schema and application code
+- **Customer Type Architecture**: Clear separation between guest and registered customer workflows
+- **Email Domain Management**: Complete migration from sandbox to production email configuration
+
+### User Experience
+- **Email Reliability**: All emails now delivered from professional business domain
+- **Admin Clarity**: Clean customer management interface focused on registered users
+- **Guest Checkout**: Maintains seamless anonymous purchase workflow
+- **Data Accuracy**: Proper customer segmentation for business intelligence and marketing
+
+## [1.0.12] - 2025-07-18
+
+### Fixed
+- **Wishlist Product Access**: Fixed "Product not found" error when accessing products from wishlist page by updating links to use product IDs instead of slugs
+- **Password Reset Functionality**: Complete overhaul of password reset system after extensive troubleshooting to resolve "Invalid Reset Link" errors
+- **Supabase Email Template Configuration**: Updated email template to use `{{ .TokenHash }}` instead of `{{ .Token }}` for proper token verification
+- **Password Reset Page Styling**: Applied consistent dark gradient background and glass morphism styling to match other auth pages
+
+### Enhanced
+- **Token Verification Logic**: Comprehensive token handling supporting both `token` and `token_hash` parameters with proper session establishment
+- **Error Handling**: Enhanced error messages and troubleshooting UI for password reset failures
+- **Authentication Flow**: Improved password reset workflow with proper session management and cleanup
+- **UI Consistency**: Unified styling across all authentication pages (login, forgot password, reset password)
+
+### Added
+- **Password Reset Troubleshooting Guide**: Created comprehensive `PASSWORD_RESET_TROUBLESHOOTING.md` with configuration requirements and common solutions
+- **Auth Callback Routes**: Created `/auth/callback` and `/auth/confirm` routes for enhanced authentication handling (used during troubleshooting)
+- **Enhanced Token Support**: Added support for both 6-digit OTP tokens and token hash verification methods
+- **User Experience Improvements**: Better error states, loading indicators, and success feedback throughout password reset flow
+
+### Technical Details
+- **Root Cause Analysis**: Identified mismatch between Supabase email template (`{{ .Token }}`) and code expectations (`{{ .TokenHash }}`)
+- **Extensive Debugging**: Implemented comprehensive logging and error tracking throughout authentication flow
+- **Multiple Fix Attempts**: Tried various approaches including callback routes, token extraction methods, and verification approaches
+- **Final Solution**: Email template configuration change to use `{{ .TokenHash }}` resolved all issues
+- **Session Management**: Proper session cleanup after password update with redirect to login page
+
+### Files Modified
+- `/src/app/account/wishlist/page.tsx` - Fixed product links to use IDs instead of slugs
+- `/src/app/account/page.tsx` - Fixed wishlist product links in recent orders section
+- `/src/app/reset-password/page.tsx` - Complete overhaul with comprehensive token handling and error management
+- `/src/contexts/AuthContext.tsx` - Updated redirect URLs for password reset flow
+- `/src/app/auth/callback/route.ts` - Created auth callback handler (during troubleshooting phase)
+- `/src/app/auth/confirm/route.ts` - Created confirmation handler (during troubleshooting phase)
+
+### Documentation
+- **PASSWORD_RESET_TROUBLESHOOTING.md**: Complete guide for password reset configuration and troubleshooting
+- **CLAUDE.md Updates**: Comprehensive documentation of troubleshooting session and lessons learned
+
+### User Experience
+- **Customer Feedback**: User confirmed password reset functionality: "Thats worked"
+- **Wishlist Fix**: Products now properly accessible from wishlist without "Product not found" errors
+- **Consistent Design**: All authentication pages now have matching luxury aesthetic
+- **Clear Error Messages**: Enhanced error handling with specific troubleshooting guidance
+
+### Lessons Learned
+- **Email Template Critical**: Supabase email template configuration is crucial for password reset functionality
+- **Token Format Matters**: Difference between `{{ .Token }}` and `{{ .TokenHash }}` affects verification approach
+- **Comprehensive Debugging**: Step-by-step logging essential for complex authentication troubleshooting
+- **User Communication**: When initial fixes fail, deeper investigation and systematic approach needed
+
 ## [1.0.11] - 2025-07-18
 
 ### Added
@@ -499,6 +628,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History
 
+- **v1.0.12** (2025-07-18): Wishlist product access fix and complete password reset functionality overhaul with Supabase email template configuration
 - **v1.0.11** (2025-07-18): Critical customer experience fixes - dashboard data accuracy, address deduplication, payment cancellation improvements, and enhanced error handling
 - **v1.0.10** (2025-07-15): PayPal email pre-fill, popup checkout window, enhanced sign out functionality, and improved payment UX
 - **v1.0.9** (2025-07-12): Complete guest checkout system with enhanced e-commerce workflow and customer order management

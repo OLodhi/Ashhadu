@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { AccountLayout } from '@/components/account/AccountLayout';
 import { 
   CreditCard, 
@@ -19,79 +19,16 @@ import AddPaymentMethodModal from '@/components/payments/AddPaymentMethodModal';
 import { toast } from 'react-hot-toast';
 
 const PaymentMethodsPage = () => {
+  // ALL HOOKS MUST BE CALLED FIRST - NO EXCEPTIONS
   const { user, customer, refreshProfile } = useAuth();
-  
-  // Debug customer data
-  console.log('Customer data in payments page:', customer);
-  console.log('User data in payments page:', user);
-  console.log('Customer ID being passed to modal:', customer?.id);
-  
-  // Auto-create customer record if user is authenticated but no customer record exists
-  useEffect(() => {
-    const createCustomerIfNeeded = async () => {
-      if (user && !customer?.id) {
-        try {
-          console.log('User exists but no customer record. Creating customer record...');
-          console.log('User email:', user.email);
-          console.log('User metadata:', user.user_metadata);
-          
-          // Create customer record
-          const response = await fetch('/api/customers', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              email: user.email,
-              firstName: user.user_metadata?.first_name || 'Customer',
-              lastName: user.user_metadata?.last_name || 'User',
-              phone: user.user_metadata?.phone || null,
-              marketingConsent: user.user_metadata?.marketing_consent || false,
-            }),
-          });
-
-          if (response.ok) {
-            console.log('Customer record created successfully');
-            // Refresh auth data to load the new customer record
-            await refreshProfile();
-          } else {
-            console.error('Failed to create customer record:', await response.text());
-          }
-        } catch (error) {
-          console.error('Error creating customer record:', error);
-        }
-      }
-    };
-
-    createCustomerIfNeeded();
-  }, [user, customer]);
-
-  // If no customer data and we have a user, show loading while we create the customer record
-  if (user && !customer?.id) {
-    return (
-      <AccountLayout 
-        title="Payment Methods" 
-        description="Manage your saved payment methods for faster checkout"
-      >
-        <div className="text-center py-12">
-          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gray-100 mb-4">
-            <Loader2 className="h-8 w-8 text-gray-400 animate-spin" />
-          </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Setting up your account...</h3>
-          <p className="text-gray-600 mb-6 max-w-sm mx-auto">
-            We're preparing your payment methods section.
-          </p>
-        </div>
-      </AccountLayout>
-    );
-  }
   const [paymentMethods, setPaymentMethods] = useState<AnyPaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  // Fetch payment methods
-  const fetchPaymentMethods = async () => {
+  const [customerCreating, setCustomerCreating] = useState(false);
+  
+  // Fetch payment methods function
+  const fetchPaymentMethods = useCallback(async () => {
     if (!customer?.id) return;
 
     try {
@@ -111,11 +48,69 @@ const PaymentMethodsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [customer?.id]);
 
+  // Auto-create customer record if needed
+  useEffect(() => {
+    const createCustomerIfNeeded = async () => {
+      if (user && !customer?.id && !customerCreating) {
+        try {
+          setCustomerCreating(true);
+          console.log('Creating customer record for:', user.email);
+          
+          const response = await fetch('/api/customers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: user.email,
+              firstName: user.user_metadata?.first_name || 'Customer',
+              lastName: user.user_metadata?.last_name || 'User',
+              phone: user.user_metadata?.phone || null,
+              marketingConsent: user.user_metadata?.marketing_consent || false,
+            }),
+          });
+
+          if (response.ok) {
+            console.log('Customer record created successfully');
+            await refreshProfile();
+          } else {
+            console.error('Failed to create customer record:', await response.text());
+          }
+        } catch (error) {
+          console.error('Error creating customer record:', error);
+        } finally {
+          setCustomerCreating(false);
+        }
+      }
+    };
+
+    createCustomerIfNeeded();
+  }, [user, customer, customerCreating, refreshProfile]);
+
+  // Fetch payment methods when customer changes
   useEffect(() => {
     fetchPaymentMethods();
-  }, [customer?.id]);
+  }, [fetchPaymentMethods]);
+
+  // CONDITIONAL RENDERING ONLY AFTER ALL HOOKS
+  if (user && !customer?.id) {
+    return (
+      <AccountLayout 
+        title="Payment Methods" 
+        description="Manage your saved payment methods for faster checkout"
+      >
+        <div className="text-center py-12">
+          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gray-100 mb-4">
+            <Loader2 className="h-8 w-8 text-gray-400 animate-spin" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Setting up your account...</h3>
+          <p className="text-gray-600 mb-6 max-w-sm mx-auto">
+            We're preparing your payment methods section.
+          </p>
+        </div>
+      </AccountLayout>
+    );
+  }
 
   // Handle setting default payment method
   const handleSetDefault = async (paymentMethodId: string) => {
