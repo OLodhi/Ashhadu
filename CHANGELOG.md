@@ -10,6 +10,77 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Upcoming features and improvements
 
+## [1.0.14] - 2025-07-23
+
+### Fixed
+- **Login Page Popup Issues**: Removed redundant "Please check your email" toast message to show only clean "Account created successfully" message
+- **SessionRecovery Component**: Disabled SessionRecovery component to prevent additional popup notifications during login
+- **Profile Full Name Population**: Fixed missing `full_name` field in profiles table during admin signup by combining `firstName` and `lastName` with proper trimming
+- **User Experience**: Enhanced signup workflow with cleaner success messaging and reduced notification clutter
+
+### Enhanced
+- **Project Directory Cleanup**: Removed 34 unnecessary files while preserving essential database schema and documentation
+- **Code Organization**: Streamlined project structure by removing temporary troubleshooting files and debug scripts
+- **Admin Signup API**: Enhanced profile creation to properly populate all required fields including full_name
+- **Login Flow**: Simplified login page notifications to show only relevant success messages
+
+### Removed
+- **Temporary Files**: 18 temporary/debug SQL files no longer needed for development
+- **Debug Scripts**: 6 test/debug JavaScript files that were used during development
+- **Troubleshooting Documentation**: 8 temporary documentation files created during debugging sessions
+- **Backup Components**: 2 backup component files that were no longer needed
+
+### Added
+- **Email Template SQL**: Added `auth-email-templates.sql` for proper email template configuration
+- **Admin Signup System**: Complete admin signup API at `/api/auth/admin-signup` with enhanced profile creation
+- **Email Service Enhancement**: Improved email service with template registry system
+- **Authentication Webhook**: Added comprehensive auth webhook handling for user lifecycle events
+- **Debug Endpoints**: Enhanced debugging capabilities with signup test endpoints
+
+### Technical Improvements
+- **File Cleanup**: Removed 34 unnecessary files including SQL scripts, debug files, and troubleshooting docs
+- **Database Schema**: Preserved essential schema files (`supabase-*.sql`) while removing temporary ones
+- **Profile Creation**: Enhanced admin signup to create complete profile records with all required fields
+- **Authentication Flow**: Streamlined authentication process with better error handling and user feedback
+- **Email Integration**: Improved email template system with proper service organization
+
+### User Experience Enhancements
+- **Cleaner Signup**: Users now see only one clear success message after account creation
+- **Reduced Confusion**: Eliminated multiple popup notifications that could confuse users
+- **Complete Profiles**: User profiles now have complete information including proper full name display
+- **Professional Flow**: Enhanced signup email workflow with better success messaging
+
+### Developer Experience
+- **Organized Codebase**: Much cleaner project directory with only essential files
+- **Better Documentation**: Preserved important documentation while removing temporary troubleshooting files
+- **Enhanced APIs**: Improved admin signup and authentication APIs with better error handling
+- **Debug Tools**: Enhanced debugging capabilities while removing obsolete debug scripts
+
+### Files Modified
+- `/src/app/login/page.tsx` - Removed redundant toast messages and disabled SessionRecovery
+- `/src/app/api/auth/admin-signup/route.ts` - Enhanced profile creation with full_name field
+- `/src/contexts/AuthContext.tsx` - Improved authentication flow and error handling
+- `/src/lib/email/email-service.ts` - Enhanced email service architecture
+- `/src/lib/email/template-registry.ts` - Added email template registry system
+- `/src/app/account/page.tsx` - Enhanced customer dashboard functionality
+
+### Database Schema
+- **Profile Creation**: Enhanced profile insertion to include `full_name` field properly populated
+- **User Data**: Improved user data handling in admin signup process
+- **Email Templates**: Added proper email template configuration for authentication flows
+
+### Security & Reliability
+- **Admin Signup**: Enhanced admin signup process with proper validation and error handling
+- **Profile Data**: Ensured all profile fields are properly populated during user creation
+- **Authentication**: Improved authentication flow with better session management
+- **Email Security**: Enhanced email service with proper template handling and security
+
+### Islamic Art Business Features
+- **Complete User Profiles**: Customer profiles now display full names properly in admin dashboard
+- **Professional Signup**: Clean, professional signup experience for Islamic art customers
+- **UK Market**: Enhanced user experience for British Islamic art enthusiasts
+- **Brand Consistency**: Maintained luxury brand experience throughout authentication flow
+
 ## [1.0.13] - 2025-01-19
 
 ### Fixed
@@ -628,6 +699,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History
 
+- **v1.0.14** (2025-07-23): Signup email workflow fixes, profile data completion, and comprehensive project directory cleanup
+- **v1.0.13** (2025-01-19): Complete email system overhaul with domain configuration and customer management enhancements
 - **v1.0.12** (2025-07-18): Wishlist product access fix and complete password reset functionality overhaul with Supabase email template configuration
 - **v1.0.11** (2025-07-18): Critical customer experience fixes - dashboard data accuracy, address deduplication, payment cancellation improvements, and enhanced error handling
 - **v1.0.10** (2025-07-15): PayPal email pre-fill, popup checkout window, enhanced sign out functionality, and improved payment UX
