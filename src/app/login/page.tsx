@@ -31,7 +31,7 @@ export default function LoginPage() {
     }
   }, [clearError]);
 
-  // Show success message if password was updated
+  // Show success message if password was updated or account was created
   useEffect(() => {
     if (message === 'password-updated') {
       toast.success('Password updated successfully! Please sign in with your new password.');
@@ -39,8 +39,25 @@ export default function LoginPage() {
       const url = new URL(window.location.href);
       url.searchParams.delete('message');
       window.history.replaceState({}, '', url.toString());
+    } else if (message === 'account-created') {
+      const emailParam = searchParams.get('email');
+      const isConfirmed = searchParams.get('confirmed') === 'true';
+      
+      if (isConfirmed) {
+        toast.success('Account created successfully! You can now sign in with your email and password.');
+        if (emailParam) {
+          setEmail(decodeURIComponent(emailParam));
+        }
+      }
+      
+      // Clean up URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete('message');
+      url.searchParams.delete('email');
+      url.searchParams.delete('confirmed');
+      window.history.replaceState({}, '', url.toString());
     }
-  }, [message]);
+  }, [message, searchParams]);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -174,8 +191,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-luxury-black via-gray-900 to-luxury-black">
-      {/* Session Recovery Component */}
-      <SessionRecovery />
+      {/* Session Recovery Component - Disabled to reduce popup clutter */}
+      {/* <SessionRecovery /> */}
       
       {/* White Header Banner */}
       <div className="bg-white border-b border-gray-200">

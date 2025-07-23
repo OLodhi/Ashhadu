@@ -34,7 +34,9 @@ export async function POST(request: NextRequest) {
       .insert({
         user_id: userId,
         email,
-        full_name: `${userData.firstName} ${userData.lastName}`,
+        first_name: userData.firstName || '',
+        last_name: userData.lastName || '',
+        phone: userData.phone || null,
         role: 'customer'
       })
       .select()
@@ -79,7 +81,8 @@ export async function POST(request: NextRequest) {
         first_name: userData.firstName,
         last_name: userData.lastName,
         phone: userData.phone || null,
-        marketing_consent: userData.marketingConsent || false
+        marketing_consent: userData.marketingConsent || false,
+        is_guest: false
       })
       .select()
       .single();

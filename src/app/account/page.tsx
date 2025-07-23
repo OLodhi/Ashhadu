@@ -37,7 +37,7 @@ interface DashboardStats {
 }
 
 export default function AccountDashboard() {
-  const { user, profile, customer, loading: authLoading } = useAuth();
+  const { user, profile, customer, loading: authLoading, refreshProfile } = useAuth();
   const { wishlistCount, totalValue, wishlistItems } = useWishlist();
   const router = useRouter();
   
@@ -74,15 +74,48 @@ export default function AccountDashboard() {
       setLoading(true);
       
       // First get the customer record using the authenticated user's email
-      const { data: customerData, error: customerError } = await supabase
+      let { data: customerData, error: customerError } = await supabase
         .from('customers')
         .select('id')
         .eq('email', user?.email)
         .single();
 
-      if (customerError) {
+      // If no customer record exists, create one for this registered user
+      if (customerError && customerError.code === 'PGRST116') {
+        console.log('No customer record found, creating one for new user...');
+        
+        const { data: newCustomer, error: createError } = await supabase
+          .from('customers')
+          .insert({
+            email: user?.email,
+            first_name: profile?.first_name || '',
+            last_name: profile?.last_name || '',
+            phone: '',
+            is_guest: false // This is a registered user
+          })
+          .select('id')
+          .single();
+
+        if (createError) {
+          console.error('Error creating customer record:', createError);
+          // Continue with empty stats if we can't create customer record
+          setStats({
+            totalOrders: 0,
+            totalSpent: 0,
+            wishlistItems: wishlistCount,
+            recentOrders: []
+          });
+          return;
+        }
+
+        customerData = newCustomer;
+        console.log('✅ Customer record created successfully');
+        
+        // Refresh the auth context to update the customer data
+        await refreshProfile();
+      } else if (customerError) {
         console.error('Error loading customer data:', customerError);
-        // If no customer record found, continue with empty stats
+        // If other error, continue with empty stats
         setStats({
           totalOrders: 0,
           totalSpent: 0,

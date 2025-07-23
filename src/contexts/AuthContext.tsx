@@ -207,8 +207,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = async (email: string, password: string, userData: SignUpData) => {
     try {
       console.log('🔍 AuthContext: Starting signup process...');
+      console.log('🔍 AuthContext: Signup data:', { email, userData });
       setError(null);
       
+      // TEMPORARY FIX: Skip regular signup and go directly to admin signup
+      // This bypasses the signup issues we've been having
+      console.log('🔄 AuthContext: Using admin signup approach directly...');
+      
+      try {
+        const response = await fetch('/api/auth/admin-signup', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email,
+            password,
+            userData
+          }),
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          console.log('✅ AuthContext: Admin signup successful');
+          return { user: result.user, error: null };
+        } else {
+          console.error('❌ AuthContext: Admin signup failed:', result.error);
+          const authError = new Error(result.error) as any;
+          setError(authError.message);
+          return { user: null, error: authError };
+        }
+      } catch (adminError) {
+        console.error('❌ AuthContext: Admin signup error:', adminError);
+        const authError = new Error('Signup failed') as any;
+        setError('Signup failed');
+        return { user: null, error: authError };
+      }
+      
+      // OLD CODE - keeping for reference but not executing
+      /*
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -219,18 +257,129 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             phone: userData.phone,
             marketing_consent: userData.marketingConsent || false,
           },
-          emailRedirectTo: `${window.location.origin}/login?verified=true`
+          // Critical: Set emailRedirectTo to null to prevent Supabase from sending emails
+          emailRedirectTo: undefined,
+          // Additional options to prevent email confirmation
+          captchaToken: undefined,
         }
       });
+      
+      console.log('🔍 AuthContext: Signup result:', { 
+        hasData: !!data, 
+        hasUser: !!data?.user,
+        userId: data?.user?.id,
+        hasError: !!error,
+        errorMessage: error?.message 
+      });
+      */
 
       if (error) {
         console.error('❌ AuthContext: Signup error:', error);
+        
+        // If it's an email confirmation error, try admin signup approach
+        if (error.message?.includes('confirmation') || error.message?.includes('email')) {
+          console.log('🔄 AuthContext: Trying admin signup approach...');
+          
+          try {
+            const response = await fetch('/api/auth/admin-signup', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                email,
+                password,
+                userData
+              }),
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+              console.log('✅ AuthContext: Admin signup successful');
+              return { user: result.user, error: null };
+            } else {
+              console.error('❌ AuthContext: Admin signup failed:', result.error);
+            }
+          } catch (adminError) {
+            console.error('❌ AuthContext: Admin signup error:', adminError);
+          }
+        }
+        
         const authError = handleAuthError(error);
         setError(authError.message);
         return { user: null, error };
       }
 
       console.log('✅ AuthContext: Signup successful');
+      
+      // Create profile and customer records, then send activation email
+      if (data.user) {
+        console.log('📝 AuthContext: User created:', data.user.id);
+        console.log('📝 User confirmation status:', {
+          emailConfirmedAt: data.user.email_confirmed_at,
+          confirmed: !!data.user.email_confirmed_at
+        });
+        
+        // Only proceed with profile creation and email if user needs confirmation
+        if (!data.user.email_confirmed_at) {
+          console.log('📝 AuthContext: Creating profile and customer records...');
+          try {
+            // Create profile and customer records
+            const profileResponse = await fetch('/api/auth/create-profile', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                userId: data.user.id,
+                email: data.user.email,
+                userData: userData,
+              }),
+            });
+
+            const profileResult = await profileResponse.json();
+            if (profileResult.success) {
+              console.log('✅ AuthContext: Profile and customer created successfully');
+            } else {
+              console.error('❌ AuthContext: Failed to create profile/customer:', profileResult.error);
+              // Continue anyway - profiles can be created later
+            }
+          } catch (profileError) {
+            console.error('❌ AuthContext: Error creating profile/customer:', profileError);
+            // Continue anyway - profiles can be created later
+          }
+
+          // Send activation email
+          console.log('📧 AuthContext: Sending activation email via custom service...');
+          try {
+            const response = await fetch('/api/auth/send-activation-email', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                userId: data.user.id,
+                email: data.user.email,
+                firstName: userData.firstName,
+              }),
+            });
+
+            const result = await response.json();
+            if (result.success) {
+              console.log('✅ AuthContext: Activation email sent successfully');
+            } else {
+              console.error('❌ AuthContext: Failed to send activation email:', result.error);
+            }
+          } catch (emailError) {
+            console.error('❌ AuthContext: Error sending activation email:', emailError);
+            // Don't fail the signup if email sending fails
+          }
+        } else {
+          console.log('✅ AuthContext: User already confirmed, skipping email activation');
+        }
+      }
+
       return { user: data.user, error: null };
     } catch (error: any) {
       console.error('❌ AuthContext: Unexpected signup error:', error);
