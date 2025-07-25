@@ -58,6 +58,17 @@ export async function GET(request: NextRequest) {
           console.log('✅ Email confirmed at:', data.user.email_confirmed_at);
         }
 
+        // Check if this is a password reset flow
+        const isPasswordReset = redirectTo.includes('/reset-password');
+        if (isPasswordReset) {
+          console.log('🔐 Password reset flow detected, adding recovery flag');
+          const resetUrl = new URL(`${origin}${redirectTo}`);
+          resetUrl.searchParams.set('recovery', 'true');
+          resetUrl.searchParams.set('session_verified', 'true');
+          console.log('🔄 Redirecting to reset page with recovery flag:', resetUrl.toString());
+          return NextResponse.redirect(resetUrl.toString());
+        }
+
         // Redirect to the specified location
         console.log('🔄 Redirecting to:', redirectTo);
         return NextResponse.redirect(`${origin}${redirectTo}`);

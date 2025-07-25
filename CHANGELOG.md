@@ -10,6 +10,89 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Upcoming features and improvements
 
+## [1.0.15] - 2025-01-25
+
+### Fixed
+- **Password Reset System Complete Overhaul**: Resolved "Invalid Reset Link" error that prevented users from successfully resetting passwords
+- **Supabase Auth Flow Integration**: Fixed password reset redirect flow to work properly with Supabase's authentication system
+- **Multiple Authentication Methods**: Enhanced reset-password page to handle various Supabase authentication flows (hash-based tokens, authorization codes, token parameters)
+- **Hash-Based Token Support**: Added comprehensive support for Supabase's implicit auth flow using URL hash parameters with access and refresh tokens
+- **Session Management**: Proper session establishment and cleanup during password reset process
+
+### Enhanced
+- **Authentication Flow Detection**: Advanced parameter detection supporting URL query parameters and hash-based authentication tokens
+- **Error Handling**: Comprehensive error management with specific error messages for expired, invalid, or already-used reset links
+- **Token Verification**: Multiple verification methods including `exchangeCodeForSession`, `setSession`, and `verifyOtp` for maximum compatibility
+- **User Experience**: Clear success messaging and automatic URL cleanup after successful authentication
+- **Debug Logging**: Extensive console logging throughout authentication flow for troubleshooting and monitoring
+
+### Added
+- **Hash Parameter Detection**: New `handleHashBasedAuth()` function to process access and refresh tokens from URL hash
+- **Authorization Code Handling**: Enhanced `handleAuthorizationCode()` function for OAuth-style authorization code exchange
+- **Multiple Auth Flow Support**: Support for recovery flags, authorization codes, token parameters, and hash-based authentication
+- **URL State Management**: Automatic cleanup of authentication parameters from URL after successful session establishment
+- **Toast Notifications**: Success and error feedback throughout the password reset process
+
+### Technical Enhancements
+- **Supabase Auth Compatibility**: Full compatibility with Supabase's various authentication redirect methods
+- **Client-Side Session Management**: Proper session handling using `supabase.auth.setSession()` and `exchangeCodeForSession()`
+- **Error State Management**: Comprehensive error catching and user-friendly error messaging
+- **Parameter Parsing**: Enhanced URL parameter and hash parameter parsing for all authentication scenarios
+- **Session Validation**: Multiple validation methods to ensure proper session establishment before allowing password updates
+
+### Authentication Flow Improvements
+- **Direct Redirect Support**: Password reset API now redirects directly to `/reset-password` without requiring auth callback
+- **Hash-Based Flow**: Primary support for Supabase's hash-based authentication with `access_token` and `refresh_token` in URL hash
+- **Fallback Compatibility**: Maintains backward compatibility with authorization code flow and token parameter methods
+- **Recovery Detection**: Enhanced detection of password recovery flows with proper session verification
+- **Session Persistence**: Proper session persistence across page refreshes and navigation
+
+### User Experience Enhancements
+- **Success Feedback**: Clear "Password reset link verified successfully!" message upon successful authentication
+- **Error Guidance**: Specific error messages with troubleshooting steps for different failure scenarios
+- **Loading States**: Professional loading indicators during token verification and session establishment
+- **Clean URLs**: Automatic removal of authentication parameters from URL after successful processing
+- **Consistent Interface**: Maintained luxury Islamic art design aesthetic throughout password reset flow
+
+### Security Improvements
+- **Token Validation**: Comprehensive validation of all authentication tokens before session establishment
+- **Session Security**: Proper session cleanup and new session establishment during password reset
+- **Error Prevention**: Prevention of session hijacking through proper token validation and error handling
+- **Audit Trail**: Complete logging of authentication attempts and outcomes for security monitoring
+
+### Files Modified
+- `/src/app/reset-password/page.tsx` - Complete overhaul with multi-flow authentication support and hash parameter detection
+- `/src/app/api/auth/send-password-reset/route.ts` - Reverted to direct redirect approach for better Supabase compatibility
+- `/src/app/auth/callback/route.ts` - Enhanced with password reset flow detection and recovery flag support
+
+### Technical Details
+- **Authentication Methods**: Support for 4 different Supabase authentication flows with automatic detection
+- **Parameter Detection**: Enhanced URL parameter and hash parameter parsing for comprehensive flow support
+- **Session Management**: Proper session lifecycle management from token verification to password update completion
+- **Error Recovery**: Robust error handling with automatic fallback to alternative authentication methods
+- **State Cleanup**: Automatic URL state cleanup and proper browser history management
+
+### Islamic Art Business Impact
+- **Customer Support**: Eliminated password reset support tickets through reliable self-service functionality
+- **User Retention**: Improved customer experience with working password recovery system
+- **Brand Trust**: Professional authentication experience maintaining luxury Islamic art brand standards
+- **UK Market**: Reliable password reset system for British Islamic art customers
+
+### Password Reset Flow Summary
+1. **User Request**: Customer requests password reset via `/forgot-password`
+2. **Email Generation**: System generates Supabase recovery link and sends email
+3. **Link Processing**: Supabase processes link and redirects to `/reset-password` with authentication tokens
+4. **Token Detection**: Reset page detects and processes various token formats (hash, query params, codes)
+5. **Session Establishment**: Appropriate handler establishes authenticated session using detected tokens
+6. **Password Update**: User can now securely update password with verified session
+7. **Completion**: Clean redirect to login page with success messaging
+
+### Compatibility Notes
+- **Supabase Auth**: Full compatibility with Supabase Auth v2 and various redirect methods
+- **Browser Support**: Works across all modern browsers including mobile devices
+- **Security Standards**: Meets OAuth 2.0 and modern authentication security requirements
+- **Error Handling**: Graceful degradation with clear error messaging for all failure scenarios
+
 ## [1.0.14] - 2025-07-23
 
 ### Fixed
@@ -699,6 +782,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History
 
+- **v1.0.15** (2025-01-25): Complete password reset system overhaul with multi-flow Supabase authentication support and hash-based token processing
 - **v1.0.14** (2025-07-23): Signup email workflow fixes, profile data completion, and comprehensive project directory cleanup
 - **v1.0.13** (2025-01-19): Complete email system overhaul with domain configuration and customer management enhancements
 - **v1.0.12** (2025-07-18): Wishlist product access fix and complete password reset functionality overhaul with Supabase email template configuration
