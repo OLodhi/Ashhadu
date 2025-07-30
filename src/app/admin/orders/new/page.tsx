@@ -302,11 +302,11 @@ const NewOrderPage = () => {
   const addProductToOrder = (product: Product) => {
     console.log('Adding product to order:', product); // Debug log
     
-    const existingItem = orderItems.find(item => item.productId === product.id);
+    const existingItem = orderItems.find(item => item.product_id === product.id);
     
     if (existingItem) {
       setOrderItems(prev => prev.map(item =>
-        item.productId === product.id
+        item.product_id === product.id
           ? { ...item, quantity: item.quantity + 1, totalPrice: (item.quantity + 1) * item.unitPrice }
           : item
       ));
@@ -316,7 +316,7 @@ const NewOrderPage = () => {
       
       const newItem: OrderItem = {
         id: generateUUID(),
-        productId: product.id,
+        product_id: product.id,
         name: product.name,
         arabicName: product.arabicName || '',
         sku: product.sku,
@@ -391,7 +391,7 @@ const NewOrderPage = () => {
           phone: customer.phone,
         },
         items: orderItems.map(item => ({
-          productId: item.productId,
+          productId: item.product_id,
           quantity: item.quantity,
           price: item.unitPrice,
           total: item.totalPrice,
