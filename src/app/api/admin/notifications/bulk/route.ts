@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
           .update({ read: true })
           .eq('admin_user_id', user.id)
           .eq('read', false)
-          .select('*', { count: 'exact', head: true });
+          .select('*', { count: 'exact' });
 
         if (readError) {
           throw readError;
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
           .update({ read: true })
           .eq('admin_user_id', user.id)
           .in('id', notification_ids)
-          .select('*', { count: 'exact', head: true });
+          .select('*', { count: 'exact' });
 
         if (selectedReadError) {
           throw selectedReadError;
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
           .update({ dismissed: true })
           .eq('admin_user_id', user.id)
           .in('id', notification_ids)
-          .select('*', { count: 'exact', head: true });
+          .select('*', { count: 'exact' });
 
         if (dismissError) {
           throw dismissError;
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
           .delete()
           .eq('admin_user_id', user.id)
           .eq('dismissed', true)
-          .select('*', { count: 'exact', head: true });
+          .select('*', { count: 'exact' });
 
         if (deleteError) {
           throw deleteError;
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
           .delete()
           .eq('admin_user_id', user.id)
           .lt('created_at', cutoffDate.toISOString())
-          .select('*', { count: 'exact', head: true });
+          .select('*', { count: 'exact' });
 
         if (oldDeleteError) {
           throw oldDeleteError;
@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
           .delete()
           .eq('admin_user_id', user.id)
           .eq('type', filters.type)
-          .select('*', { count: 'exact', head: true });
+          .select('*', { count: 'exact' });
 
         if (typeDeleteError) {
           throw typeDeleteError;
@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
           .eq('admin_user_id', user.id)
           .not('expires_at', 'is', null)
           .lt('expires_at', now)
-          .select('*', { count: 'exact', head: true });
+          .select('*', { count: 'exact' });
 
         if (expiredError) {
           throw expiredError;
