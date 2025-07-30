@@ -164,7 +164,7 @@ export async function PUT(request: NextRequest) {
     if (updatedSettingsData) {
       updatedSettingsData.forEach(setting => {
         if (setting.setting_key in currentSettings) {
-          currentSettings[setting.setting_key as keyof NotificationSettings] = setting.setting_value;
+          (currentSettings as any)[setting.setting_key] = setting.setting_value;
         }
       });
     }
