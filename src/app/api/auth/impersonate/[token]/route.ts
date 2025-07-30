@@ -46,7 +46,7 @@ export async function GET(
     }
 
     // Create Supabase client for session management
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -153,7 +153,7 @@ export async function POST(
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     
     // Get impersonation session from cookies
     const impersonationCookie = cookieStore.get('impersonation_session');

@@ -4,7 +4,7 @@ import { logImpersonationAudit } from '@/lib/impersonation';
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     
     // Get impersonation session from cookies
     const impersonationCookie = cookieStore.get('impersonation_session');
