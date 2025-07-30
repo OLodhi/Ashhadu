@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
       settingsData.forEach(setting => {
         if (setting.setting_key in settings) {
           // Parse JSON value back to appropriate type
-          settings[setting.setting_key as keyof NotificationSettings] = setting.setting_value;
+          (settings as any)[setting.setting_key] = setting.setting_value;
         }
       });
     }
