@@ -106,6 +106,7 @@ export interface OrderItem {
   product?: {
     id: string;
     name: string;
+    arabic_name?: string;
     featured_image?: string;
     slug: string;
     islamic_category?: string;
