@@ -147,8 +147,8 @@ const EditProductPage = () => {
       setModels(product.models || []);
       setFeaturedModelState(product.featuredModel || '');
       setHdriFiles(product.hdriFiles || []);
-      setDefaultHdri(product.defaultHdri || '');
-      setBackgroundBlur(product.backgroundBlur || 0);
+      setDefaultHdri(product.defaultHdriUrl || '');
+      setBackgroundBlur(product.backgroundBlurEnabled ? (product.backgroundBlurIntensity || 0) : 0);
     }
   }, [product]);
 
