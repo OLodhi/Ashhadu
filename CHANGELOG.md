@@ -10,6 +10,229 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Upcoming features and improvements
 
+## [1.0.18] - 2025-01-30
+
+### Added
+- **Complete About Page**: Comprehensive about page at `/about` with luxury video background, company story, values, team information, and quality certifications
+- **Ethereal Mosque Video Background**: Hero section features subtle mosque animation with multiple overlay layers for optimal readability
+- **Glass Morphism Content Box**: Hero content wrapped in elegant glass morphism container with backdrop blur effects
+- **Complete Search Functionality**: Fully operational search system with real-time API integration and dedicated results page
+- **Search Results Page**: Professional search page at `/search` with filtering, sorting, grid/list views, and product tiles matching shop page
+- **Search Modal Integration**: Live search suggestions, featured products, and seamless navigation from header search
+- **Legal Pages Suite**: Complete set of legal pages including Privacy Policy, Terms of Service, Cookie Policy, Contact, FAQ, and Returns & Exchanges
+- **Privacy Policy Page**: GDPR-compliant privacy policy at `/privacy-policy` with comprehensive UK data protection coverage
+- **Terms of Service Page**: Complete terms at `/terms-of-service` with UK law compliance and Islamic art business specifics
+- **Cookie Policy Page**: Detailed cookie policy at `/cookie-policy` with UK/EU regulatory compliance and user consent management
+- **Contact Us Page**: Professional contact page at `/contact` with business information, contact form, and multiple contact methods
+- **FAQ Page**: Comprehensive FAQ at `/faq` with 5 categories, search functionality, and Islamic art specific content
+- **Returns & Exchanges Page**: Complete returns policy at `/returns` with 30-day policy and UK consumer rights
+
+### Enhanced
+- **Footer Navigation**: Updated shop links to reflect correct collection names (Islamic Architecture, Geometric Art, Heritage Collections)
+- **Footer Structure**: Consolidated Company and Support sections into single "Help & Info" section with About, Contact, Returns, and FAQ
+- **Homepage Optimization**: Removed newsletter section from homepage while preserving it on other pages for cleaner user experience
+- **About Page Hero**: Gold text highlighting on "Crafting Sacred Art with" for improved visual hierarchy and brand emphasis
+- **Search Button Behavior**: Search results only display after pressing search button, preventing premature result display during typing
+
+### Fixed
+- **Search API Integration**: Connected search modal to real product database instead of hardcoded sample data
+- **Search Button Animation**: Removed problematic hover animation that moved search button outside search bar boundaries
+- **Terms of Service Routing**: Fixed server component error by converting to client component with proper onClick handler support
+- **Footer Link URLs**: Corrected Privacy Policy and Terms of Service links to point to actual page locations
+- **Newsletter Section**: Removed "Stay Connected with Islamic Art" section from homepage only, keeping it on other pages
+
+### Technical Enhancements
+- **Real-time Search**: Search modal now queries `/api/products` with live filtering and 300ms debounce
+- **Search Results Architecture**: Professional search page with category filters, sorting options, and view toggles
+- **Product Tile Consistency**: Search results match shop page styling exactly with same card effects and interactions
+- **Glass Morphism Design**: Enhanced visual hierarchy with backdrop blur effects and luxury gold accents
+- **Client/Server Component Management**: Proper separation of server and client components for optimal performance
+- **SEO Optimization**: All legal pages include comprehensive metadata and proper canonical URLs
+- **Form Validation**: Contact form includes real-time validation, inquiry types, and professional error handling
+- **FAQ Search System**: Real-time search through FAQ content with category filtering and expandable sections
+- **UK Compliance**: All legal pages tailored for UK business requirements with proper jurisdiction and consumer rights
+
+### Footer Updates
+- **Shop Section**: Updated to Islamic Calligraphy, Islamic Architecture, Geometric Art, and Heritage Collections with correct URLs
+- **Help & Info Section**: Combined Company and Support into single section with About Us, Contact Us, Returns & Exchanges, and FAQ
+- **Legal Links**: Reinstated Cookie Policy link alongside Privacy Policy and Terms of Service
+- **Trust Badges**: Removed Halal Certified badge while maintaining SSL Secured and UK Based certifications
+
+### Video Integration
+- **Mosque Animation**: Subtle ethereal mosque video background with 20% opacity, 1px blur, and 30% grayscale for non-intrusive display
+- **Multi-layer Approach**: Video background with dark overlay (50% black), Islamic pattern overlay (10% opacity), and content layer for optimal readability
+- **Performance Optimized**: Autoplay, loop, muted, and playsInline attributes for seamless cross-device experience
+
+## [1.0.17] - 2025-01-28
+
+### Added
+- **Complete Collection Pages System**: Four stunning collection pages with unique hero sections and unified product grids
+- **Islamic Calligraphy Collection Page**: `/collections/calligraphy` with luxury gold gradient hero featuring floating geometric shapes, animated Arabic calligraphy overlays, and flowing SVG animations
+- **Islamic Architecture Collection Page**: `/collections/mosque-models` with emerald green gradient hero showcasing dome silhouettes, minaret towers, and architectural pattern overlays
+- **Geometric Art Collection Page**: `/collections/geometric-art` with deep blue gradient hero displaying complex mathematical mandalas, tessellation patterns, and rotating geometric elements
+- **Heritage Collections Page**: `/collections/custom` with royal purple gradient hero featuring traditional Islamic manuscripts, heritage scrolls, and cultural artifact animations
+- **Unified Product Display**: Consistent 4-column responsive grid system across all collection pages without filters or sorting
+- **Custom CSS Animations**: 8 new keyframe animations including float, spin-slow, pulse-slow, and expand effects for enhanced visual appeal
+
+### Enhanced
+- **Featured Products Section**: Fixed "New new" and "Sale Sale" badge duplication by consolidating badge logic and removing redundant conditions
+- **Product Pricing Display**: Enhanced sale price styling with proper strikethrough for original prices in featured products
+- **Add to Cart Functionality**: Complete integration of featured products with shopping cart and wishlist systems
+- **Arabic Text Alignment**: Fixed review alignment issues by reserving consistent space for Arabic names across all product displays
+- **Navigation Order**: Reordered navbar to display Home → Collections → Shop → About → Contact for improved user flow
+- **Typography Consistency**: Unified font styling across all collection page titles using Playfair Display with consistent sizing and effects
+
+### Fixed
+- **Badge Display Issues**: Eliminated duplicated badge text (e.g., "New new", "Sale Sale") by using single badge source in featured products
+- **Price Display Consistency**: Original prices now properly display with strikethrough styling when products are on sale
+- **Review Section Alignment**: Arabic name spacing fixed to maintain consistent review positioning across all products
+- **Font Weight Consistency**: Corrected Geometric Art title font weight to match other collection pages
+- **Product Grid Spacing**: Uniform spacing and layout consistency across all collection displays
+
+### Technical Enhancements
+- **Hero Animation System**: Comprehensive CSS animation library with 8 custom keyframes for sophisticated visual effects
+- **SVG Animation Integration**: Complex SVG animations with proper performance optimization and reduced motion accessibility
+- **Responsive Design**: All collection pages optimized for mobile, tablet, and desktop viewing with proper scaling
+- **Category Filtering**: Automatic product filtering by Islamic category (calligraphy, architecture, geometric, custom)
+- **Clean Architecture**: Removed unnecessary UI components (filters, sorting, view toggles) for focused collection browsing
+- **Performance Optimization**: Efficient animation cycles with proper GPU acceleration and memory management
+
+### Hero Section Specifications
+- **Islamic Calligraphy**: Golden warmth theme with flowing calligraphy overlays, geometric patterns, and script-focused animations
+- **Islamic Architecture**: Sacred green theme with dome silhouettes, minaret towers, and architectural pattern overlays
+- **Geometric Art**: Cosmic blue theme with complex mandalas, tessellation patterns, and mathematical precision animations  
+- **Heritage Collections**: Royal purple theme with manuscript pages, traditional scrolls, and cultural artifact elements
+- **All Heroes**: 48vh height, gradient backgrounds matching homepage tiles, Islamic pattern overlays, and cultural authenticity
+
+### Islamic Art Business Features
+- **Curated Collection Experience**: Each collection page provides focused browsing for specific Islamic art categories
+- **Cultural Storytelling**: Hero sections tell the story of each art form with appropriate Arabic text and cultural context
+- **Professional Presentation**: Luxury aesthetic maintained across all collection pages with sophisticated animations
+- **Enhanced Navigation**: Prominent Collections menu position encourages exploration of curated Islamic art categories
+- **Arabic Language Integration**: Proper RTL text support with authentic Arabic names for each collection
+
+### Animation & Visual Effects
+- **Floating Elements**: Geometric shapes, manuscripts, and architectural elements that gently float and rotate
+- **Gradient Animations**: Dynamic gradient overlays with expanding and pulsing effects
+- **Cultural Authenticity**: All animations respect Islamic artistic traditions and geometric principles
+- **Smooth Interactions**: Hover effects, scaling animations, and transition states for enhanced user engagement
+- **Performance Conscious**: All animations optimized for mobile devices with proper reduced motion support
+
+### User Experience Improvements
+- **Streamlined Browsing**: Clean collection pages without distracting filters or sorting options
+- **Visual Hierarchy**: Clear typography hierarchy with consistent spacing and luxury styling
+- **Cultural Navigation**: Easy access to specific Islamic art categories through prominent Collections menu
+- **Mobile Optimization**: All hero sections and product grids work flawlessly across all device sizes
+- **Fast Loading**: Optimized animations and efficient CSS for quick page load times
+
+### Files Created
+- `/src/app/collections/calligraphy/page.tsx` - Islamic Calligraphy collection with animated hero
+- `/src/app/collections/mosque-models/page.tsx` - Islamic Architecture collection with architectural hero
+- `/src/app/collections/geometric-art/page.tsx` - Geometric Art collection with mathematical hero
+- `/src/app/collections/custom/page.tsx` - Heritage Collections with cultural heritage hero
+
+### Files Modified  
+- `/src/app/globals.css` - Added comprehensive animation keyframes and utility classes
+- `/src/components/homepage/FeaturedProducts.tsx` - Fixed badge logic, pricing display, and cart integration
+- `/src/components/layout/Header.tsx` - Reordered navigation menu for improved user flow
+
+### Cultural & Design Impact
+- **Islamic Art Celebration**: Each collection page celebrates a different aspect of Islamic artistic tradition
+- **Educational Value**: Hero sections provide cultural context and historical significance for each art form
+- **Luxury Brand Enhancement**: Sophisticated animations and premium styling reinforce luxury positioning
+- **UK Market Appeal**: Professional presentation suitable for British Islamic art market
+- **Heritage Preservation**: Emphasizes the cultural importance and artistic legacy of Islamic art forms
+
+### Technical Specifications
+- **Animation Performance**: 60fps animations with proper GPU acceleration
+- **Responsive Breakpoints**: Mobile-first design with proper scaling for all screen sizes
+- **Accessibility**: Reduced motion support and proper ARIA labels for screen readers
+- **SEO Optimization**: Proper meta tags and structured content for search engine visibility
+- **Cross-Browser Support**: Tested and optimized for all modern browsers including mobile Safari
+
+## [1.0.16] - 2025-01-27
+
+### Added
+- **Complete HDRI Environment System**: Comprehensive HDRI upload and management system for enhanced 3D model viewing
+- **HDRI Upload Component**: Dedicated admin interface for uploading and managing HDRI environment files
+- **HDRI Intensity Controls**: Slider controls for adjusting HDRI lighting intensity (0.0-2.0 range)
+- **Background Blur System**: Advanced background blur controls (0-10 scale) with exponential scaling for realistic depth of field effects
+- **Unified 3D Model & Environment Section**: Combined 3D model upload and HDRI environment configuration in single admin interface
+- **MediaLightbox HDRI Integration**: Enhanced lightbox system to use product-specific HDRI settings instead of hardcoded URLs
+- **Form Control Fixes**: Added `type="button"` to all 3D viewer control buttons to prevent unwanted form submissions
+
+### Enhanced
+- **HDRI Background Blur Effect**: Implemented exponential scaling (`Math.pow(backgroundBlur / 10, 2)`) making level 10 produce nearly complete background blur
+- **3D Model Positioning**: Complete camera orbit behavior improvements ensuring models stay fixed while camera moves around them
+- **Model Centering Logic**: Enhanced centering for OBJ and PLY model loaders with explicit positioning and proper matrix updates
+- **Admin Form Organization**: Improved visual hierarchy and user experience in admin product forms with unified sections
+- **3D Viewer Controls**: Enhanced control system with smooth damping and disabled panning for consistent model positioning
+
+### Fixed
+- **Database Column Integration**: Resolved missing 'background_blur' column errors by adding proper database schema migration
+- **HDRI URL Consistency**: Fixed MediaLightbox to use product's actual HDRI settings instead of hardcoded environment URLs
+- **Form Submission Issues**: Prevented 3D viewer control buttons from triggering form submission and unwanted page navigation
+- **Background Blur Intensity**: Enhanced blur calculation to provide strong visual effect at maximum settings
+- **3D Model Drift**: Eliminated model position shifting during camera interaction by implementing fixed-target orbit controls
+
+### Technical Enhancements
+- **HDRI Environment Component**: Complete React Three Fiber integration with Three.js RGBELoader and proper error handling
+- **Background Blur Calculation**: Exponential blur factor calculation for natural depth of field progression
+- **Model Scene Components**: Enhanced STL, OBJ, and PLY scene components with improved centering and matrix world updates
+- **Camera Control System**: Implemented fixed target orbit controls with smooth damping and disabled panning
+- **API Integration**: Enhanced product APIs to handle HDRI intensity and background blur data with proper camelCase conversion
+
+### Database Schema Updates
+- **Background Blur Field**: Added `background_blur INTEGER DEFAULT 0` to products table for storing blur intensity settings
+- **HDRI Metadata**: Enhanced product HDRI storage with intensity and blur configuration
+- **API Data Handling**: Proper field name transformation between database snake_case and frontend camelCase
+
+### User Experience Improvements
+- **Admin Workflow**: Streamlined 3D model and HDRI environment management in single interface section
+- **Visual Feedback**: Real-time preview of HDRI intensity and background blur effects during configuration
+- **Professional Controls**: Non-intrusive 3D viewer controls that don't interfere with admin form workflows
+- **Consistent Lightbox**: Unified HDRI experience between main product viewer and fullscreen lightbox
+
+### Islamic Art Business Impact
+- **Premium 3D Visualization**: Enhanced product presentation with realistic HDRI environment lighting
+- **Professional Product Display**: Consistent HDRI environments across product catalog for luxury brand experience
+- **Reduced Customer Inquiries**: Better product visualization helps customers understand items before purchase
+- **Competitive Advantage**: Advanced 3D viewing capabilities differentiate from standard e-commerce platforms
+
+### 3D Model Positioning Achievements
+- **Fixed Model Positioning**: 3D models now stay centered at origin while camera orbits around them
+- **Enhanced Centering Logic**: Improved OBJ and PLY model loaders with explicit positioning (`obj.position.set(-center.x, -center.y, -center.z)`)
+- **Matrix World Updates**: Added `updateMatrixWorld(true)` and geometry updates for proper model positioning
+- **Smooth Camera Controls**: Implemented damping and disabled panning for professional viewing experience
+- **Reset View Functionality**: Proper camera position and target reset functionality for consistent user experience
+
+### Files Modified/Created
+- `/src/components/models/Model3DViewer.tsx` - Enhanced 3D viewer with HDRI system and positioning fixes
+- `/src/components/ui/HDRIUpload.tsx` - New HDRI upload component with preview and validation
+- `/src/components/ui/MediaLightbox.tsx` - Enhanced lightbox with product HDRI integration  
+- `/src/app/admin/products/new/page.tsx` - Combined 3D model and HDRI sections with enhanced controls
+- `/src/app/admin/products/[id]/edit/page.tsx` - Applied same section combination and HDRI enhancements
+- `/src/app/api/products/route.ts` - Added background blur field handling and HDRI data integration
+- `/src/app/api/products/[id]/route.ts` - Enhanced PUT/GET methods with HDRI and blur data support
+- `/src/app/products/[id]/page.tsx` - Updated MediaLightbox integration with product HDRI data
+- `/src/types/models.ts` - Added backgroundBlur parameter to Model3DViewerProps interface
+- `supabase-add-background-blur.sql` - Database migration for background blur field
+
+### Technical Specifications
+- **HDRI Format Support**: .hdr and .hdri file formats with validation and error handling
+- **Blur Range**: 0-10 integer scale with exponential calculation for natural depth progression  
+- **Intensity Range**: 0.0-2.0 float scale for precise lighting control
+- **File Size Limits**: Appropriate limits for HDRI files with user feedback
+- **Error Recovery**: Graceful fallbacks to studio preset when HDRI loading fails
+- **Memory Management**: Proper cleanup and optimization for 3D rendering performance
+
+### Development Quality
+- **Type Safety**: Complete TypeScript integration for all HDRI and 3D model functionality
+- **Error Handling**: Comprehensive error boundaries and fallback systems
+- **Performance**: Optimized 3D rendering with proper memory management and cleanup
+- **Documentation**: Enhanced code comments and interface documentation
+- **Testing Ready**: Components structured for future unit and integration testing
+
 ## [1.0.15] - 2025-01-25
 
 ### Fixed

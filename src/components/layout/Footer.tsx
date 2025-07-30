@@ -11,30 +11,20 @@ const footerNavigation = {
   shop: [
     { name: 'All Products', href: '/shop' },
     { name: 'Islamic Calligraphy', href: '/collections/calligraphy' },
-    { name: 'Mosque Models', href: '/collections/mosque-models' },
-    { name: 'Decorative Art', href: '/collections/decorative-art' },
-    { name: 'Custom Commissions', href: '/collections/custom' },
+    { name: 'Islamic Architecture', href: '/collections/mosque-models' },
+    { name: 'Geometric Art', href: '/collections/geometric-art' },
+    { name: 'Heritage Collections', href: '/collections/custom' },
   ],
-  company: [
+  helpInfo: [
     { name: 'About Us', href: '/about' },
-    { name: 'Our Story', href: '/about/story' },
-    { name: 'Craftsmanship', href: '/about/craftsmanship' },
-    { name: 'Press & Media', href: '/about/press' },
-    { name: 'Careers', href: '/about/careers' },
-  ],
-  support: [
     { name: 'Contact Us', href: '/contact' },
-    { name: 'Shipping Info', href: '/support/shipping' },
-    { name: 'Returns & Exchanges', href: '/support/returns' },
-    { name: 'Size Guide', href: '/support/size-guide' },
-    { name: 'Care Instructions', href: '/support/care' },
-    { name: 'FAQ', href: '/support/faq' },
+    { name: 'Returns & Exchanges', href: '/returns' },
+    { name: 'FAQ', href: '/faq' },
   ],
   legal: [
-    { name: 'Privacy Policy', href: '/legal/privacy' },
-    { name: 'Terms of Service', href: '/legal/terms' },
-    { name: 'Refund Policy', href: '/legal/refunds' },
-    { name: 'Cookie Policy', href: '/legal/cookies' },
+    { name: 'Privacy Policy', href: '/privacy-policy' },
+    { name: 'Terms of Service', href: '/terms-of-service' },
+    { name: 'Cookie Policy', href: '/cookie-policy' },
   ],
 };
 
@@ -104,7 +94,7 @@ const Footer = () => {
 
       {/* Main Footer Content */}
       <div className="container-luxury py-12 lg:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           {/* Company Info */}
           <div className="lg:col-span-2">
             <Link href="/" className="inline-block mb-6">
@@ -191,32 +181,13 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Company Links */}
+          {/* Help & Info Links */}
           <div>
             <h4 className="font-playfair text-lg font-semibold text-luxury-gold mb-6">
-              Company
+              Help & Info
             </h4>
             <ul className="space-y-3">
-              {footerNavigation.company.map((item) => (
-                <li key={item.name}>
-                  <Link
-                    href={item.href}
-                    className="text-gray-300 hover:text-luxury-gold transition-colors duration-200 text-sm"
-                  >
-                    {item.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Support Links */}
-          <div>
-            <h4 className="font-playfair text-lg font-semibold text-luxury-gold mb-6">
-              Support
-            </h4>
-            <ul className="space-y-3">
-              {footerNavigation.support.map((item) => (
+              {footerNavigation.helpInfo.map((item) => (
                 <li key={item.name}>
                   <Link
                     href={item.href}
@@ -260,9 +231,6 @@ const Footer = () => {
               </div>
               <div className="text-xs text-gray-400 bg-white/10 px-3 py-1 rounded">
                 UK Based
-              </div>
-              <div className="text-xs text-gray-400 bg-white/10 px-3 py-1 rounded">
-                Halal Certified
               </div>
             </div>
           </div>

@@ -20,38 +20,18 @@ const popularSearches = [
   'Surah Al-Fatiha'
 ];
 
-const suggestedProducts = [
-  {
-    id: 1,
-    name: 'Ayat al-Kursi Calligraphy',
-    price: 89.99,
-    image: '/images/products/ayat-al-kursi.jpg',
-    category: 'Islamic Calligraphy'
-  },
-  {
-    id: 2,
-    name: 'Bismillah Wall Art',
-    price: 64.99,
-    image: '/images/products/bismillah-art.jpg',
-    category: 'Wall Art'
-  },
-  {
-    id: 3,
-    name: 'Masjid al-Haram Model',
-    price: 159.99,
-    image: '/images/products/masjid-al-haram.jpg',
-    category: 'Mosque Models'
-  }
-];
 
 const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [suggestedProducts, setSuggestedProducts] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
+      // Load suggested products when modal opens
+      loadSuggestedProducts();
     } else {
       document.body.style.overflow = 'unset';
     }
@@ -61,19 +41,41 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
     };
   }, [isOpen]);
 
+  const loadSuggestedProducts = async () => {
+    try {
+      const response = await fetch('/api/products?status=published&featured=true&limit=3');
+      const data = await response.json();
+      
+      if (data.success) {
+        setSuggestedProducts(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error loading suggested products:', error);
+      setSuggestedProducts([]);
+    }
+  };
+
   useEffect(() => {
     if (searchTerm.length > 2) {
       setIsSearching(true);
       
-      // Simulate API search
-      const timer = setTimeout(() => {
-        const filtered = suggestedProducts.filter(product =>
-          product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          product.category.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        setSearchResults(filtered);
+      // Real API search
+      const timer = setTimeout(async () => {
+        try {
+          const response = await fetch(`/api/products?search=${encodeURIComponent(searchTerm)}&limit=5&status=published`);
+          const data = await response.json();
+          
+          if (data.success) {
+            setSearchResults(data.data || []);
+          } else {
+            setSearchResults([]);
+          }
+        } catch (error) {
+          console.error('Search error:', error);
+          setSearchResults([]);
+        }
         setIsSearching(false);
-      }, 500);
+      }, 300);
 
       return () => clearTimeout(timer);
     } else {
@@ -162,12 +164,25 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                             className="flex items-center space-x-4 p-3 hover:bg-luxury-gray-50 rounded-lg transition-colors"
                             onClick={handleClose}
                           >
-                            <div className="w-12 h-12 bg-luxury-gray-100 rounded-lg flex items-center justify-center">
-                              <Search size={16} className="text-luxury-gold" />
+                            <div className="w-12 h-12 bg-luxury-gray-100 rounded-lg overflow-hidden">
+                              {product.featuredImage ? (
+                                <img 
+                                  src={product.featuredImage} 
+                                  alt={product.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <Search size={16} className="text-luxury-gold" />
+                                </div>
+                              )}
                             </div>
                             <div className="flex-1">
                               <h4 className="font-medium text-luxury-black">{product.name}</h4>
                               <p className="text-sm text-luxury-gray-600">{product.category}</p>
+                              {product.arabicName && (
+                                <p className="text-xs text-luxury-gold font-arabic">{product.arabicName}</p>
+                              )}
                             </div>
                             <div className="text-luxury-gold font-semibold">
                               {formatPrice(product.price)}
@@ -218,12 +233,25 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                             className="flex items-center space-x-4 p-3 hover:bg-luxury-gray-50 rounded-lg transition-colors"
                             onClick={handleClose}
                           >
-                            <div className="w-12 h-12 bg-luxury-gray-100 rounded-lg flex items-center justify-center">
-                              <Search size={16} className="text-luxury-gold" />
+                            <div className="w-12 h-12 bg-luxury-gray-100 rounded-lg overflow-hidden">
+                              {product.featuredImage ? (
+                                <img 
+                                  src={product.featuredImage} 
+                                  alt={product.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <Search size={16} className="text-luxury-gold" />
+                                </div>
+                              )}
                             </div>
                             <div className="flex-1">
                               <h4 className="font-medium text-luxury-black">{product.name}</h4>
                               <p className="text-sm text-luxury-gray-600">{product.category}</p>
+                              {product.arabicName && (
+                                <p className="text-xs text-luxury-gold font-arabic">{product.arabicName}</p>
+                              )}
                             </div>
                             <div className="text-luxury-gold font-semibold">
                               {formatPrice(product.price)}
