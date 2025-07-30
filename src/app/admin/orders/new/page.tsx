@@ -307,7 +307,7 @@ const NewOrderPage = () => {
     if (existingItem) {
       setOrderItems(prev => prev.map(item =>
         item.product_id === product.id
-          ? { ...item, quantity: item.quantity + 1, totalPrice: (item.quantity + 1) * item.unitPrice }
+          ? { ...item, quantity: item.quantity + 1, total: (item.quantity + 1) * item.price }
           : item
       ));
     } else {
@@ -316,22 +316,14 @@ const NewOrderPage = () => {
       
       const newItem: OrderItem = {
         id: generateUUID(),
+        order_id: '', // Will be set when order is created
         product_id: product.id,
-        name: product.name,
-        arabicName: product.arabicName || '',
-        sku: product.sku,
-        image: product.featuredImage || '',
-        unitPrice: productPrice,
         quantity: 1,
-        totalPrice: productPrice,
-        customizations: [],
-        personalizations: [],
-        printStatus: 'pending',
-        printTime: product.printTime || 2,
-        finishingTime: product.finishingTime || 1,
-        materialUsed: Array.isArray(product.material) ? product.material.join(', ') : (product.material || 'Not specified'),
-        fulfilled: false,
-        qualityChecked: false,
+        price: productPrice,
+        total: productPrice,
+        product_name: product.name,
+        product_sku: product.sku,
+        created_at: new Date().toISOString(),
       };
       setOrderItems(prev => [...prev, newItem]);
     }
@@ -346,7 +338,7 @@ const NewOrderPage = () => {
     } else {
       setOrderItems(prev => prev.map(item =>
         item.id === itemId
-          ? { ...item, quantity, totalPrice: quantity * item.unitPrice }
+          ? { ...item, quantity, total: quantity * item.price }
           : item
       ));
     }
@@ -357,7 +349,7 @@ const NewOrderPage = () => {
   };
 
   // Calculate totals
-  const subtotal = orderItems.reduce((sum, item) => sum + item.totalPrice, 0);
+  const subtotal = orderItems.reduce((sum, item) => sum + item.total, 0);
   const vatAmount = subtotal * 0.2; // UK VAT 20%
   const total = subtotal + shippingCost + vatAmount - discountAmount;
 
@@ -393,10 +385,10 @@ const NewOrderPage = () => {
         items: orderItems.map(item => ({
           productId: item.product_id,
           quantity: item.quantity,
-          price: item.unitPrice,
-          total: item.totalPrice,
-          name: item.name,
-          sku: item.sku || `ITEM-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`
+          price: item.price,
+          total: item.total,
+          name: item.product_name,
+          sku: item.product_sku || `ITEM-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`
         })),
         subtotal,
         taxAmount: vatAmount,
@@ -1060,9 +1052,9 @@ const NewOrderPage = () => {
                         <Package className="h-6 w-6 text-luxury-gold" />
                       </div>
                       <div>
-                        <p className="font-medium text-luxury-black">{item.name}</p>
-                        <p className="text-sm text-luxury-gray-600">SKU: {item.sku}</p>
-                        <p className="text-sm text-luxury-gold">{formatPrice(item.unitPrice)} each</p>
+                        <p className="font-medium text-luxury-black">{item.product_name}</p>
+                        <p className="text-sm text-luxury-gray-600">SKU: {item.product_sku}</p>
+                        <p className="text-sm text-luxury-gold">{formatPrice(item.price)} each</p>
                       </div>
                     </div>
                     
@@ -1086,7 +1078,7 @@ const NewOrderPage = () => {
                       </div>
                       
                       <div className="text-right">
-                        <p className="font-semibold text-luxury-black">{formatPrice(item.totalPrice)}</p>
+                        <p className="font-semibold text-luxury-black">{formatPrice(item.total)}</p>
                         <button
                           type="button"
                           onClick={() => removeItem(item.id)}
