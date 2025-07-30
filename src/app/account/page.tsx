@@ -131,6 +131,18 @@ export default function AccountDashboard() {
         return;
       }
 
+      // Ensure we have customer data before proceeding
+      if (!customerData) {
+        console.error('No customer data available');
+        setStats({
+          totalOrders: 0,
+          totalSpent: 0,
+          wishlistItems: wishlistCount,
+          recentOrders: []
+        });
+        return;
+      }
+
       // Load orders using the customer's ID
       const { data: orders, error: ordersError } = await supabase
         .from('orders')
