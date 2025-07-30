@@ -1,5 +1,4 @@
 {
-  "_comment": "Force rebuild - TypeScript fix applied",
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "installCommand": "npm install",
