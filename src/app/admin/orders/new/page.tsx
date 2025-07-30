@@ -599,7 +599,7 @@ const NewOrderPage = () => {
                       value={customer.firstName}
                       onChange={(e) => setCustomer(prev => ({ ...prev, firstName: e.target.value }))}
                       className="input-luxury"
-                      disabled={customerSelectionMode === 'existing' && selectedCustomerId}
+                      disabled={customerSelectionMode === 'existing' && !!selectedCustomerId}
                       required
                     />
                   </div>
@@ -613,7 +613,7 @@ const NewOrderPage = () => {
                       value={customer.lastName}
                       onChange={(e) => setCustomer(prev => ({ ...prev, lastName: e.target.value }))}
                       className="input-luxury"
-                      disabled={customerSelectionMode === 'existing' && selectedCustomerId}
+                      disabled={customerSelectionMode === 'existing' && !!selectedCustomerId}
                       required
                     />
                   </div>
@@ -627,7 +627,7 @@ const NewOrderPage = () => {
                       value={customer.email}
                       onChange={(e) => setCustomer(prev => ({ ...prev, email: e.target.value }))}
                       className="input-luxury"
-                      disabled={customerSelectionMode === 'existing' && selectedCustomerId}
+                      disabled={customerSelectionMode === 'existing' && !!selectedCustomerId}
                       required
                     />
                   </div>
@@ -641,7 +641,7 @@ const NewOrderPage = () => {
                       value={customer.phone}
                       onChange={(e) => setCustomer(prev => ({ ...prev, phone: e.target.value }))}
                       className="input-luxury"
-                      disabled={customerSelectionMode === 'existing' && selectedCustomerId}
+                      disabled={customerSelectionMode === 'existing' && !!selectedCustomerId}
                     />
                   </div>
                   
@@ -654,7 +654,7 @@ const NewOrderPage = () => {
                       value={customer.company}
                       onChange={(e) => setCustomer(prev => ({ ...prev, company: e.target.value }))}
                       className="input-luxury"
-                      disabled={customerSelectionMode === 'existing' && selectedCustomerId}
+                      disabled={customerSelectionMode === 'existing' && !!selectedCustomerId}
                     />
                   </div>
                 </div>
