@@ -68,19 +68,29 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   // Fetch unread count only
   const fetchUnreadCount = useCallback(async () => {
-    if (!isAdmin) return;
+    if (!isAdmin || !user?.id) return;
 
     try {
       const response = await fetch('/api/admin/notifications/unread-count');
+      
+      if (!response.ok) {
+        // Don't log 403/401 errors as they're expected for non-admin users
+        if (response.status !== 403 && response.status !== 401) {
+          console.error('Error fetching unread count:', response.status, response.statusText);
+        }
+        return;
+      }
+
       const data = await response.json();
 
       if (data.success) {
         setUnreadCount(data.data.unread_count);
       }
     } catch (err) {
+      // Silently fail for network errors when not critical
       console.error('Error fetching unread count:', err);
     }
-  }, [isAdmin]);
+  }, [isAdmin, user?.id]);
 
   // Mark notification as read
   const markAsRead = useCallback(async (notificationId: string) => {
@@ -356,14 +366,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   // Periodic refresh of unread count
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!isAdmin || !user?.id) return;
 
     const interval = setInterval(() => {
       fetchUnreadCount();
     }, 30000); // Refresh every 30 seconds
 
     return () => clearInterval(interval);
-  }, [isAdmin, fetchUnreadCount]);
+  }, [isAdmin, user?.id, fetchUnreadCount]);
 
   const value: NotificationContextType = {
     notifications,

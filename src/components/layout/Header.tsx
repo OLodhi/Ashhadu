@@ -19,18 +19,17 @@ import CartSidebar from '@/components/cart/CartSidebar';
 
 const navigation = [
   { name: 'Home', href: '/' },
-  { name: 'Shop', href: '/shop' },
   { 
     name: 'Collections', 
     href: '/collections',
     submenu: [
       { name: 'Islamic Calligraphy', href: '/collections/calligraphy' },
-      { name: 'Mosque Models', href: '/collections/mosque-models' },
-      { name: 'Decorative Art', href: '/collections/decorative-art' },
-      { name: 'Arabic Text Art', href: '/collections/arabic-text' },
-      { name: 'Custom Commissions', href: '/collections/custom' },
+      { name: 'Islamic Architecture', href: '/collections/mosque-models' },
+      { name: 'Geometric Art', href: '/collections/geometric-art' },
+      { name: 'Heritage Collections', href: '/collections/custom' },
     ]
   },
+  { name: 'Shop', href: '/shop' },
   { name: 'About', href: '/about' },
   { name: 'Contact', href: '/contact' },
 ];
@@ -174,16 +173,28 @@ const Header = () => {
                   onMouseEnter={() => setHoveredMenu(item.name)}
                   onMouseLeave={() => setHoveredMenu(null)}
                 >
-                  <Link
-                    href={item.href}
-                    className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition-colors duration-200 ${
-                      isActiveLink(item.href)
-                        ? 'text-luxury-gold border-b-2 border-luxury-gold'
-                        : 'text-luxury-black hover:text-luxury-gold'
-                    }`}
-                  >
-                    {item.name}
-                  </Link>
+                  {item.submenu ? (
+                    <button
+                      className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition-colors duration-200 ${
+                        isActiveLink(item.href)
+                          ? 'text-luxury-gold border-b-2 border-luxury-gold'
+                          : 'text-luxury-black hover:text-luxury-gold'
+                      }`}
+                    >
+                      {item.name}
+                    </button>
+                  ) : (
+                    <Link
+                      href={item.href}
+                      className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition-colors duration-200 ${
+                        isActiveLink(item.href)
+                          ? 'text-luxury-gold border-b-2 border-luxury-gold'
+                          : 'text-luxury-black hover:text-luxury-gold'
+                      }`}
+                    >
+                      {item.name}
+                    </Link>
+                  )}
 
                   {/* Dropdown Menu */}
                   {item.submenu && (
@@ -413,16 +424,28 @@ const Header = () => {
                   {/* Mobile Navigation Links */}
                   {navigation.map((item) => (
                     <div key={item.name} className="space-y-2">
-                      <Link
-                        href={item.href}
-                        className={`block py-2 text-base font-medium transition-colors duration-200 ${
-                          isActiveLink(item.href)
-                            ? 'text-luxury-gold'
-                            : 'text-luxury-black hover:text-luxury-gold'
-                        }`}
-                      >
-                        {item.name}
-                      </Link>
+                      {item.submenu ? (
+                        <span
+                          className={`block py-2 text-base font-medium transition-colors duration-200 ${
+                            isActiveLink(item.href)
+                              ? 'text-luxury-gold'
+                              : 'text-luxury-black hover:text-luxury-gold'
+                          }`}
+                        >
+                          {item.name}
+                        </span>
+                      ) : (
+                        <Link
+                          href={item.href}
+                          className={`block py-2 text-base font-medium transition-colors duration-200 ${
+                            isActiveLink(item.href)
+                              ? 'text-luxury-gold'
+                              : 'text-luxury-black hover:text-luxury-gold'
+                          }`}
+                        >
+                          {item.name}
+                        </Link>
+                      )}
                       
                       {/* Mobile Submenu */}
                       {item.submenu && (

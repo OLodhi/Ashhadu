@@ -4,8 +4,22 @@ import React from 'react';
 import Link from 'next/link';
 import { ArrowRight, Play } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useSettings } from '@/contexts/SettingsContext';
+import { SETTING_KEYS } from '@/types/settings';
+import Model3DViewer from '@/components/models/Model3DViewer';
 
 const HeroSection = () => {
+  const { getSetting } = useSettings();
+
+  // Get showcase settings
+  const isShowcaseEnabled = getSetting(SETTING_KEYS.SHOWCASE_3D_MODEL_ENABLED) || false;
+  const modelUrl = getSetting(SETTING_KEYS.SHOWCASE_3D_MODEL_URL) || '';
+  const modelFormat = getSetting(SETTING_KEYS.SHOWCASE_3D_MODEL_FORMAT) || 'glb';
+  const rotationSpeed = getSetting(SETTING_KEYS.SHOWCASE_3D_ROTATION_SPEED) || 1.0;
+  
+  // Show 3D model if enabled and model URL exists
+  const show3DModel = isShowcaseEnabled && modelUrl;
+
   return (
     <section className="relative min-h-[80vh] lg:min-h-[90vh] bg-luxury-hero overflow-hidden">
       {/* Background Pattern */}
@@ -103,19 +117,39 @@ const HeroSection = () => {
             <div className="relative aspect-square max-w-lg mx-auto">
               {/* Main Product Image Placeholder */}
               <div className="absolute inset-0 bg-gradient-to-br from-luxury-gold/20 to-luxury-gold/5 rounded-2xl border border-luxury-gold/30 backdrop-blur-sm">
-                <div className="absolute inset-4 bg-white/10 rounded-xl flex items-center justify-center">
-                  <div className="text-center space-y-4">
-                    <div className="w-32 h-32 mx-auto bg-luxury-gold/30 rounded-full flex items-center justify-center">
-                      <svg width="60" height="60" viewBox="0 0 60 60" className="text-luxury-gold">
-                        <path d="M30 5l8.817 18.183L57 25l-18.183 1.817L37 45l-7-18.183L12 25l18.183-1.817L30 5z" 
-                              fill="currentColor"/>
-                      </svg>
+                <div className="absolute inset-4 bg-white/10 rounded-xl overflow-hidden">
+                  {show3DModel ? (
+                    /* 3D Model Showcase */
+                    <div className="w-full h-full">
+                      <Model3DViewer
+                        modelUrl={modelUrl}
+                        format={modelFormat}
+                        showControls={false}
+                        autoRotate={true}
+                        autoRotateSpeed={rotationSpeed}
+                        enableZoom={false}
+                        enablePan={false}
+                        cameraPosition={[4, 0, 2]} // Head-on side view, same height as model
+                        className="rounded-lg"
+                      />
                     </div>
-                    <div className="space-y-2">
-                      <h3 className="text-xl font-playfair text-white">Ayat al-Kursi</h3>
-                      <p className="text-luxury-gold text-sm">Premium 3D Calligraphy</p>
+                  ) : (
+                    /* Default Ayat al-Kursi Content */
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center space-y-4">
+                        <div className="w-32 h-32 mx-auto bg-luxury-gold/30 rounded-full flex items-center justify-center">
+                          <svg width="60" height="60" viewBox="0 0 60 60" className="text-luxury-gold">
+                            <path d="M30 5l8.817 18.183L57 25l-18.183 1.817L37 45l-7-18.183L12 25l18.183-1.817L30 5z" 
+                                  fill="currentColor"/>
+                          </svg>
+                        </div>
+                        <div className="space-y-2">
+                          <h3 className="text-xl font-playfair text-white">Ayat al-Kursi</h3>
+                          <p className="text-luxury-gold text-sm">Premium 3D Calligraphy</p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
 
@@ -125,7 +159,9 @@ const HeroSection = () => {
                 transition={{ duration: 4, repeat: Infinity }}
                 className="absolute -top-4 -right-4 w-20 h-20 bg-luxury-gold/20 rounded-full border border-luxury-gold/40 flex items-center justify-center"
               >
-                <span className="text-luxury-gold font-playfair text-sm">3D</span>
+                <span className="text-luxury-gold font-playfair text-sm">
+                  {show3DModel ? '3D' : '✨'}
+                </span>
               </motion.div>
 
               <motion.div

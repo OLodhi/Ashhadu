@@ -1,0 +1,205 @@
+/* HDRI Upload Component Styles */
+
+/* Custom slider styling for background blur and intensity controls */
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.slider:hover {
+  opacity: 1;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #D4AF37; /* luxury-gold */
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: background 0.2s ease;
+}
+
+.slider::-webkit-slider-thumb:hover {
+  background: #B8941F; /* darker luxury-gold */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #D4AF37; /* luxury-gold */
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: background 0.2s ease;
+}
+
+.slider::-moz-range-thumb:hover {
+  background: #B8941F; /* darker luxury-gold */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Smaller slider variant for intensity controls */
+.slider-sm {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  outline: none;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.slider-sm:hover {
+  opacity: 1;
+}
+
+.slider-sm::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #D4AF37; /* luxury-gold */
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: background 0.2s ease;
+}
+
+.slider-sm::-webkit-slider-thumb:hover {
+  background: #B8941F; /* darker luxury-gold */
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.slider-sm::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #D4AF37; /* luxury-gold */
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: background 0.2s ease;
+}
+
+.slider-sm::-moz-range-thumb:hover {
+  background: #B8941F; /* darker luxury-gold */
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* HDRI preview gradient animation */
+.hdri-preview-gradient {
+  background: linear-gradient(45deg, #1a1a1a, #2d2d2d, #1a1a1a);
+  background-size: 200% 200%;
+  animation: hdriGradient 3s ease infinite;
+}
+
+@keyframes hdriGradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* HDRI file type badge */
+.hdri-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  color: #000;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Drag and drop area enhancement for HDRI */
+.hdri-dropzone {
+  transition: all 0.3s ease;
+  border-style: dashed;
+  border-width: 2px;
+}
+
+.hdri-dropzone.drag-active {
+  border-color: #D4AF37;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(212, 175, 55, 0.05));
+  transform: scale(1.02);
+}
+
+.hdri-dropzone:hover:not(.drag-active) {
+  border-color: #D4AF37;
+  background: rgba(212, 175, 55, 0.05);
+}
+
+/* Loading animation for HDRI uploads */
+.hdri-upload-loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.hdri-upload-loading::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.3), transparent);
+  animation: hdriUploadShimmer 2s infinite;
+}
+
+@keyframes hdriUploadShimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .slider::-webkit-slider-thumb {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .slider-sm::-webkit-slider-thumb {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .slider-sm::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+/* Focus states for accessibility */
+.slider:focus {
+  outline: 2px solid #D4AF37;
+  outline-offset: 2px;
+}
+
+.slider-sm:focus {
+  outline: 1px solid #D4AF37;
+  outline-offset: 1px;
+}

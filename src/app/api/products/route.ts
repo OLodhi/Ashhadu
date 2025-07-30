@@ -19,6 +19,31 @@ export async function GET(request: NextRequest) {
           title,
           featured,
           sort_order
+        ),
+        product_models (
+          id,
+          url,
+          filename,
+          file_type,
+          format,
+          file_size,
+          featured,
+          title,
+          description,
+          sort_order,
+          thumbnail,
+          created_at
+        ),
+        product_hdris (
+          id,
+          url,
+          filename,
+          file_size,
+          intensity,
+          is_default,
+          title,
+          description,
+          created_at
         )
       `);
 
@@ -119,7 +144,40 @@ export async function GET(request: NextRequest) {
         featured: img.featured,
         sortOrder: img.sort_order
       })) || [],
-      featuredImage: product.product_images?.find((img: any) => img.featured)?.url || product.featured_image || ''
+      featuredImage: product.product_images?.find((img: any) => img.featured)?.url || product.featured_image || '',
+      // 3D Models data
+      models: product.product_models?.map((model: any) => ({
+        id: model.id,
+        url: model.url,
+        filename: model.filename,
+        fileType: model.file_type,
+        format: model.format,
+        fileSize: model.file_size,
+        featured: model.featured,
+        title: model.title || '',
+        description: model.description || '',
+        sortOrder: model.sort_order,
+        thumbnail: model.thumbnail,
+        uploadedAt: model.created_at
+      })) || [],
+      has3dModel: product.has_3d_model || false,
+      featuredModel: product.featured_model || '',
+      // HDRI data
+      hdriFiles: product.product_hdris?.map((hdri: any) => ({
+        id: hdri.id,
+        url: hdri.url,
+        filename: hdri.filename,
+        fileSize: hdri.file_size,
+        intensity: hdri.intensity,
+        isDefault: hdri.is_default,
+        title: hdri.title || '',
+        description: hdri.description || '',
+        uploadedAt: hdri.created_at
+      })) || [],
+      hasHdri: product.has_hdri || false,
+      defaultHdriUrl: product.default_hdri_url || '',
+      defaultHdriIntensity: product.default_hdri_intensity || 1.0,
+      backgroundBlur: product.background_blur || 0
     })) || [];
 
     return NextResponse.json({
@@ -142,8 +200,15 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    // Extract images from body for separate insertion
-    const { images, ...productData } = body;
+    // Extract images, models, and HDRI files from body for separate insertion
+    const { images, models, hdriFiles, ...productData } = body;
+    
+    // Debug logging
+    console.log('🔍 Product creation data received:');
+    console.log('- Images:', images?.length || 0);
+    console.log('- Models:', models?.length || 0);
+    console.log('- HDRI Files:', hdriFiles?.length || 0);
+    console.log('- HDRI Data:', hdriFiles);
 
     // Generate slug from name if not provided
     if (!productData.slug) {
@@ -202,6 +267,14 @@ export async function POST(request: NextRequest) {
       personalizable: productData.personalizable || false,
       gift_wrapping: productData.giftWrapping ?? true,
       featured_image: productData.featuredImage,
+      // 3D Model fields
+      has_3d_model: (models && models.length > 0) || false,
+      featured_model: productData.featuredModel || '',
+      // HDRI fields
+      has_hdri: (hdriFiles && hdriFiles.length > 0) || false,
+      default_hdri_url: hdriFiles?.[0]?.url || '',
+      default_hdri_intensity: hdriFiles?.[0]?.intensity || 1.0,
+      background_blur: productData.backgroundBlur || 0,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -234,6 +307,66 @@ export async function POST(request: NextRequest) {
         console.error('Error inserting product images:', imagesError);
         // Don't fail the entire operation for image errors
       }
+    }
+
+    // Insert 3D models if provided
+    if (models && models.length > 0 && product) {
+      const modelInserts = models.map((model: any, index: number) => ({
+        product_id: product.id,
+        url: model.url,
+        filename: model.filename,
+        file_type: model.fileType || '3dModel',
+        format: model.format,
+        file_size: model.fileSize,
+        featured: model.featured || index === 0,
+        title: model.title || `${product.name} 3D Model`,
+        description: model.description || '',
+        sort_order: index,
+        thumbnail: model.thumbnail || null
+      }));
+
+      const { error: modelsError } = await supabaseAdmin
+        .from('product_models')
+        .insert(modelInserts);
+
+      if (modelsError) {
+        console.error('Error inserting product models:', modelsError);
+        // Don't fail the entire operation for model errors
+      }
+    }
+
+    // Insert HDRI files if provided
+    if (hdriFiles && hdriFiles.length > 0 && product) {
+      console.log('🎯 Attempting to insert HDRI files:', hdriFiles.length);
+      
+      const hdriInserts = hdriFiles.map((hdri: any, index: number) => ({
+        product_id: product.id,
+        url: hdri.url,
+        filename: hdri.filename,
+        file_size: hdri.fileSize,
+        intensity: hdri.intensity || 1.0,
+        is_default: index === 0, // First HDRI is default
+        title: hdri.title || `${product.name} HDRI Environment`,
+        description: hdri.description || ''
+      }));
+
+      console.log('🎯 HDRI insert data:', hdriInserts);
+
+      const { error: hdriError } = await supabaseAdmin
+        .from('product_hdris')
+        .insert(hdriInserts);
+
+      if (hdriError) {
+        console.error('❌ Error inserting product HDRIs:', hdriError);
+        // Don't fail the entire operation for HDRI errors
+      } else {
+        console.log('✅ HDRI files inserted successfully');
+      }
+    } else {
+      console.log('⚠️ No HDRI files to insert:', {
+        hdriFiles: hdriFiles?.length || 0,
+        productExists: !!product
+      });
     }
 
     // Create initial inventory movement

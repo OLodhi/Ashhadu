@@ -12,9 +12,11 @@ import {
   EyeOff
 } from 'lucide-react';
 // Removed useProductStore - now using API routes
-import { ProductCategory, IslamicArtCategory, Product, ProductImage } from '@/types/product';
+import { ProductCategory, IslamicArtCategory, Product, ProductImage, Product3DModel, ProductHDRI } from '@/types/product';
 import { toast } from 'react-hot-toast';
 import ImageUpload from '@/components/ui/ImageUpload';
+import Model3DUpload from '@/components/ui/Model3DUpload';
+import HDRIUpload from '@/components/ui/HDRIUpload';
 
 const NewProductPage = () => {
   const router = useRouter();
@@ -42,6 +44,12 @@ const NewProductPage = () => {
     images: [] as any[],
     imageUrls: [] as string[], // Simple array for ImageUpload component
     featuredImage: '',
+    models: [] as Product3DModel[],
+    has3dModel: false,
+    featuredModel: '',
+    hdriFiles: [] as ProductHDRI[],
+    defaultHdri: '',
+    backgroundBlur: 0,
     sku: '',
     stock: 0,
     stockStatus: 'in-stock' as const,
@@ -135,6 +143,27 @@ const NewProductPage = () => {
     }));
   };
 
+  const handleModelsChange = (newModels: Product3DModel[]) => {
+    setFormData(prev => ({
+      ...prev,
+      models: newModels,
+      has3dModel: newModels.length > 0
+    }));
+  };
+
+  const handleFeaturedModelChange = (featuredModel: string) => {
+    setFormData(prev => ({
+      ...prev,
+      featuredModel,
+      // Update the models array to reflect the new featured selection
+      models: prev.models.map(model => ({
+        ...model,
+        featured: model.id === featuredModel
+      }))
+    }));
+  };
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -142,6 +171,13 @@ const NewProductPage = () => {
       toast.error('Please fill in all required fields (name, description, regular price)');
       return;
     }
+
+    // Debug: Log form data before submission
+    console.log('🔍 Form submission data:');
+    console.log('- HDRI Files:', formData.hdriFiles);
+    console.log('- HDRI Files Length:', formData.hdriFiles?.length);
+    console.log('- Models:', formData.models?.length);
+    console.log('- Images:', formData.images?.length);
 
     try {
       const productData = {
@@ -155,6 +191,14 @@ const NewProductPage = () => {
         on_sale: formData.price > 0 && formData.price < formData.regularPrice,
         // Format images for database
         images: formData.images.length > 0 ? formData.images : undefined,
+        // Format 3D models for database
+        models: formData.models,
+        has3dModel: formData.has3dModel,
+        featuredModel: formData.featuredModel,
+        // Format HDRI files for database
+        hdriFiles: formData.hdriFiles,
+        defaultHdri: formData.defaultHdri,
+        backgroundBlur: formData.backgroundBlur,
       };
 
       // Call the API route to create the product
@@ -660,6 +704,124 @@ const NewProductPage = () => {
             aspectRatio="square"
             showFeaturedToggle={true}
           />
+        </div>
+
+        {/* 3D Model & Environment */}
+        <div className="bg-white rounded-lg shadow-luxury p-6">
+          <h2 className="text-xl font-semibold text-luxury-black mb-6">3D Model & Environment</h2>
+          <p className="text-sm text-luxury-gray-600 mb-6">
+            Upload your 3D model and configure HDRI environment lighting for realistic product visualization. 
+            HDRI environments enhance the visual quality and realism of 3D product displays.
+          </p>
+          
+          {/* 3D Model Upload Section */}
+          <div className="mb-8">
+            <h3 className="text-lg font-medium text-luxury-black mb-4">3D Model</h3>
+            <Model3DUpload
+              models={formData.models}
+              onModelsChange={handleModelsChange}
+              featuredModel={formData.featuredModel}
+              onFeaturedModelChange={handleFeaturedModelChange}
+              maxModels={1}
+              showFeaturedToggle={true}
+            />
+          </div>
+
+          {/* HDRI Environment Section */}
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="text-lg font-medium text-luxury-black mb-4">HDRI Environment Lighting</h3>
+            
+            <HDRIUpload
+              value={formData.hdriFiles?.[0] || null}
+              onChange={(hdri) => {
+                if (hdri) {
+                  setFormData(prev => ({ ...prev, hdriFiles: [hdri] }));
+                } else {
+                  setFormData(prev => ({ ...prev, hdriFiles: [] }));
+                }
+              }}
+              maxFiles={1}
+              showPreview={true}
+            />
+
+            {/* HDRI Controls */}
+            {formData.hdriFiles.length > 0 && (
+              <div className="mt-6 space-y-4">
+                <h4 className="text-base font-medium text-luxury-black">Environment Settings</h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* HDRI Intensity */}
+                  <div>
+                    <label className="block text-sm font-medium text-luxury-black mb-2">
+                      HDRI Intensity
+                    </label>
+                    <div className="space-y-2">
+                      <input
+                        type="range"
+                        min="0"
+                        max="2"
+                        step="0.1"
+                        value={formData.hdriFiles[0]?.intensity || 1.0}
+                        onChange={(e) => {
+                          const intensity = parseFloat(e.target.value);
+                          if (formData.hdriFiles[0]) {
+                            const updatedHdri = { ...formData.hdriFiles[0], intensity };
+                            setFormData(prev => ({ ...prev, hdriFiles: [updatedHdri] }));
+                          }
+                        }}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <div className="flex justify-between text-xs text-luxury-gray-500">
+                        <span>0.0 (Dark)</span>
+                        <span className="font-medium text-luxury-black">
+                          {formData.hdriFiles[0]?.intensity?.toFixed(1) || '1.0'}
+                        </span>
+                        <span>2.0 (Bright)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Background Blur */}
+                  <div>
+                    <label className="block text-sm font-medium text-luxury-black mb-2">
+                      Background Blur Intensity
+                    </label>
+                    <div className="space-y-2">
+                      <input
+                        type="range"
+                        min="0"
+                        max="10"
+                        step="1"
+                        value={formData.backgroundBlur}
+                        onChange={(e) => handleInputChange('backgroundBlur', parseInt(e.target.value))}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <div className="flex justify-between text-xs text-luxury-gray-500">
+                        <span>0 (Sharp)</span>
+                        <span className="font-medium text-luxury-black">
+                          {formData.backgroundBlur}
+                        </span>
+                        <span>10 (Blurred)</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-luxury-gray-500 mt-1">
+                      Controls how blurred the HDRI background appears behind the 3D model
+                    </p>
+                  </div>
+                </div>
+
+                {/* HDRI Preview Settings */}
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                  <h5 className="text-sm font-medium text-luxury-black mb-2">Environment Guidelines</h5>
+                  <div className="text-sm text-luxury-gray-600 space-y-1">
+                    <p>• <strong>Intensity:</strong> Controls the brightness of the HDRI environment lighting</p>
+                    <p>• <strong>Background Blur:</strong> Adds depth of field effect to focus attention on the product</p>
+                    <p>• <strong>Recommended:</strong> Start with intensity 1.0 and adjust based on your 3D model</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Product Settings */}

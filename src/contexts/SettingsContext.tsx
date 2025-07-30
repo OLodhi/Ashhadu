@@ -24,6 +24,13 @@ interface SettingsContextType {
   // Shipping helpers
   freeShippingThreshold: number;
   defaultShippingCost: number;
+  // Showcase 3D model helpers
+  isShowcase3DEnabled: boolean;
+  showcase3DModelUrl: string;
+  showcase3DModelFormat: string;
+  showcase3DRotationSpeed: number;
+  showcase3DTitle: string;
+  showcase3DDescription: string;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -148,6 +155,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const isNewsletterEnabled = getSetting(SETTING_KEYS.FEATURE_NEWSLETTER);
   const freeShippingThreshold = getSetting(SETTING_KEYS.SHIPPING_FREE_THRESHOLD);
   const defaultShippingCost = getSetting(SETTING_KEYS.SHIPPING_DEFAULT_COST);
+  const isShowcase3DEnabled = getSetting(SETTING_KEYS.SHOWCASE_3D_MODEL_ENABLED);
+  const showcase3DModelUrl = getSetting(SETTING_KEYS.SHOWCASE_3D_MODEL_URL);
+  const showcase3DModelFormat = getSetting(SETTING_KEYS.SHOWCASE_3D_MODEL_FORMAT);
+  const showcase3DRotationSpeed = getSetting(SETTING_KEYS.SHOWCASE_3D_ROTATION_SPEED);
+  const showcase3DTitle = getSetting(SETTING_KEYS.SHOWCASE_3D_TITLE);
+  const showcase3DDescription = getSetting(SETTING_KEYS.SHOWCASE_3D_DESCRIPTION);
 
   const value: SettingsContextType = {
     settings,
@@ -168,6 +181,13 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     // Shipping helpers - now reactive
     freeShippingThreshold,
     defaultShippingCost,
+    // Showcase 3D model helpers - now reactive
+    isShowcase3DEnabled,
+    showcase3DModelUrl,
+    showcase3DModelFormat,
+    showcase3DRotationSpeed,
+    showcase3DTitle,
+    showcase3DDescription,
   };
 
   return (
@@ -243,6 +263,14 @@ function getDefaultValue(key: SettingKey): any {
     [SETTING_KEYS.SOCIAL_FACEBOOK]: 'https://facebook.com/ashhadu',
     [SETTING_KEYS.SOCIAL_TWITTER]: 'https://twitter.com/ashhadu',
     [SETTING_KEYS.SOCIAL_TIKTOK]: '',
+    
+    // Showcase 3D model defaults
+    [SETTING_KEYS.SHOWCASE_3D_MODEL_ENABLED]: false,
+    [SETTING_KEYS.SHOWCASE_3D_MODEL_URL]: '',
+    [SETTING_KEYS.SHOWCASE_3D_MODEL_FORMAT]: 'glb',
+    [SETTING_KEYS.SHOWCASE_3D_ROTATION_SPEED]: 1.0,
+    [SETTING_KEYS.SHOWCASE_3D_TITLE]: 'Featured Islamic Art',
+    [SETTING_KEYS.SHOWCASE_3D_DESCRIPTION]: 'Experience our artisanal Islamic art in interactive 3D',
   };
   
   return defaults[key];

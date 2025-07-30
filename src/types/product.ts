@@ -29,6 +29,19 @@ export interface Product {
   featuredImage: string;
   gallery?: string[];
   
+  // 3D Models (Limited to 1 per product)
+  models: Product3DModel[];
+  has3dModel: boolean;
+  featuredModel: string;
+  
+  // HDRI Environment
+  hdriFiles: ProductHDRI[];
+  hasHdri: boolean;
+  defaultHdriUrl: string;
+  defaultHdriIntensity: number; // 0.0 to 2.0, default 1.0
+  backgroundBlurEnabled?: boolean;
+  backgroundBlurIntensity?: number; // 0-10 scale for background blur intensity
+  
   // Inventory
   sku: string;
   stock: number;
@@ -86,6 +99,46 @@ export interface ProductImage {
   title?: string;
   featured?: boolean;
   sortOrder: number;
+}
+
+export interface Product3DModel {
+  id: string;
+  url: string;
+  filename: string;
+  fileType: '3dModel';
+  format: 'glb' | 'stl' | 'obj' | 'fbx' | 'dae' | 'ply';
+  fileSize: number;
+  featured: boolean;
+  title?: string;
+  description?: string;
+  sortOrder: number;
+  thumbnail?: string; // Preview image of the 3D model
+  uploadedAt: string;
+  // HDRI Environment Support
+  hdriUrl?: string;
+  hdriFilename?: string;
+  hdriIntensity?: number; // 0.0 to 2.0, default 1.0
+  enableHdri?: boolean;
+}
+
+export interface ProductHDRI {
+  id: string;
+  url: string;
+  filename: string;
+  fileSize: number;
+  intensity: number; // 0.0 to 2.0
+  isDefault: boolean;
+  title?: string;
+  description?: string;
+  uploadedAt?: string;
+}
+
+// Enhanced HDRI Settings for admin forms
+export interface HDRISettings {
+  hdri?: ProductHDRI | null;
+  intensity: number; // 0.0 to 2.0
+  backgroundBlurEnabled: boolean;
+  backgroundBlurIntensity: number; // 0-10 scale
 }
 
 export interface ProductDimensions {

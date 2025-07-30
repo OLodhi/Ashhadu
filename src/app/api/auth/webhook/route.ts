@@ -228,6 +228,22 @@ async function handleUserSignup(user: any, emailData?: any) {
       activationUrl 
     });
 
+    // Get store settings for email contact info
+    const { data: storeSettings } = await supabaseAdmin
+      .from('site_settings')
+      .select('key, value')
+      .in('key', ['store_email', 'store_phone']);
+    
+    const storeEmailValue = storeSettings?.find(s => s.key === 'store_email')?.value;
+    const storePhoneValue = storeSettings?.find(s => s.key === 'store_phone')?.value;
+    
+    const storeEmail = typeof storeEmailValue === 'string' ? storeEmailValue : 
+                      (storeEmailValue && typeof storeEmailValue === 'object') ? 
+                      String(storeEmailValue) : 'support@ashhadu.co.uk';
+    const storePhone = typeof storePhoneValue === 'string' ? storePhoneValue : 
+                      (storePhoneValue && typeof storePhoneValue === 'object') ? 
+                      String(storePhoneValue) : '+44 7123 456 789';
+
     // Prepare template variables
     const templateVariables = {
       firstName,
@@ -237,7 +253,9 @@ async function handleUserSignup(user: any, emailData?: any) {
         day: 'numeric',
         month: 'long', 
         year: 'numeric'
-      })
+      }),
+      storeEmail,
+      storePhone,
     };
 
     // Send email using your existing email service with the template

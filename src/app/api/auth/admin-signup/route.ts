@@ -123,6 +123,22 @@ export async function POST(request: NextRequest) {
         const activationUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/login?message=account-created&email=${encodeURIComponent(email)}&confirmed=true`;
         console.log('🔍 Generated simple login link:', activationUrl);
         
+        // Get store settings for email contact info
+        const { data: storeSettings } = await supabaseAdmin
+          .from('site_settings')
+          .select('key, value')
+          .in('key', ['store_email', 'store_phone']);
+        
+        const storeEmailValue = storeSettings?.find(s => s.key === 'store_email')?.value;
+        const storePhoneValue = storeSettings?.find(s => s.key === 'store_phone')?.value;
+        
+        const storeEmail = typeof storeEmailValue === 'string' ? storeEmailValue : 
+                          (storeEmailValue && typeof storeEmailValue === 'object' && 'value' in storeEmailValue) ? 
+                          String(storeEmailValue) : 'support@ashhadu.co.uk';
+        const storePhone = typeof storePhoneValue === 'string' ? storePhoneValue : 
+                          (storePhoneValue && typeof storePhoneValue === 'object' && 'value' in storePhoneValue) ? 
+                          String(storePhoneValue) : '+44 7123 456 789';
+        
         const result = await emailService.sendTemplateEmail(
           'account_activation',
           {
@@ -135,7 +151,9 @@ export async function POST(request: NextRequest) {
                 day: 'numeric',
                 month: 'long', 
                 year: 'numeric'
-              })
+              }),
+              storeEmail,
+              storePhone,
             },
             replyTo: 'support@ashhadu.co.uk',
             tags: [

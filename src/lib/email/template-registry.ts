@@ -67,6 +67,8 @@ const EMAIL_TEMPLATE_IMPORTS: Record<string, () => Promise<{ default: ComponentT
   order_confirmation: () => import('@/emails/OrderConfirmationEmail'),
   welcome: () => import('@/emails/WelcomeEmail'),
   admin_new_order: () => import('@/emails/AdminNewOrderEmail'),
+  account_activation: () => import('@/emails/AccountActivationEmail'),
+  password_reset: () => import('@/emails/PasswordResetEmail'),
 };
 
 // Email template metadata for better organization
@@ -108,17 +110,17 @@ export const EMAIL_TEMPLATE_INFO: Record<string, EmailTemplateInfo> = {
     name: 'Account Activation',
     category: 'auth',
     description: 'Sent to users to activate their account',
-    requiredVariables: ['firstName', 'email', 'activationUrl'],
-    hasReactComponent: false,
-    hasDatabaseTemplate: false, // Now uses fallback template
+    requiredVariables: ['firstName', 'email', 'activationUrl', 'registrationDate'],
+    hasReactComponent: true,
+    hasDatabaseTemplate: false,
   },
   password_reset: {
     name: 'Password Reset',
     category: 'auth',
     description: 'Sent to users requesting password reset',
-    requiredVariables: ['greeting', 'email', 'resetUrl'],
-    hasReactComponent: false,
-    hasDatabaseTemplate: false, // Now uses fallback template
+    requiredVariables: ['firstName', 'email', 'resetUrl', 'requestTime'],
+    hasReactComponent: true,
+    hasDatabaseTemplate: false,
   },
   admin_low_stock: {
     name: 'Admin Low Stock Alert',

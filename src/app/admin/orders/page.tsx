@@ -44,7 +44,7 @@ interface DatabaseOrder {
     first_name: string;
     last_name: string;
     email: string;
-  };
+  } | null;
   order_items: Array<{
     id: string;
     product_name: string;
@@ -421,10 +421,13 @@ const OrdersPage = () => {
       <td className="px-6 py-4">
         <div className="space-y-1">
           <div className="font-medium text-luxury-black">
-            {order.customer.first_name} {order.customer.last_name}
+            {order.customer ? 
+              `${order.customer.first_name || 'Unknown'} ${order.customer.last_name || 'Customer'}` :
+              'Unknown Customer'
+            }
           </div>
           <div className="text-sm text-luxury-gray-600">
-            {order.customer.email}
+            {order.customer?.email || 'No email provided'}
           </div>
         </div>
       </td>

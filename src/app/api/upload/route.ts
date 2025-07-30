@@ -15,19 +15,101 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      return NextResponse.json(
-        { success: false, error: 'File must be an image' },
-        { status: 400 }
-      );
+    // Determine file type based on bucket
+    const is3DModel = bucket === '3d-models';
+    const isHDRI = bucket === 'hdri-files';
+    
+    console.log('Upload API Debug:', {
+      fileName: file.name,
+      fileType: file.type,
+      fileSize: file.size,
+      bucket,
+      folder,
+      is3DModel,
+      isHDRI
+    });
+    
+    // Validate file type based on upload type
+    if (isHDRI) {
+      // HDRI file validation
+      const supportedHDRIFormats = [
+        'image/x-hdr',
+        'application/octet-stream', // .hdr, .exr
+        'image/vnd.radiance', // .hdr
+        'image/x-exr', // .exr
+        'application/x-hdr' // .hdr
+      ];
+      
+      // Check file extension for HDRI files
+      const fileName = file.name.toLowerCase();
+      const supportedHDRIExtensions = ['.hdr', '.exr', '.hdri', '.pic'];
+      const hasValidHDRIExtension = supportedHDRIExtensions.some(ext => fileName.endsWith(ext));
+      
+      if (!supportedHDRIFormats.includes(file.type) && !hasValidHDRIExtension) {
+        return NextResponse.json(
+          { success: false, error: 'File must be a supported HDRI format (HDR, EXR, HDRI, PIC)' },
+          { status: 400 }
+        );
+      }
+      
+      // HDRI file size limit (100MB)
+      if (file.size > 100 * 1024 * 1024) {
+        return NextResponse.json(
+          { success: false, error: 'HDRI file size must be less than 100MB' },
+          { status: 400 }
+        );
+      }
+    } else if (is3DModel) {
+      // 3D Model file validation
+      const supported3DFormats = [
+        'model/gltf-binary', // .glb
+        'application/octet-stream', // .stl, .obj, .fbx, .ply (generic binary)
+        'text/plain', // .obj, .dae (text-based)
+        'model/obj', // .obj
+        'application/x-fbx', // .fbx
+        'model/x3d+xml', // .dae
+        'application/x-ply' // .ply
+      ];
+      
+      // Also check file extension as MIME types for 3D models can be inconsistent
+      const fileName = file.name.toLowerCase();
+      const supported3DExtensions = ['.glb', '.stl', '.obj', '.fbx', '.dae', '.ply'];
+      const hasValid3DExtension = supported3DExtensions.some(ext => fileName.endsWith(ext));
+      
+      if (!supported3DFormats.includes(file.type) && !hasValid3DExtension) {
+        return NextResponse.json(
+          { success: false, error: 'File must be a supported 3D model format (GLB, STL, OBJ, FBX, DAE, PLY)' },
+          { status: 400 }
+        );
+      }
+    } else if (!isHDRI) {
+      // Image file validation (only if not HDRI)
+      if (!file.type.startsWith('image/')) {
+        return NextResponse.json(
+          { success: false, error: 'File must be an image' },
+          { status: 400 }
+        );
+      }
     }
 
-    // Validate file size (5MB limit)
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    // Validate file size based on file type
+    let maxSize: number;
+    let maxSizeText: string;
+    
+    if (is3DModel) {
+      maxSize = 50 * 1024 * 1024; // 50MB for 3D models
+      maxSizeText = '50MB';
+    } else if (isHDRI) {
+      maxSize = 100 * 1024 * 1024; // 100MB for HDRI files
+      maxSizeText = '100MB';
+    } else {
+      maxSize = 5 * 1024 * 1024; // 5MB for images
+      maxSizeText = '5MB';
+    }
+    
     if (file.size > maxSize) {
       return NextResponse.json(
-        { success: false, error: 'File size must be less than 5MB' },
+        { success: false, error: `File size must be less than ${maxSizeText}` },
         { status: 400 }
       );
     }

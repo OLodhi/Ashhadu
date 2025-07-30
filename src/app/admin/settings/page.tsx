@@ -14,11 +14,13 @@ import {
   Bell,
   Save,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Box
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase-client';
 import { SiteSetting, SettingCategory, SETTING_KEYS } from '@/types/settings';
 import NotificationSettingsComponent from '@/components/admin/NotificationSettings';
+import Showcase3DSettings from '@/components/admin/Showcase3DSettings';
 import toast from 'react-hot-toast';
 
 interface SettingGroup {
@@ -82,6 +84,12 @@ const settingGroups: SettingGroup[] = [
     title: 'Social Media',
     description: 'Social media profile links',
     icon: <Share2 className="h-5 w-5" />
+  },
+  {
+    category: 'showcase',
+    title: '3D Model Showcase',
+    description: 'Configure the homepage 3D model showcase',
+    icon: <Box className="h-5 w-5" />
   },
   {
     category: 'notifications',
@@ -300,6 +308,15 @@ export default function AdminSettingsPage() {
               return (
                 <div key={group.category}>
                   <NotificationSettingsComponent />
+                </div>
+              );
+            }
+            
+            // Special handling for showcase category
+            if (group.category === 'showcase') {
+              return (
+                <div key={group.category}>
+                  <Showcase3DSettings />
                 </div>
               );
             }

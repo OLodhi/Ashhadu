@@ -294,6 +294,17 @@ export async function GET(request: NextRequest) {
     // Add debugging to check what orders are being returned
     console.log(`Admin orders API: Found ${orders?.length || 0} orders`);
     if (orders && orders.length > 0) {
+      // Check for orders with null customers
+      const ordersWithoutCustomers = orders.filter(order => !order.customer);
+      if (ordersWithoutCustomers.length > 0) {
+        console.warn(`Warning: Found ${ordersWithoutCustomers.length} orders with null customer data:`, 
+          ordersWithoutCustomers.map(order => ({ 
+            order_id: order.id, 
+            customer_id: order.customer_id 
+          }))
+        );
+      }
+      
       console.log('Sample order data:', {
         id: orders[0].id,
         customer_id: orders[0].customer_id,

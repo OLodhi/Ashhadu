@@ -19,7 +19,8 @@ export type SettingCategory =
   | 'features' 
   | 'email' 
   | 'social'
-  | 'notifications';
+  | 'notifications'
+  | 'showcase';
 
 export type SettingType = 'string' | 'boolean' | 'number' | 'json';
 
@@ -88,6 +89,14 @@ export const SETTING_KEYS = {
   SOCIAL_FACEBOOK: 'social_facebook',
   SOCIAL_TWITTER: 'social_twitter',
   SOCIAL_TIKTOK: 'social_tiktok',
+  
+  // Showcase 3D Model Settings
+  SHOWCASE_3D_MODEL_ENABLED: 'showcase_3d_model_enabled',
+  SHOWCASE_3D_MODEL_URL: 'showcase_3d_model_url',
+  SHOWCASE_3D_MODEL_FORMAT: 'showcase_3d_model_format',
+  SHOWCASE_3D_ROTATION_SPEED: 'showcase_3d_rotation_speed',
+  SHOWCASE_3D_TITLE: 'showcase_3d_title',
+  SHOWCASE_3D_DESCRIPTION: 'showcase_3d_description',
 } as const;
 
 export type SettingKey = typeof SETTING_KEYS[keyof typeof SETTING_KEYS];
@@ -99,7 +108,7 @@ export type SettingValue<K extends SettingKey> =
             'product_allow_backorders' | 'product_reviews_enabled' | 'product_guest_reviews' | 'customer_guest_checkout' |
             'customer_email_verification' | 'customer_marketing_default' | 'feature_wishlist' | 'feature_search' |
             'feature_newsletter' | 'feature_social_links' | 'email_order_confirmation' | 'email_shipping_notification' |
-            'email_admin_new_order' | 'email_admin_low_stock' ? boolean :
+            'email_admin_new_order' | 'email_admin_low_stock' | 'showcase_3d_model_enabled' ? boolean :
   K extends 'shipping_free_threshold' | 'shipping_default_cost' | 'shipping_express_cost' | 'tax_rate' | 
-            'product_low_stock_threshold' ? number :
+            'product_low_stock_threshold' | 'showcase_3d_rotation_speed' ? number :
   string;

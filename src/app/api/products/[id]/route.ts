@@ -19,6 +19,31 @@ export async function GET(
           title,
           featured,
           sort_order
+        ),
+        product_models (
+          id,
+          url,
+          filename,
+          file_type,
+          format,
+          file_size,
+          featured,
+          title,
+          description,
+          sort_order,
+          thumbnail,
+          created_at
+        ),
+        product_hdris (
+          id,
+          url,
+          filename,
+          file_size,
+          intensity,
+          is_default,
+          title,
+          description,
+          created_at
         )
       `)
       .eq('id', id)
@@ -85,7 +110,40 @@ export async function GET(
         featured: img.featured,
         sortOrder: img.sort_order
       })) || [],
-      featuredImage: data.product_images?.find((img: any) => img.featured)?.url || data.featured_image || ''
+      featuredImage: data.product_images?.find((img: any) => img.featured)?.url || data.featured_image || '',
+      // 3D Models data
+      models: data.product_models?.map((model: any) => ({
+        id: model.id,
+        url: model.url,
+        filename: model.filename,
+        fileType: model.file_type,
+        format: model.format,
+        fileSize: model.file_size,
+        featured: model.featured,
+        title: model.title || '',
+        description: model.description || '',
+        sortOrder: model.sort_order,
+        thumbnail: model.thumbnail,
+        uploadedAt: model.created_at
+      })) || [],
+      has3dModel: data.has_3d_model || false,
+      featuredModel: data.featured_model || '',
+      // HDRI data
+      hdriFiles: data.product_hdris?.map((hdri: any) => ({
+        id: hdri.id,
+        url: hdri.url,
+        filename: hdri.filename,
+        fileSize: hdri.file_size,
+        intensity: hdri.intensity,
+        isDefault: hdri.is_default,
+        title: hdri.title || '',
+        description: hdri.description || '',
+        uploadedAt: hdri.created_at
+      })) || [],
+      hasHdri: data.has_hdri || false,
+      defaultHdriUrl: data.default_hdri_url || '',
+      defaultHdriIntensity: data.default_hdri_intensity || 1.0,
+      backgroundBlur: data.background_blur || 0
     };
 
     return NextResponse.json({
@@ -110,7 +168,14 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { images, ...productData } = body;
+    const { images, models, hdriFiles, ...productData } = body;
+    
+    // Debug logging for product update
+    console.log('🔍 Product update data received:');
+    console.log('- Images:', images?.length || 0);
+    console.log('- Models:', models?.length || 0);
+    console.log('- HDRI Files:', hdriFiles?.length || 0);
+    console.log('- HDRI Data:', hdriFiles);
 
     // Transform camelCase to snake_case for database
     const dbProductData = {
@@ -149,6 +214,14 @@ export async function PUT(
       personalizable: productData.personalizable,
       gift_wrapping: productData.giftWrapping,
       featured_image: productData.featuredImage,
+      // 3D Model fields
+      has_3d_model: productData.has3dModel || false,
+      featured_model: productData.featuredModel || null,
+      // HDRI fields
+      has_hdri: (hdriFiles && hdriFiles.length > 0) || false,
+      default_hdri_url: hdriFiles?.[0]?.url || null,
+      default_hdri_intensity: hdriFiles?.[0]?.intensity || 1.0,
+      background_blur: productData.backgroundBlur || 0,
       updated_at: new Date().toISOString()
     };
 
@@ -211,6 +284,129 @@ export async function PUT(
             .update({ featured_image: images[0].url })
             .eq('id', id);
         }
+      }
+    }
+
+    // Update product 3D models if provided
+    if (models && Array.isArray(models)) {
+      // Delete existing models
+      await supabaseAdmin
+        .from('product_models')
+        .delete()
+        .eq('product_id', id);
+
+      // Insert new models
+      if (models.length > 0) {
+        const modelInserts = models.map((model: any, index: number) => ({
+          product_id: id,
+          url: model.url,
+          filename: model.filename,
+          file_type: model.fileType || '3dModel',
+          format: model.format,
+          file_size: model.fileSize,
+          featured: model.featured || false,
+          title: model.title || model.filename.split('.')[0],
+          description: model.description || '',
+          sort_order: model.sortOrder || index,
+          thumbnail: model.thumbnail || null
+        }));
+
+        const { error: modelsError } = await supabaseAdmin
+          .from('product_models')
+          .insert(modelInserts);
+
+        if (modelsError) {
+          console.error('Error updating product models:', modelsError);
+        }
+
+        // Update featured_model on product - use the explicitly marked featured model
+        const featuredModel = models.find((model: any) => model.featured);
+        if (featuredModel) {
+          await supabaseAdmin
+            .from('products')
+            .update({ 
+              featured_model: featuredModel.url,
+              has_3d_model: true 
+            })
+            .eq('id', id);
+        } else if (models.length > 0) {
+          // If no model is marked as featured, use the first one as fallback
+          await supabaseAdmin
+            .from('products')
+            .update({ 
+              featured_model: models[0].url,
+              has_3d_model: true 
+            })
+            .eq('id', id);
+        }
+      } else {
+        // No models provided, update flags
+        await supabaseAdmin
+          .from('products')
+          .update({ 
+            featured_model: null,
+            has_3d_model: false 
+          })
+          .eq('id', id);
+      }
+    }
+
+    // Update product HDRI files if provided
+    if (hdriFiles && Array.isArray(hdriFiles)) {
+      console.log('🎯 Updating HDRI files for product:', id);
+      
+      // Delete existing HDRI files
+      await supabaseAdmin
+        .from('product_hdris')
+        .delete()
+        .eq('product_id', id);
+
+      // Insert new HDRI files
+      if (hdriFiles.length > 0) {
+        const hdriInserts = hdriFiles.map((hdri: any, index: number) => ({
+          product_id: id,
+          url: hdri.url,
+          filename: hdri.filename,
+          file_size: hdri.fileSize,
+          intensity: hdri.intensity || 1.0,
+          is_default: index === 0, // First HDRI is default
+          title: hdri.title || `HDRI Environment`,
+          description: hdri.description || ''
+        }));
+
+        console.log('🎯 HDRI insert data for update:', hdriInserts);
+
+        const { error: hdriError } = await supabaseAdmin
+          .from('product_hdris')
+          .insert(hdriInserts);
+
+        if (hdriError) {
+          console.error('❌ Error updating product HDRIs:', hdriError);
+        } else {
+          console.log('✅ HDRI files updated successfully');
+        }
+
+        // Update HDRI fields on product - use the first/default HDRI
+        if (hdriFiles.length > 0) {
+          await supabaseAdmin
+            .from('products')
+            .update({ 
+              default_hdri_url: hdriFiles[0].url,
+              default_hdri_intensity: hdriFiles[0].intensity || 1.0,
+              has_hdri: true 
+            })
+            .eq('id', id);
+        }
+      } else {
+        // No HDRI files provided, clear HDRI flags
+        await supabaseAdmin
+          .from('products')
+          .update({ 
+            default_hdri_url: null,
+            default_hdri_intensity: 1.0,
+            has_hdri: false 
+          })
+          .eq('id', id);
       }
     }
 

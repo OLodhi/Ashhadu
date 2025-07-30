@@ -439,6 +439,10 @@ class EmailService {
         return `Low Stock Alert - ${variables.productName || 'Product'}`;
       case 'newsletter_welcome':
         return 'Welcome to Ashhadu Newsletter';
+      case 'account_activation':
+        return `Welcome to Ashhadu Islamic Art - Activate Your Account`;
+      case 'password_reset':
+        return `Reset Your Ashhadu Islamic Art Password`;
       default:
         return `Notification from Ashhadu Islamic Art`;
     }

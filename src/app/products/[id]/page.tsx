@@ -30,8 +30,9 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import WishlistButton from '@/components/ui/WishlistButton';
 import ShareButton from '@/components/ui/ShareButton';
-import ImageLightbox from '@/components/ui/ImageLightbox';
+import MediaLightbox from '@/components/ui/MediaLightbox';
 import HollowStarRating from '@/components/ui/HollowStarRating';
+import Model3DViewer from '@/components/models/Model3DViewer';
 
 const ProductDetailPage = () => {
   const { id } = useParams();
@@ -48,6 +49,8 @@ const ProductDetailPage = () => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [reviews, setReviews] = useState<any[]>([]);
+  const [selectedMediaType, setSelectedMediaType] = useState<'image' | '3d'>('image');
+  const [selected3DModel, setSelected3DModel] = useState(0);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [reviewStats, setReviewStats] = useState({ totalReviews: 0, averageRating: 0 });
 
@@ -83,6 +86,43 @@ const ProductDetailPage = () => {
     return images;
   }, [product?.featuredImage, product?.images]);
 
+  // Build combined media array for lightbox (images + 3D models)
+  const mediaItems = useMemo(() => {
+    const items: Array<{
+      type: 'image' | '3d';
+      url: string;
+      alt?: string;
+      format?: string;
+      model?: any;
+    }> = [];
+
+    // Add images first
+    productImages.forEach((imageUrl, index) => {
+      if (!imageUrl.includes('placeholder')) { // Skip placeholder images in lightbox
+        items.push({
+          type: 'image',
+          url: imageUrl,
+          alt: `${product?.name || 'Product'} - Image ${index + 1}`
+        });
+      }
+    });
+
+    // Add 3D models
+    if (product?.models && product.models.length > 0) {
+      product.models.forEach((model, index) => {
+        items.push({
+          type: '3d',
+          url: model.url,
+          format: model.format,
+          model: model,
+          alt: `${product.name} - 3D Model ${index + 1}`
+        });
+      });
+    }
+
+    return items;
+  }, [productImages, product?.models, product?.name]);
+
   // Synchronize selectedImage with productImages array changes
   useEffect(() => {
     // Reset selectedImage to 0 when productImages array changes
@@ -90,6 +130,19 @@ const ProductDetailPage = () => {
       setSelectedImage(0);
     }
   }, [productImages, selectedImage]);
+
+  // Auto-switch to 3D view only if product has NO real images (only placeholder)
+  useEffect(() => {
+    if (product && product.has3dModel && product.models && product.models.length > 0) {
+      // Only default to 3D view if product has NO real images (only placeholder)
+      const hasOnlyPlaceholder = productImages.length === 1 && productImages[0]?.includes('placeholder');
+      
+      if (hasOnlyPlaceholder && selectedMediaType === 'image') {
+        setSelectedMediaType('3d');
+        setSelected3DModel(product.models.findIndex(m => m.featured) || 0);
+      }
+    }
+  }, [product, productImages, selectedMediaType]);
 
   // Fetch product from API
   useEffect(() => {
@@ -227,9 +280,21 @@ const ProductDetailPage = () => {
     toast.success(`${product.name} added to cart!`);
   };
 
-  const openLightbox = (index: number) => {
+  const openLightbox = (mediaType: 'image' | '3d', index: number) => {
+    let lightboxIndex = 0;
+    
+    if (mediaType === 'image') {
+      // Find the index of this image in the combined media array
+      const imageUrl = productImages[index];
+      lightboxIndex = mediaItems.findIndex(item => item.type === 'image' && item.url === imageUrl);
+    } else {
+      // Find the index of this 3D model in the combined media array
+      const model = product?.models?.[index];
+      lightboxIndex = mediaItems.findIndex(item => item.type === '3d' && item.url === model?.url);
+    }
+    
     // Ensure index is within bounds
-    const safeIndex = Math.max(0, Math.min(index, productImages.length - 1));
+    const safeIndex = Math.max(0, Math.min(lightboxIndex, mediaItems.length - 1));
     setLightboxIndex(safeIndex);
     setLightboxOpen(true);
   };
@@ -291,24 +356,56 @@ const ProductDetailPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Product Images */}
           <div className="space-y-4">
-            {/* Main Image */}
+            {/* Main Media Display */}
             <div className="aspect-square bg-luxury-gray-50 rounded-lg overflow-hidden relative group max-w-full max-h-full">
-              <Image
-                src={productImages[Math.min(selectedImage, productImages.length - 1)] || productImages[0]}
-                alt={product.name}
-                fill
-                className="object-cover transition-transform duration-300 group-hover:scale-105"
-                onClick={() => openLightbox(Math.min(selectedImage, productImages.length - 1))}
-                sizes="(max-width: 768px) 100vw, 50vw"
-                priority
-              />
-              
-              {/* Zoom Indicator */}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center pointer-events-none cursor-pointer">
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
-                  Click to zoom
-                </div>
-              </div>
+              {selectedMediaType === 'image' ? (
+                <>
+                  {/* Image Display */}
+                  <Image
+                    src={productImages[Math.min(selectedImage, productImages.length - 1)] || productImages[0]}
+                    alt={product.name}
+                    fill
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    onClick={() => openLightbox('image', Math.min(selectedImage, productImages.length - 1))}
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    priority
+                  />
+                  
+                  {/* Zoom Indicator for Images */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center pointer-events-none cursor-pointer">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                      Click to zoom
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* 3D Model Display */}
+                  {product.models && product.models.length > 0 && (
+                    <div className="w-full h-full">
+                      <Model3DViewer
+                        modelUrl={product.models[Math.min(selected3DModel, product.models.length - 1)]?.url || product.models[0]?.url}
+                        format={product.models[Math.min(selected3DModel, product.models.length - 1)]?.format || product.models[0]?.format}
+                        showControls={true}
+                        autoRotate={false}
+                        enableZoom={true}
+                        enablePan={true}
+                        className="w-full h-full"
+                        // ✨ HDRI Environment Support
+                        hdriUrl={product.hdriFiles?.[0]?.url || product.defaultHdriUrl || undefined}
+                        hdriIntensity={product.hdriFiles?.[0]?.intensity || product.defaultHdriIntensity || 1.0}
+                        enableHdri={product.hasHdri && (product.hdriFiles?.length > 0 || !!product.defaultHdriUrl)}
+                        backgroundBlur={product.backgroundBlur || 0}
+                      />
+                    </div>
+                  )}
+                  
+                  {/* 3D Controls Indicator */}
+                  <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-1 rounded-full text-xs">
+                    Click & drag to rotate • Scroll to zoom
+                  </div>
+                </>
+              )}
               
               {/* Badges */}
               <div className="absolute top-4 left-4 space-y-2">
@@ -320,6 +417,12 @@ const ProductDetailPage = () => {
                 {product.featured && (
                   <span className="px-3 py-1 bg-luxury-gold text-white text-sm font-medium rounded-full">
                     Featured
+                  </span>
+                )}
+                {product.has3dModel && product.models && product.models.length > 0 && (
+                  <span className="px-3 py-1 bg-blue-600 text-white text-sm font-medium rounded-full flex items-center space-x-1">
+                    <Package className="w-3 h-3" />
+                    <span>3D View</span>
                   </span>
                 )}
                 {product.status === 'limited' && (
@@ -339,19 +442,19 @@ const ProductDetailPage = () => {
               </div>
             </div>
 
-            {/* Thumbnail Images */}
-            {productImages.length > 1 && (
+            {/* Media Thumbnails */}
+            {(productImages.length > 1 || (product.models && product.models.length > 0)) && (
               <div className="grid grid-cols-4 gap-2">
+                {/* Image Thumbnails */}
                 {productImages.map((image, index) => (
                   <button
-                    key={index}
+                    key={`image-${index}`}
                     onClick={() => {
-                      if (index >= 0 && index < productImages.length) {
-                        setSelectedImage(index);
-                      }
+                      setSelectedMediaType('image');
+                      setSelectedImage(index);
                     }}
                     className={`aspect-square bg-luxury-gray-50 rounded-lg overflow-hidden border-2 transition-colors relative ${
-                      selectedImage === index 
+                      selectedMediaType === 'image' && selectedImage === index
                         ? 'border-luxury-gold' 
                         : 'border-transparent hover:border-luxury-gray-300'
                     }`}
@@ -363,6 +466,36 @@ const ProductDetailPage = () => {
                       className="object-cover"
                       sizes="(max-width: 768px) 25vw, 12vw"
                     />
+                  </button>
+                ))}
+                
+                {/* 3D Model Thumbnails */}
+                {product.models && product.models.length > 0 && product.models.map((model, index) => (
+                  <button
+                    key={`model-${index}`}
+                    onClick={() => {
+                      setSelectedMediaType('3d');
+                      setSelected3DModel(index);
+                    }}
+                    className={`aspect-square bg-gradient-to-br from-gray-900 to-black rounded-lg overflow-hidden border-2 transition-colors relative group ${
+                      selectedMediaType === '3d' && selected3DModel === index
+                        ? 'border-luxury-gold' 
+                        : 'border-transparent hover:border-luxury-gray-300'
+                    }`}
+                  >
+                    {/* 3D Model Thumbnail Content */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="w-8 h-8 mx-auto mb-1 bg-luxury-gold rounded-full flex items-center justify-center">
+                          <Package className="w-4 h-4 text-luxury-black" />
+                        </div>
+                        <div className="text-white text-xs font-medium">3D</div>
+                        <div className="text-luxury-gold text-xs uppercase">{model.format}</div>
+                      </div>
+                    </div>
+                    
+                    {/* Hover Effect */}
+                    <div className="absolute inset-0 bg-luxury-gold/0 group-hover:bg-luxury-gold/10 transition-colors duration-200" />
                   </button>
                 ))}
               </div>
@@ -762,13 +895,18 @@ const ProductDetailPage = () => {
       
       <Footer />
 
-      {/* Image Lightbox */}
-      <ImageLightbox
-        images={productImages}
+      {/* Media Lightbox */}
+      <MediaLightbox
+        mediaItems={mediaItems}
         initialIndex={lightboxIndex}
         isOpen={lightboxOpen}
         onClose={closeLightbox}
-        productName={product.name}
+        productName={product?.name || 'Product'}
+        // ✨ HDRI Environment Support - Pass Product's HDRI Data
+        hdriUrl={product?.hdriFiles?.[0]?.url || product?.defaultHdriUrl}
+        hdriIntensity={product?.hdriFiles?.[0]?.intensity || product?.defaultHdriIntensity || 1.0}
+        enableHdri={product?.hasHdri && (product?.hdriFiles?.length > 0 || !!product?.defaultHdriUrl)}
+        backgroundBlur={product?.backgroundBlur || 0}
       />
     </>
   );

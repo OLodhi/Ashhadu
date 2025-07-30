@@ -15,12 +15,12 @@ const collections = [
     href: '/collections/calligraphy',
     image: '/images/collections/calligraphy.jpg',
     color: 'from-luxury-gold to-yellow-600',
-    featured: true
+    featured: false
   },
   {
     id: 2,
-    name: 'Mosque Architecture',
-    arabicName: 'عمارة المساجد',
+    name: 'Islamic Architecture',
+    arabicName: 'العمارة الإسلامية',
     description: 'Detailed models of famous mosques and Islamic architecture',
     productCount: 12,
     href: '/collections/mosque-models',
@@ -41,9 +41,9 @@ const collections = [
   },
   {
     id: 4,
-    name: 'Custom Commissions',
-    arabicName: 'أعمال مخصصة',
-    description: 'Personalized Islamic art pieces made to your specifications',
+    name: 'Heritage Collections',
+    arabicName: 'مجموعات التراث',
+    description: 'Timeless Islamic art celebrating our rich cultural heritage and traditions',
     productCount: 8,
     href: '/collections/custom',
     image: '/images/collections/custom.jpg',
@@ -75,7 +75,7 @@ const CollectionsPreview = () => {
         </div>
 
         {/* Collections Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {collections.map((collection, index) => (
             <motion.div
               key={collection.id}
@@ -83,12 +83,12 @@ const CollectionsPreview = () => {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
               viewport={{ once: true }}
-              className={`group ${collection.featured ? 'lg:col-span-2' : ''}`}
+              className="group"
             >
               <Link href={collection.href} className="block">
                 <div className={`
                   relative overflow-hidden rounded-2xl 
-                  ${collection.featured ? 'aspect-[2/1]' : 'aspect-[4/3]'}
+                  aspect-[4/3]
                   bg-gradient-to-br ${collection.color}
                   hover:shadow-luxury-hover transition-all duration-500
                   group-hover:scale-[1.02]
@@ -96,43 +96,87 @@ const CollectionsPreview = () => {
                   {/* Background Pattern */}
                   <div className="absolute inset-0 islamic-pattern-overlay opacity-20"></div>
                   
+                  {/* Islamic Calligraphy Enhanced Overlay */}
+                  {collection.id === 1 && (
+                    <div 
+                      className="absolute inset-0 bg-cover bg-no-repeat opacity-45 transition-all duration-700 group-hover:opacity-70 group-hover:scale-105"
+                      style={{
+                        backgroundImage: 'url(/images/collections/calligraphy-overlay.png?v=3)',
+                        backgroundPosition: 'bottom right',
+                        backgroundSize: '120%',
+                        backgroundBlendMode: 'overlay',
+                        maskImage: 'radial-gradient(ellipse at bottom right, black 50%, rgba(0,0,0,0.7) 70%, transparent 90%)',
+                        WebkitMaskImage: 'radial-gradient(ellipse at bottom right, black 50%, rgba(0,0,0,0.7) 70%, transparent 90%)',
+                        filter: 'contrast(1.1) saturate(1.2)'
+                      }}
+                    />
+                  )}
+                  
+                  {/* Geometric Art Enhanced Overlay */}
+                  {collection.id === 3 && (
+                    <div 
+                      className="absolute inset-0 bg-cover bg-no-repeat opacity-45 transition-all duration-700 group-hover:opacity-70 group-hover:scale-105"
+                      style={{
+                        backgroundImage: 'url(/images/collections/geometric-overlay.png)',
+                        backgroundPosition: 'bottom right',
+                        backgroundSize: '120%',
+                        backgroundBlendMode: 'overlay',
+                        maskImage: 'radial-gradient(ellipse at bottom right, black 50%, rgba(0,0,0,0.7) 70%, transparent 90%)',
+                        WebkitMaskImage: 'radial-gradient(ellipse at bottom right, black 50%, rgba(0,0,0,0.7) 70%, transparent 90%)',
+                        filter: 'contrast(1.1) saturate(1.2)'
+                      }}
+                    />
+                  )}
+                  
+                  {/* Mosque Architecture Enhanced Overlay */}
+                  {collection.id === 2 && (
+                    <div 
+                      className="absolute inset-0 bg-cover bg-no-repeat opacity-40 transition-all duration-700 group-hover:opacity-65 group-hover:scale-105"
+                      style={{
+                        backgroundImage: 'url(/images/collections/mosque-overlay.png)',
+                        backgroundPosition: 'bottom right',
+                        backgroundSize: '130%',
+                        backgroundBlendMode: 'overlay',
+                        maskImage: 'radial-gradient(ellipse at bottom right, black 45%, rgba(0,0,0,0.8) 65%, transparent 85%)',
+                        WebkitMaskImage: 'radial-gradient(ellipse at bottom right, black 45%, rgba(0,0,0,0.8) 65%, transparent 85%)',
+                        filter: 'contrast(1.2) saturate(1.3)'
+                      }}
+                    />
+                  )}
+                  
+                  {/* Custom Commissions Enhanced Overlay */}
+                  {collection.id === 4 && (
+                    <div 
+                      className="absolute inset-0 bg-cover bg-no-repeat opacity-45 transition-all duration-700 group-hover:opacity-70 group-hover:scale-105"
+                      style={{
+                        backgroundImage: 'url(/images/collections/custom-overlay.png?v=2)',
+                        backgroundPosition: 'bottom right',
+                        backgroundSize: '120%',
+                        backgroundBlendMode: 'overlay',
+                        maskImage: 'radial-gradient(ellipse at bottom right, black 50%, rgba(0,0,0,0.7) 70%, transparent 90%)',
+                        WebkitMaskImage: 'radial-gradient(ellipse at bottom right, black 50%, rgba(0,0,0,0.7) 70%, transparent 90%)',
+                        filter: 'contrast(1.1) saturate(1.2)'
+                      }}
+                    />
+                  )}
+                  
                   {/* Content */}
                   <div className="relative h-full flex flex-col justify-between p-8 lg:p-12">
                     {/* Header */}
                     <div className="flex items-start justify-between">
                       <div className="space-y-2">
-                        {collection.featured && (
-                          <div className="flex items-center space-x-2">
-                            <Sparkles size={16} className="text-yellow-300" />
-                            <span className="text-yellow-300 text-sm font-medium">
-                              Featured Collection
-                            </span>
-                          </div>
-                        )}
-                        <h3 className={`
-                          font-playfair font-semibold text-white
-                          ${collection.featured ? 'text-3xl lg:text-4xl' : 'text-2xl lg:text-3xl'}
-                        `}>
+                        <h3 className="font-playfair font-semibold text-white text-2xl lg:text-3xl">
                           {collection.name}
                         </h3>
                         <p className="arabic-text text-white/80 text-lg">
                           {collection.arabicName}
                         </p>
                       </div>
-                      
-                      <div className="text-right">
-                        <div className="text-white/80 text-sm">
-                          {collection.productCount} Products
-                        </div>
-                      </div>
                     </div>
 
                     {/* Description */}
                     <div className="space-y-6">
-                      <p className={`
-                        text-white/90 leading-relaxed
-                        ${collection.featured ? 'text-lg max-w-2xl' : 'text-base'}
-                      `}>
+                      <p className="text-white/90 leading-relaxed text-base">
                         {collection.description}
                       </p>
                       
@@ -147,15 +191,6 @@ const CollectionsPreview = () => {
                     </div>
                   </div>
 
-                  {/* Decorative Elements */}
-                  <div className="absolute top-8 right-8 w-20 h-20 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm">
-                    <svg width="32" height="32" viewBox="0 0 32 32" className="text-white">
-                      <path 
-                        d="M16 2l4.944 9.888L32 13l-11.056 1.612L19 26l-3-11.388L5 13l11.056-1.112L16 2z" 
-                        fill="currentColor"
-                      />
-                    </svg>
-                  </div>
                 </div>
               </Link>
             </motion.div>

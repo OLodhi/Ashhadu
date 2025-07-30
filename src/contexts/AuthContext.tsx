@@ -442,27 +442,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const resetPassword = async (email: string) => {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-    // Use the auth confirm route which will handle the token and redirect to reset-password
-    const redirectUrl = `${siteUrl}/auth/confirm?next=/reset-password`;
-    
-    console.log('🔍 AuthContext: Sending password reset email');
-    console.log('Email:', email);
-    console.log('Redirect URL:', redirectUrl);
-    
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: redirectUrl,
-      captchaToken: undefined // Ensure we don't require captcha for password reset
-    });
-    
-    if (error) {
-      console.error('❌ Password reset error:', error);
-    } else {
-      console.log('✅ Password reset email sent successfully');
-      console.log('🔍 Email should contain a link to:', redirectUrl);
+    try {
+      console.log('🔍 AuthContext: Starting password reset for:', email);
+      setError(null);
+      
+      // Use our custom password reset API instead of Supabase default
+      const response = await fetch('/api/auth/send-password-reset', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        console.log('✅ AuthContext: Password reset email sent successfully');
+        return { error: null };
+      } else {
+        console.error('❌ AuthContext: Password reset failed:', result.error);
+        const authError = new Error(result.error) as any;
+        setError(authError.message);
+        return { error: authError };
+      }
+    } catch (error: any) {
+      console.error('❌ AuthContext: Password reset error:', error);
+      const authError = new Error('Failed to send password reset email') as any;
+      setError(authError.message);
+      return { error: authError };
     }
-    
-    return { error };
   };
 
   const updatePassword = async (password: string) => {

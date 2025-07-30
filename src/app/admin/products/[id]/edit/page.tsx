@@ -10,8 +10,10 @@ import {
   Trash2,
   Copy
 } from 'lucide-react';
-import { ProductCategory, IslamicArtCategory, Product, ProductImage } from '@/types/product';
+import { ProductCategory, IslamicArtCategory, Product, ProductImage, Product3DModel, ProductHDRI } from '@/types/product';
 import ImageUpload from '@/components/ui/ImageUpload';
+import Model3DUpload from '@/components/ui/Model3DUpload';
+import HDRIUpload from '@/components/ui/HDRIUpload';
 import toast from 'react-hot-toast';
 
 const EditProductPage = () => {
@@ -23,6 +25,11 @@ const EditProductPage = () => {
   const [mounted, setMounted] = useState(false);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [featuredImage, setFeaturedImage] = useState('');
+  const [models, setModels] = useState<Product3DModel[]>([]);
+  const [featuredModel, setFeaturedModelState] = useState('');
+  const [hdriFiles, setHdriFiles] = useState<ProductHDRI[]>([]);
+  const [defaultHdri, setDefaultHdri] = useState('');
+  const [backgroundBlur, setBackgroundBlur] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
 
   // Form data state
@@ -60,6 +67,7 @@ const EditProductPage = () => {
     customCommission: false,
     personalizable: false,
     giftWrapping: true,
+    has3dModel: false,
   });
 
   const [currentTag, setCurrentTag] = useState('');
@@ -132,9 +140,15 @@ const EditProductPage = () => {
         customCommission: product.customCommission || false,
         personalizable: product.personalizable || false,
         giftWrapping: product.giftWrapping ?? true,
+        has3dModel: (product.models && product.models.length > 0) || false,
       });
       setImageUrls(product.images?.map(img => img.url) || []);
       setFeaturedImage(product.featuredImage || '');
+      setModels(product.models || []);
+      setFeaturedModelState(product.featuredModel || '');
+      setHdriFiles(product.hdriFiles || []);
+      setDefaultHdri(product.defaultHdri || '');
+      setBackgroundBlur(product.backgroundBlur || 0);
     }
   }, [product]);
 
@@ -210,6 +224,12 @@ const EditProductPage = () => {
           sortOrder: index
         })),
         featuredImage,
+        models,
+        featuredModel,
+        has3dModel: models.length > 0,
+        hdriFiles,
+        defaultHdri,
+        backgroundBlur,
         slug: formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
         price: formData.price || formData.regularPrice,
         onSale: formData.price > 0 && formData.price < formData.regularPrice,
@@ -686,6 +706,124 @@ const EditProductPage = () => {
             aspectRatio="square"
             showFeaturedToggle={true}
           />
+        </div>
+
+        {/* 3D Model & Environment */}
+        <div className="bg-white rounded-lg shadow-luxury p-6">
+          <h2 className="text-xl font-semibold text-luxury-black mb-6">3D Model & Environment</h2>
+          <p className="text-sm text-luxury-gray-600 mb-6">
+            Upload your 3D model and configure HDRI environment lighting for realistic product visualization. 
+            HDRI environments enhance the visual quality and realism of 3D product displays.
+          </p>
+          
+          {/* 3D Model Upload Section */}
+          <div className="mb-8">
+            <h3 className="text-lg font-medium text-luxury-black mb-4">3D Model</h3>
+            <Model3DUpload
+              models={models}
+              onModelsChange={setModels}
+              featuredModel={featuredModel}
+              onFeaturedModelChange={setFeaturedModelState}
+              maxModels={1}
+              showFeaturedToggle={true}
+            />
+          </div>
+
+          {/* HDRI Environment Section */}
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="text-lg font-medium text-luxury-black mb-4">HDRI Environment Lighting</h3>
+            
+            <HDRIUpload
+              value={hdriFiles?.[0] || null}
+              onChange={(hdri) => {
+                if (hdri) {
+                  setHdriFiles([hdri]);
+                } else {
+                  setHdriFiles([]);
+                }
+              }}
+              maxFiles={1}
+              showPreview={true}
+            />
+
+            {/* HDRI Controls */}
+            {hdriFiles.length > 0 && (
+              <div className="mt-6 space-y-4">
+                <h4 className="text-base font-medium text-luxury-black">Environment Settings</h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* HDRI Intensity */}
+                  <div>
+                    <label className="block text-sm font-medium text-luxury-black mb-2">
+                      HDRI Intensity
+                    </label>
+                    <div className="space-y-2">
+                      <input
+                        type="range"
+                        min="0"
+                        max="2"
+                        step="0.1"
+                        value={hdriFiles[0]?.intensity || 1.0}
+                        onChange={(e) => {
+                          const intensity = parseFloat(e.target.value);
+                          if (hdriFiles[0]) {
+                            const updatedHdri = { ...hdriFiles[0], intensity };
+                            setHdriFiles([updatedHdri]);
+                          }
+                        }}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <div className="flex justify-between text-xs text-luxury-gray-500">
+                        <span>0.0 (Dark)</span>
+                        <span className="font-medium text-luxury-black">
+                          {hdriFiles[0]?.intensity?.toFixed(1) || '1.0'}
+                        </span>
+                        <span>2.0 (Bright)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Background Blur */}
+                  <div>
+                    <label className="block text-sm font-medium text-luxury-black mb-2">
+                      Background Blur Intensity
+                    </label>
+                    <div className="space-y-2">
+                      <input
+                        type="range"
+                        min="0"
+                        max="10"
+                        step="1"
+                        value={backgroundBlur}
+                        onChange={(e) => setBackgroundBlur(parseInt(e.target.value))}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <div className="flex justify-between text-xs text-luxury-gray-500">
+                        <span>0 (Sharp)</span>
+                        <span className="font-medium text-luxury-black">
+                          {backgroundBlur}
+                        </span>
+                        <span>10 (Blurred)</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-luxury-gray-500 mt-1">
+                      Controls how blurred the HDRI background appears behind the 3D model
+                    </p>
+                  </div>
+                </div>
+
+                {/* HDRI Preview Settings */}
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                  <h5 className="text-sm font-medium text-luxury-black mb-2">Environment Guidelines</h5>
+                  <div className="text-sm text-luxury-gray-600 space-y-1">
+                    <p>• <strong>Intensity:</strong> Controls the brightness of the HDRI environment lighting</p>
+                    <p>• <strong>Background Blur:</strong> Adds depth of field effect to focus attention on the product</p>
+                    <p>• <strong>Recommended:</strong> Start with intensity 1.0 and adjust based on your 3D model</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Product Settings */}
