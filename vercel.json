@@ -1,0 +1,90 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "regions": ["lhr1"],
+  "functions": {
+    "src/app/api/**/*.ts": {
+      "runtime": "nodejs20.x",
+      "maxDuration": 30
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://ashhadu.co.uk"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        }
+      ]
+    },
+    {
+      "source": "/videos/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/images/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/admin",
+      "destination": "/admin/dashboard"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/wp-admin",
+      "destination": "/admin/dashboard",
+      "permanent": true
+    },
+    {
+      "source": "/wordpress",
+      "destination": "/",
+      "permanent": true
+    }
+  ]
+}
