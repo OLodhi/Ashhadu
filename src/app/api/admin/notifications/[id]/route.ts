@@ -4,7 +4,7 @@ import { createServerSupabaseClient } from '@/lib/auth-utils-server';
 // PUT /api/admin/notifications/[id] - Update notification (mark as read/dismissed)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createServerSupabaseClient();
@@ -33,7 +33,7 @@ export async function PUT(
       );
     }
 
-    const notificationId = params.id;
+    const { id: notificationId } = await params;
     const updates = await request.json();
 
     // Validate notification exists and belongs to user
@@ -89,7 +89,7 @@ export async function PUT(
 // DELETE /api/admin/notifications/[id] - Delete notification (user can only delete dismissed ones)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createServerSupabaseClient();
@@ -118,7 +118,7 @@ export async function DELETE(
       );
     }
 
-    const notificationId = params.id;
+    const { id: notificationId } = await params;
 
     // Validate notification exists, belongs to user, and is dismissed
     const { data: existingNotification, error: fetchError } = await supabase
@@ -174,7 +174,7 @@ export async function DELETE(
 // GET /api/admin/notifications/[id] - Get single notification
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createServerSupabaseClient();
@@ -203,7 +203,7 @@ export async function GET(
       );
     }
 
-    const notificationId = params.id;
+    const { id: notificationId } = await params;
 
     // Get notification
     const { data: notification, error: fetchError } = await supabase
