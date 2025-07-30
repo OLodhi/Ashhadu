@@ -84,12 +84,18 @@ export default function AccountDashboard() {
       if (customerError && customerError.code === 'PGRST116') {
         console.log('No customer record found, creating one for new user...');
         
+        // Parse full name into first and last name
+        const fullName = profile?.full_name || '';
+        const nameParts = fullName.split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+
         const { data: newCustomer, error: createError } = await supabase
           .from('customers')
           .insert({
             email: user?.email,
-            first_name: profile?.first_name || '',
-            last_name: profile?.last_name || '',
+            first_name: firstName,
+            last_name: lastName,
             phone: '',
             is_guest: false // This is a registered user
           })
