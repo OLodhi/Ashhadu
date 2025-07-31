@@ -399,7 +399,9 @@ class EmailService {
       }
     };
 
-    return templates[template] || templates['welcome'];
+    // Convert EmailTemplate key to actual template value
+    const templateValue = EMAIL_CONFIG.TEMPLATES[template] || EMAIL_CONFIG.TEMPLATES.WELCOME;
+    return templates[templateValue] || templates['welcome'];
   }
 
   /**
