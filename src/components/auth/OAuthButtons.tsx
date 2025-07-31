@@ -11,22 +11,15 @@ interface OAuthButtonsProps {
 }
 
 export default function OAuthButtons({ mode, className = '' }: OAuthButtonsProps) {
-  const { signInWithGoogle, signInWithFacebook, signInWithApple, oauthLoading } = useAuth();
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
 
-  const handleOAuthLogin = async (
-    provider: 'google' | 'facebook' | 'apple',
-    loginFunction: () => Promise<any>
-  ) => {
+  const handleOAuthLogin = async (provider: 'google' | 'facebook' | 'apple') => {
     setLoadingProvider(provider);
     
     try {
-      const { error } = await loginFunction();
-      
-      if (error) {
-        toast.error(`${provider} login failed: ${error.message}`);
-      }
-      // Success handling is done by the OAuth callback
+      // OAuth integration coming soon
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      toast.error(`${provider.charAt(0).toUpperCase() + provider.slice(1)} login coming soon!`);
     } catch (error) {
       toast.error(`An error occurred during ${provider} login`);
     } finally {
@@ -53,8 +46,8 @@ export default function OAuthButtons({ mode, className = '' }: OAuthButtonsProps
         {/* Google */}
         <button
           type="button"
-          onClick={() => handleOAuthLogin('google', signInWithGoogle)}
-          disabled={oauthLoading}
+          onClick={() => handleOAuthLogin('google')}
+          disabled={!!loadingProvider}
           className="w-full inline-flex justify-center items-center px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-luxury-gold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {loadingProvider === 'google' ? (
@@ -68,8 +61,8 @@ export default function OAuthButtons({ mode, className = '' }: OAuthButtonsProps
         {/* Facebook */}
         <button
           type="button"
-          onClick={() => handleOAuthLogin('facebook', signInWithFacebook)}
-          disabled={oauthLoading}
+          onClick={() => handleOAuthLogin('facebook')}
+          disabled={!!loadingProvider}
           className="w-full inline-flex justify-center items-center px-4 py-3 bg-[#1877f2] border border-transparent rounded-lg shadow-sm text-sm font-medium text-white hover:bg-[#166fe5] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1877f2] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {loadingProvider === 'facebook' ? (
@@ -83,8 +76,8 @@ export default function OAuthButtons({ mode, className = '' }: OAuthButtonsProps
         {/* Apple */}
         <button
           type="button"
-          onClick={() => handleOAuthLogin('apple', signInWithApple)}
-          disabled={oauthLoading}
+          onClick={() => handleOAuthLogin('apple')}
+          disabled={!!loadingProvider}
           className="w-full inline-flex justify-center items-center px-4 py-3 bg-black border border-transparent rounded-lg shadow-sm text-sm font-medium text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {loadingProvider === 'apple' ? (
