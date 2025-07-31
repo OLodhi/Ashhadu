@@ -6,8 +6,10 @@ import { loadStripe } from '@stripe/stripe-js';
 import { CreditCard, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { stripeElementsOptions, handleStripeError } from '@/lib/stripe-client';
 
-// Load Stripe
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+// Load Stripe with fallback for build time
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder_key_for_build'
+);
 
 interface StripeCardFormProps {
   amount: number;

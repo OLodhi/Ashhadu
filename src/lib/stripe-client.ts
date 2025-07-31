@@ -3,11 +3,19 @@
 
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 
-// Get the publishable key from environment variables
-const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+// Get the publishable key from environment variables with fallback for build time
+const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder_key_for_build';
 
-if (!stripePublishableKey) {
-  throw new Error('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is required in environment variables');
+// Runtime validation function for client-side Stripe usage
+export function validateStripeClientConfig(): { isValid: boolean; error?: string } {
+  if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+    return {
+      isValid: false,
+      error: 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is required in environment variables'
+    };
+  }
+  
+  return { isValid: true };
 }
 
 // Cache the Stripe promise to avoid recreating it

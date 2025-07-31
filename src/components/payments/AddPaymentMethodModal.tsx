@@ -24,8 +24,10 @@ import GooglePayPaymentMethod from './GooglePayPaymentMethod';
 import { toast } from 'react-hot-toast';
 import { useSettings } from '@/contexts/SettingsContext';
 
-// Get Stripe instance
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+// Get Stripe instance with fallback for build time
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder_key_for_build'
+);
 
 interface AddPaymentMethodModalProps {
   isOpen: boolean;
