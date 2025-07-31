@@ -24,7 +24,7 @@ export default function GooglePayPaymentMethod({ customerId, onSuccess, onError 
   const [isProcessing, setIsProcessing] = useState(false);
   const [scriptLoaded, setScriptLoaded] = useState(false);
   const buttonContainerRef = useRef<HTMLDivElement>(null);
-  const paymentsClientRef = useRef<google.payments.api.PaymentsClient | null>(null);
+  const paymentsClientRef = useRef<any>(null); // google.payments.api.PaymentsClient
 
   useEffect(() => {
     const initializeGooglePay = async () => {
