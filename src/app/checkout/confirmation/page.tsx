@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { CheckCircle, Package, CreditCard, Truck, ArrowRight, Download, Share2, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -70,7 +70,7 @@ interface OrderDetails {
   }>;
 }
 
-export default function OrderConfirmationPage() {
+function OrderConfirmationContent() {
   const searchParams = useSearchParams();
   const orderNumber = searchParams.get('order');
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
@@ -518,5 +518,35 @@ export default function OrderConfirmationPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function OrderConfirmationPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-luxury-gray-50">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="px-4 py-4">
+            <div className="w-full max-w-md mx-auto">
+              <div className="flex justify-center">
+                <SafeLink href="/" className="inline-block">
+                  <Logo className="w-12 h-12" />
+                </SafeLink>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex items-center justify-center py-24">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-luxury-gold mx-auto mb-4"></div>
+            <p className="text-luxury-gray-600">Loading your order confirmation...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <OrderConfirmationContent />
+    </Suspense>
   );
 }
