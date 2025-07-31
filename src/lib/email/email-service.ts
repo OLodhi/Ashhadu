@@ -78,18 +78,23 @@ class EmailService {
         hasText: !!emailData.text
       });
 
-      const result = await resend.emails.send({
+      // Build email payload without undefined values
+      const emailPayload: any = {
         from: EMAIL_CONFIG.FROM_ORDERS,
         to: emailData.to,
-        cc: emailData.cc,
-        bcc: emailData.bcc,
         subject: emailData.subject,
-        html: emailData.html,
-        text: emailData.text,
         replyTo: emailData.replyTo || EMAIL_CONFIG.REPLY_TO_SUPPORT,
-        tags: emailData.tags,
-        attachments: emailData.attachments,
-      });
+      };
+
+      // Add optional fields only if they have values
+      if (emailData.cc) emailPayload.cc = emailData.cc;
+      if (emailData.bcc) emailPayload.bcc = emailData.bcc;
+      if (emailData.html) emailPayload.html = emailData.html;
+      if (emailData.text) emailPayload.text = emailData.text;
+      if (emailData.tags) emailPayload.tags = emailData.tags;
+      if (emailData.attachments) emailPayload.attachments = emailData.attachments;
+
+      const result = await resend.emails.send(emailPayload);
 
       if (result.error) {
         console.error('❌ EmailService: Resend error:', result.error);
