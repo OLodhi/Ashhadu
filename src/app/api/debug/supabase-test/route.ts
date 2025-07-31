@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     }, { status: 401 });
   }
 
-  const tests = {
+  const tests: Record<string, any> = {
     environment: {},
     connection: {},
     authentication: {},
