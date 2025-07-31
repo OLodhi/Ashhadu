@@ -508,9 +508,9 @@ export const useOrderStore = create<OrderStore>()(
           );
         }
 
-        if (filters.dateRange) {
-          const start = new Date(filters.dateRange.start);
-          const end = new Date(filters.dateRange.end);
+        if (filters.dateFrom || filters.dateTo) {
+          const start = filters.dateFrom ? new Date(filters.dateFrom) : new Date(0);
+          const end = filters.dateTo ? new Date(filters.dateTo) : new Date();
           filtered = filtered.filter((order) => {
             const orderDate = new Date(order.created_at);
             return orderDate >= start && orderDate <= end;
