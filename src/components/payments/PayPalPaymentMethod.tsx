@@ -147,7 +147,7 @@ const PayPalPaymentMethod: React.FC<PayPalPaymentMethodProps> = ({
         
         <PayPalScriptProvider
           options={{
-            "client-id": getPayPalClientId() || "",
+            clientId: getPayPalClientId() || "",
             components: "buttons",
             intent: "authorize",
             currency: "GBP"
