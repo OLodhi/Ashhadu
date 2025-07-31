@@ -277,7 +277,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('❌ AuthContext: Signup error:', error);
         
         // If it's an email confirmation error, try admin signup approach
-        if (error && (error.message?.includes('confirmation') || error.message?.includes('email'))) {
+        if (error && error.message && (error.message.includes('confirmation') || error.message.includes('email'))) {
           console.log('🔄 AuthContext: Trying admin signup approach...');
           
           try {
