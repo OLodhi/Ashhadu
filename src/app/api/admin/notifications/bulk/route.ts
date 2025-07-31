@@ -38,18 +38,18 @@ export async function POST(request: NextRequest) {
     switch (action) {
       case 'mark_all_read':
         // Mark all unread notifications as read for current user
-        const { count: readCount, error: readError } = await supabase
+        const { data: updatedReadRows, error: readError } = await supabase
           .from('admin_notifications')
           .update({ read: true })
           .eq('admin_user_id', user.id)
           .eq('read', false)
-          .select('*', { count: 'exact' });
+          .select('id');
 
         if (readError) {
           throw readError;
         }
 
-        affectedCount = readCount || 0;
+        affectedCount = updatedReadRows?.length || 0;
         message = `Marked ${affectedCount} notifications as read`;
         break;
 
@@ -61,18 +61,18 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        const { count: selectedReadCount, error: selectedReadError } = await supabase
+        const { data: updatedSelectedRows, error: selectedReadError } = await supabase
           .from('admin_notifications')
           .update({ read: true })
           .eq('admin_user_id', user.id)
           .in('id', notification_ids)
-          .select('*', { count: 'exact' });
+          .select('id');
 
         if (selectedReadError) {
           throw selectedReadError;
         }
 
-        affectedCount = selectedReadCount || 0;
+        affectedCount = updatedSelectedRows?.length || 0;
         message = `Marked ${affectedCount} selected notifications as read`;
         break;
 
@@ -84,35 +84,35 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        const { count: dismissCount, error: dismissError } = await supabase
+        const { data: dismissedRows, error: dismissError } = await supabase
           .from('admin_notifications')
           .update({ dismissed: true })
           .eq('admin_user_id', user.id)
           .in('id', notification_ids)
-          .select('*', { count: 'exact' });
+          .select('id');
 
         if (dismissError) {
           throw dismissError;
         }
 
-        affectedCount = dismissCount || 0;
+        affectedCount = dismissedRows?.length || 0;
         message = `Dismissed ${affectedCount} selected notifications`;
         break;
 
       case 'delete_dismissed':
         // Delete all dismissed notifications for current user
-        const { count: deleteCount, error: deleteError } = await supabase
+        const { data: deletedRows, error: deleteError } = await supabase
           .from('admin_notifications')
           .delete()
           .eq('admin_user_id', user.id)
           .eq('dismissed', true)
-          .select('*', { count: 'exact' });
+          .select('id');
 
         if (deleteError) {
           throw deleteError;
         }
 
-        affectedCount = deleteCount || 0;
+        affectedCount = deletedRows?.length || 0;
         message = `Deleted ${affectedCount} dismissed notifications`;
         break;
 
@@ -122,18 +122,18 @@ export async function POST(request: NextRequest) {
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - daysOld);
 
-        const { count: oldDeleteCount, error: oldDeleteError } = await supabase
+        const { data: oldDeletedRows, error: oldDeleteError } = await supabase
           .from('admin_notifications')
           .delete()
           .eq('admin_user_id', user.id)
           .lt('created_at', cutoffDate.toISOString())
-          .select('*', { count: 'exact' });
+          .select('id');
 
         if (oldDeleteError) {
           throw oldDeleteError;
         }
 
-        affectedCount = oldDeleteCount || 0;
+        affectedCount = oldDeletedRows?.length || 0;
         message = `Deleted ${affectedCount} notifications older than ${daysOld} days`;
         break;
 
@@ -145,37 +145,37 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        const { count: typeDeleteCount, error: typeDeleteError } = await supabase
+        const { data: typeDeletedRows, error: typeDeleteError } = await supabase
           .from('admin_notifications')
           .delete()
           .eq('admin_user_id', user.id)
           .eq('type', filters.type)
-          .select('*', { count: 'exact' });
+          .select('id');
 
         if (typeDeleteError) {
           throw typeDeleteError;
         }
 
-        affectedCount = typeDeleteCount || 0;
+        affectedCount = typeDeletedRows?.length || 0;
         message = `Deleted ${affectedCount} notifications of type '${filters.type}'`;
         break;
 
       case 'clear_expired':
         // Delete notifications that have passed their expiry date
         const now = new Date().toISOString();
-        const { count: expiredCount, error: expiredError } = await supabase
+        const { data: expiredRows, error: expiredError } = await supabase
           .from('admin_notifications')
           .delete()
           .eq('admin_user_id', user.id)
           .not('expires_at', 'is', null)
           .lt('expires_at', now)
-          .select('*', { count: 'exact' });
+          .select('id');
 
         if (expiredError) {
           throw expiredError;
         }
 
-        affectedCount = expiredCount || 0;
+        affectedCount = expiredRows?.length || 0;
         message = `Cleared ${affectedCount} expired notifications`;
         break;
 
