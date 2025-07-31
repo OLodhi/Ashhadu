@@ -39,12 +39,12 @@ export const isApplePayAvailable = (): boolean => {
   if (typeof window === 'undefined') return false;
   
   // Check if Apple Pay is supported in this browser
-  if (!window.ApplePaySession) {
+  if (!(window as any).ApplePaySession) {
     return false;
   }
   
   // Check if Apple Pay can make payments
-  return ApplePaySession.canMakePayments();
+  return (window as any).ApplePaySession.canMakePayments();
 };
 
 // Check if Apple Pay is available with active cards
@@ -52,7 +52,7 @@ export const isApplePayAvailableWithActiveCard = async (): Promise<boolean> => {
   if (!isApplePayAvailable()) return false;
   
   try {
-    return await ApplePaySession.canMakePaymentsWithActiveCard(applePayConfig.merchantIdentifier);
+    return await (window as any).ApplePaySession.canMakePaymentsWithActiveCard(applePayConfig.merchantIdentifier);
   } catch (error) {
     console.error('Error checking Apple Pay active card:', error);
     return false;
@@ -97,14 +97,14 @@ export interface ApplePayHandlers {
 export const startApplePaySession = (
   paymentRequest: ApplePayJS.ApplePayPaymentRequest,
   handlers: ApplePayHandlers
-): ApplePaySession | null => {
+): any | null => {
   if (!isApplePayAvailable()) {
     console.error('Apple Pay is not available');
     return null;
   }
 
   try {
-    const session = new ApplePaySession(3, paymentRequest); // Version 3 for latest features
+    const session = new (window as any).ApplePaySession(3, paymentRequest); // Version 3 for latest features
 
     // Set up event handlers
     session.onvalidatemerchant = handlers.onValidateMerchant;
