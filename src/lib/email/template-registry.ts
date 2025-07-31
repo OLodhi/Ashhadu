@@ -63,7 +63,7 @@ export interface EmailTemplateData {
 }
 
 // Email template registry with dynamic imports
-const EMAIL_TEMPLATE_IMPORTS: Record<string, () => Promise<{ default: ComponentType<EmailTemplateData> }>> = {
+const EMAIL_TEMPLATE_IMPORTS: Record<string, () => Promise<{ default: ComponentType<any> }>> = {
   order_confirmation: () => import('@/emails/OrderConfirmationEmail'),
   welcome: () => import('@/emails/WelcomeEmail'),
   admin_new_order: () => import('@/emails/AdminNewOrderEmail'),
