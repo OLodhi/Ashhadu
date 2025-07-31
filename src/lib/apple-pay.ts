@@ -60,12 +60,12 @@ export const isApplePayAvailableWithActiveCard = async (): Promise<boolean> => {
 };
 
 // Create Apple Pay payment request
-export const createApplePayPaymentRequest = (amount: number = 0.01): ApplePayJS.ApplePayPaymentRequest => {
+export const createApplePayPaymentRequest = (amount: number = 0.01): any => {
   return {
     countryCode: applePayConfig.countryCode,
     currencyCode: applePayConfig.currencyCode,
-    supportedNetworks: applePayConfig.supportedNetworks as ApplePayJS.ApplePayPaymentNetwork[],
-    merchantCapabilities: applePayConfig.merchantCapabilities as ApplePayJS.ApplePayMerchantCapability[],
+    supportedNetworks: applePayConfig.supportedNetworks as any[],
+    merchantCapabilities: applePayConfig.merchantCapabilities as any[],
     total: {
       label: applePayConfig.displayName,
       amount: amount.toFixed(2),
@@ -86,16 +86,16 @@ export const createApplePayPaymentRequest = (amount: number = 0.01): ApplePayJS.
 
 // Apple Pay session event handlers
 export interface ApplePayHandlers {
-  onValidateMerchant: (event: ApplePayJS.ApplePayValidateMerchantEvent) => void;
-  onPaymentMethodSelected?: (event: ApplePayJS.ApplePayPaymentMethodSelectedEvent) => void;
-  onPaymentAuthorized: (event: ApplePayJS.ApplePayPaymentAuthorizedEvent) => void;
+  onValidateMerchant: (event: any) => void;
+  onPaymentMethodSelected?: (event: any) => void;
+  onPaymentAuthorized: (event: any) => void;
   onCancel?: () => void;
   onError?: (error: any) => void;
 }
 
 // Start Apple Pay session
 export const startApplePaySession = (
-  paymentRequest: ApplePayJS.ApplePayPaymentRequest,
+  paymentRequest: any,
   handlers: ApplePayHandlers
 ): any | null => {
   if (!isApplePayAvailable()) {
@@ -160,7 +160,7 @@ export const validateApplePayMerchant = async (validationURL: string): Promise<a
 
 // Process Apple Pay payment (for payment method setup)
 export const processApplePayPayment = async (
-  payment: ApplePayJS.ApplePayPayment,
+  payment: any,
   customerId: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
@@ -190,7 +190,7 @@ export const processApplePayPayment = async (
 };
 
 // Helper to format Apple Pay payment method for display
-export const formatApplePayMethod = (payment: ApplePayJS.ApplePayPayment) => {
+export const formatApplePayMethod = (payment: any) => {
   const paymentMethod = payment.paymentMethod;
   const billingContact = payment.billingContact;
   
