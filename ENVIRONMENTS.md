@@ -14,7 +14,7 @@ This project uses three distinct environments to ensure safe development and dep
 |-------------|--------|-----|----------|--------------|
 | Production | `main` | https://ashhadu-islamic-art.vercel.app | Production Supabase | Live Stripe/PayPal |
 | Preview | `preview` | https://preview-ashhadu-islamic-art.vercel.app | Production Supabase | Test Stripe/PayPal |
-| Development | `development` | https://development-ashhadu-islamic-art.vercel.app | Production Supabase | Test Stripe/PayPal |
+| Development | `development` | No Vercel deployment (local only) | Production Supabase | Test Stripe/PayPal |
 | Local | `any` | http://localhost:3000 | Production Supabase | Test Stripe/PayPal |
 
 ## Environment Variables Configuration
@@ -29,7 +29,7 @@ PAYPAL_ENVIRONMENT=production
 NEXT_PUBLIC_SITE_URL=https://ashhadu-islamic-art.vercel.app
 ```
 
-### Preview + Development
+### Preview Only (Vercel)
 ```
 STRIPE_SECRET_KEY=sk_test_*
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_*
@@ -38,6 +38,9 @@ PAYPAL_CLIENT_SECRET=[sandbox-paypal-secret]
 PAYPAL_ENVIRONMENT=sandbox
 NEXT_PUBLIC_SITE_URL= (empty for preview - auto-detected)
 ```
+
+### Development (Local Only)
+Development branch does not deploy to Vercel. Use local environment with `.env.local` file.
 
 ### All Environments
 ```
@@ -58,19 +61,20 @@ npm run dev
 # Uses: Test payment keys, production database
 ```
 
-### 2. Development Environment
+### 2. Development Environment (Local Only)
 ```bash
 # Switch to development branch
 git checkout development
 
-# Make changes and push
+# Make changes and test locally
 git add .
 git commit -m "Add new feature"
 git push origin development
 
-# Deploys to development environment
-# Access: https://development-ashhadu-islamic-art.vercel.app
-# Uses: Test payment keys, production database
+# No Vercel deployment - development branch is for local work only
+# Test locally with: npm run dev
+# Access: http://localhost:3000
+# Uses: Test payment keys from .env.local, production database
 ```
 
 ### 3. Preview Environment (Staging)
@@ -125,8 +129,7 @@ git push origin main
 Visit these URLs to verify configuration:
 - Production: `https://ashhadu-islamic-art.vercel.app/api/health`
 - Preview: `https://preview-ashhadu-islamic-art.vercel.app/api/health`
-- Development: `https://development-ashhadu-islamic-art.vercel.app/api/health`
-- Local: `http://localhost:3000/api/health`
+- Local Development: `http://localhost:3000/api/health`
 
 ### Common Issues
 1. **Wrong payment keys**: Check environment in Vercel dashboard
@@ -138,8 +141,8 @@ Visit these URLs to verify configuration:
 ### In Vercel Dashboard:
 1. Go to Project → Settings → Environment Variables
 2. Set appropriate environment targets:
-   - Production only: Live payment keys
-   - Preview + Development: Test payment keys
+   - Production only: Live payment keys (for `main` branch)
+   - Preview only: Test payment keys (for `preview` branch)
    - All environments: Database and other shared config
 
 ### In Local Development:
