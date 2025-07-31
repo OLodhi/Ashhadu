@@ -340,7 +340,7 @@ const FeaturedProducts = () => {
                         </span>
                         {(product.originalPrice || product.regularPrice) && product.onSale && (
                           <span className="text-sm text-luxury-gray-500 line-through">
-                            {formatPrice(product.originalPrice || product.regularPrice)}
+                            {formatPrice(product.originalPrice || product.regularPrice || 0)}
                           </span>
                         )}
                       </div>
