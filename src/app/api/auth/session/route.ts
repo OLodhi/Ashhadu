@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       return createAuthResponse(false, {
         valid: false,
         error: validationResult.error
-      }, validationResult.error, 401);
+      }, validationResult.error || undefined, 401);
     }
 
     console.log('✅ Session API: Session valid');
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       return createAuthResponse(false, {
         refreshed: false,
         error: refreshResult.error
-      }, refreshResult.error, 401);
+      }, refreshResult.error || undefined, 401);
     }
 
     console.log('✅ Session API: Session refreshed successfully');
