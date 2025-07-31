@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/auth-utils-server';
-import { stripePaymentHelpers, formatStripeAmount } from '@/lib/stripe';
+import { stripePaymentHelpers, formatStripeAmount, validateStripeConfig } from '@/lib/stripe';
 
 export async function POST(request: NextRequest) {
   try {
+    // Runtime validation for Stripe configuration
+    const stripeValidation = validateStripeConfig();
+    if (!stripeValidation.isValid) {
+      return NextResponse.json(
+        { success: false, error: stripeValidation.error || 'Stripe not configured' },
+        { status: 500 }
+      );
+    }
+
     const { amount, currency = 'gbp', orderId, metadata = {} } = await request.json();
     
     // Validate required fields
@@ -117,6 +126,15 @@ export async function POST(request: NextRequest) {
 // GET method for retrieving existing Payment Intent
 export async function GET(request: NextRequest) {
   try {
+    // Runtime validation for Stripe configuration
+    const stripeValidation = validateStripeConfig();
+    if (!stripeValidation.isValid) {
+      return NextResponse.json(
+        { success: false, error: stripeValidation.error || 'Stripe not configured' },
+        { status: 500 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const paymentIntentId = searchParams.get('payment_intent_id');
 

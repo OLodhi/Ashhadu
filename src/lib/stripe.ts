@@ -1,16 +1,27 @@
 // Stripe Configuration for Ashhadu Islamic Art E-commerce
 import Stripe from 'stripe';
 
-// Validate environment variables
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+// Get environment variables with fallbacks for build time
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder_key_for_build';
+const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder_key_for_build';
 
-if (!stripeSecretKey) {
-  throw new Error('STRIPE_SECRET_KEY is required in environment variables');
-}
-
-if (!stripePublishableKey) {
-  throw new Error('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is required in environment variables');
+// Runtime validation function for API routes
+export function validateStripeConfig(): { isValid: boolean; error?: string } {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return {
+      isValid: false,
+      error: 'STRIPE_SECRET_KEY is required in environment variables'
+    };
+  }
+  
+  if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+    return {
+      isValid: false,
+      error: 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is required in environment variables'
+    };
+  }
+  
+  return { isValid: true };
 }
 
 // Initialize Stripe with UK-specific configuration
