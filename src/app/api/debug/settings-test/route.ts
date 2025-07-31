@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
       'store_email'
     ];
 
-    const criticalSettingsStatus = {};
+    const criticalSettingsStatus: Record<string, any> = {};
     for (const key of criticalSettings) {
       const setting = settings?.find(s => s.key === key);
       criticalSettingsStatus[key] = {
