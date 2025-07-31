@@ -1,5 +1,5 @@
 // 3D Model Types for Three.js Integration
-import { ProductHDRI } from './product';
+import { ProductHDRI, Product3DModel, ProductImage } from './product';
 
 export interface Model3DViewerProps {
   modelUrl: string;
@@ -82,8 +82,7 @@ export interface Model3DProcessingOptions {
   normalizeScale?: boolean;
 }
 
-// Re-export Product3DModel from product types for convenience
-export type { Product3DModel, ProductImage } from './product';
+// Types imported from product types above
 
 // Three.js specific types
 export interface ThreeJSScene {
