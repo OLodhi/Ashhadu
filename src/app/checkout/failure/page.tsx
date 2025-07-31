@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { AlertCircle, CreditCard, RefreshCw, ArrowLeft, Mail, Phone, ShoppingCart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -142,7 +142,7 @@ const getFailureConfig = (reason: FailureReason): {
   }
 };
 
-export default function OrderFailurePage() {
+function OrderFailureContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [failureDetails, setFailureDetails] = useState<FailureDetails>({
@@ -344,5 +344,35 @@ export default function OrderFailurePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function OrderFailurePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-luxury-gray-50">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="px-4 py-4">
+            <div className="w-full max-w-md mx-auto">
+              <div className="flex justify-center">
+                <SafeLink href="/" className="inline-block">
+                  <Logo className="w-12 h-12" />
+                </SafeLink>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex items-center justify-center py-24">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-luxury-gold mx-auto mb-4"></div>
+            <p className="text-luxury-gray-600">Loading...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <OrderFailureContent />
+    </Suspense>
   );
 }
