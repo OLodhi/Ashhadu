@@ -46,7 +46,7 @@ interface CheckoutFormData {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { user, customer, isLoading } = useAuth();
+  const { user, customer, loading } = useAuth();
   const { isStripeEnabled, isPayPalEnabled, isApplePayEnabled, isGooglePayEnabled } = useSettings();
   const { items, getTotalPrice, getTotalItems, clearCart } = useCartStore();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -115,10 +115,10 @@ export default function CheckoutPage() {
 
   // Redirect to cart if empty (but not during order completion)
   useEffect(() => {
-    if (!isLoading && items.length === 0 && !orderCompleting) {
+    if (!loading && items.length === 0 && !orderCompleting) {
       router.push('/cart');
     }
-  }, [items.length, isLoading, orderCompleting, router]);
+  }, [items.length, loading, orderCompleting, router]);
 
   // Update form data when user is loaded and fetch default address
   useEffect(() => {
@@ -871,7 +871,7 @@ export default function CheckoutPage() {
     }
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-luxury-gray-50">
         {/* Checkout Header */}
