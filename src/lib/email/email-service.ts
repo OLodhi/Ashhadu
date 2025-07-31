@@ -401,7 +401,7 @@ class EmailService {
 
     // Convert EmailTemplate key to actual template value
     const templateValue = EMAIL_CONFIG.TEMPLATES[template] || EMAIL_CONFIG.TEMPLATES.WELCOME;
-    return templates[templateValue] || templates['welcome'];
+    return (templates as any)[templateValue] || templates['welcome'];
   }
 
   /**
