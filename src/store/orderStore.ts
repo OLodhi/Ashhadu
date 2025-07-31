@@ -494,8 +494,8 @@ export const useOrderStore = create<OrderStore>()(
           filtered = filtered.filter((order) => filters.status!.includes(order.status));
         }
 
-        if (filters.paymentStatus && filters.paymentStatus.length > 0) {
-          filtered = filtered.filter((order) => filters.paymentStatus!.includes(order.payment_status));
+        if (filters.payment_status && filters.payment_status.length > 0) {
+          filtered = filtered.filter((order) => filters.payment_status!.includes(order.payment_status));
         }
 
         if (filters.search) {
