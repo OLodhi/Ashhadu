@@ -536,6 +536,7 @@ export const useOrderStore = create<OrderStore>()(
         return {
           totalOrders: total,
           totalRevenue: orders.reduce((sum, order) => sum + order.total, 0),
+          totalSpent: orders.reduce((sum, order) => sum + order.total, 0), // Same as totalRevenue for this context
           averageOrderValue: total > 0 ? orders.reduce((sum, order) => sum + order.total, 0) / total : 0,
           
           pendingOrders: orders.filter(o => o.status === 'pending').length,
@@ -569,6 +570,7 @@ export const useOrderStore = create<OrderStore>()(
           returningCustomers: 0,
           ordersByCountry: {},
           ordersByRegion: {},
+          lastOrderDate: orders.length > 0 ? orders[orders.length - 1].created_at : undefined,
         };
       },
 
