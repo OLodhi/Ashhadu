@@ -15,7 +15,7 @@ if (!stripePublishableKey) {
 
 // Initialize Stripe with UK-specific configuration
 export const stripe = new Stripe(stripeSecretKey, {
-  apiVersion: '2024-06-20', // Latest stable API version
+  apiVersion: '2025-02-24.acacia', // Latest stable API version compatible with TypeScript
   typescript: true,
   appInfo: {
     name: 'Ashhadu Islamic Art',
