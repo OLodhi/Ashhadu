@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       admin_email: 'admin@ashhadu.co.uk',
       customer_email: impersonationSession.impersonatedCustomer.email,
       session_duration: durationInterval,
-      ip_address: request.ip || undefined,
+      ip_address: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
       user_agent: request.headers.get('user-agent') || undefined
     });
 
