@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
             status: 'processing',
             payment_method: paymentMethod,
             stripe_payment_intent_id: paymentMethod === 'card' ? paymentResult.paymentId : null,
-            notes: `${order.notes || ''}\nPayment ID: ${paymentResult.paymentId}${paymentResult.status ? `\nStatus: ${paymentResult.status}` : ''}`
+            notes: `${order.notes || ''}\nPayment ID: ${paymentResult.paymentId}${'status' in paymentResult && paymentResult.status ? `\nStatus: ${paymentResult.status}` : ''}`
           })
           .eq('id', orderId);
         
