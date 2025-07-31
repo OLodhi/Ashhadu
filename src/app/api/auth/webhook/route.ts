@@ -93,7 +93,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle different payload formats
-    let eventType, table, record, oldRecord;
+    let eventType: string | undefined;
+    let table: string | undefined;
+    let record: any;
+    let oldRecord: any;
     
     // Supabase Auth Hook format (new format)
     if (payload.event_type && payload.hook_name) {
