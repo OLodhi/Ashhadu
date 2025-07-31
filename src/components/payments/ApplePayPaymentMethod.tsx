@@ -83,7 +83,7 @@ export default function ApplePayPaymentMethod({ customerId, onSuccess, onError }
             
             if (result.success) {
               // Complete the payment
-              session?.completePayment(ApplePaySession.STATUS_SUCCESS);
+              session?.completePayment(1); // ApplePaySession.STATUS_SUCCESS
               
               // Format the payment method for the parent component
               const formattedPaymentMethod = formatApplePayMethod(event.payment);
@@ -96,12 +96,12 @@ export default function ApplePayPaymentMethod({ customerId, onSuccess, onError }
                 isDefault: false
               });
             } else {
-              session?.completePayment(ApplePaySession.STATUS_FAILURE);
+              session?.completePayment(0);
               onError(result.error || 'Failed to set up Apple Pay payment method');
             }
           } catch (error) {
             console.error('Payment processing error:', error);
-            session?.completePayment(ApplePaySession.STATUS_FAILURE);
+            session?.completePayment(0);
             onError('Payment processing failed. Please try again.');
           } finally {
             setIsProcessing(false);
