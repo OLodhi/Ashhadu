@@ -213,7 +213,7 @@ export const useOrderStore = create<OrderStore>()(
 
         // Auto-update related statuses (simplified)
         if (status === 'processing') {
-          get().updateProductionStatus(orderId, 'in-progress');
+          get().updateProductionStatus(orderId, 'printing');
         }
       },
 
@@ -344,7 +344,7 @@ export const useOrderStore = create<OrderStore>()(
 
       // Production Management
       startProduction: (orderId) => {
-        get().updateProductionStatus(orderId, 'in-progress');
+        get().updateProductionStatus(orderId, 'printing');
         get().updateOrderStatus(orderId, 'processing');
         
         get().addOrderAction({
