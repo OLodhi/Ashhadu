@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, Lock, CheckCircle, AlertTriangle, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase-client';
 import Logo from '@/components/ui/Logo';
 import SafeLink from '@/components/ui/SafeLink';
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -889,5 +889,59 @@ export default function ResetPasswordPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-luxury-black via-gray-900 to-luxury-black">
+        {/* White Header Banner */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="px-4 py-4">
+            <div className="w-full max-w-md mx-auto">
+              <div className="flex justify-center">
+                <SafeLink href="/" className="inline-block -ml-10">
+                  <Logo className="w-12 h-12" />
+                </SafeLink>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex items-center justify-center p-4 min-h-[calc(100vh-80px)]">
+          {/* Islamic Pattern Overlay */}
+          <div className="absolute inset-0 top-[80px] opacity-5">
+            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern id="islamic-pattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+                  <circle cx="25" cy="25" r="2" fill="#d4af37" />
+                  <circle cx="75" cy="25" r="2" fill="#d4af37" />
+                  <circle cx="25" cy="75" r="2" fill="#d4af37" />
+                  <circle cx="75" cy="75" r="2" fill="#d4af37" />
+                  <circle cx="50" cy="50" r="3" fill="#d4af37" />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#islamic-pattern)" />
+            </svg>
+          </div>
+
+          <div className="relative z-10 w-full max-w-md">
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-luxury-gold/20 p-8 shadow-2xl">
+              <div className="text-center">
+                <Loader2 className="animate-spin h-12 w-12 text-luxury-gold mx-auto mb-4" />
+                <h2 className="text-2xl font-playfair font-bold text-white mb-4">Loading Reset Form</h2>
+                <p className="text-gray-400">
+                  Please wait while we prepare your password reset form...
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }
