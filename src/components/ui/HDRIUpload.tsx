@@ -98,6 +98,7 @@ const HDRIUpload: React.FC<HDRIUploadProps> = ({
           filename: file.name,
           fileSize: file.size,
           intensity: 1.0, // Default intensity
+          isDefault: false, // Not default by default
           uploadedAt: new Date().toISOString()
         };
         
