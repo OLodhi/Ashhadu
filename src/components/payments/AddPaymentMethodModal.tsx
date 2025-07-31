@@ -197,7 +197,7 @@ const CardForm: React.FC<{
           type: 'card',
           provider: 'stripe',
           providerPaymentMethodId: paymentMethodId,
-          providerCustomerId: confirmedSetupIntent.customer || paymentMethod.customer,
+          providerCustomerId: ('customer' in confirmedSetupIntent ? confirmedSetupIntent.customer : null) || paymentMethod.customer,
           displayName: `${card?.brand?.charAt(0).toUpperCase()}${card?.brand?.slice(1)} ending in ${card?.last4}`,
           brand: card?.brand,
           lastFour: card?.last4,
