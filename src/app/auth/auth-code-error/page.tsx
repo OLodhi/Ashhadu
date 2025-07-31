@@ -1,10 +1,11 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { AlertTriangle, ArrowLeft, RefreshCw } from 'lucide-react';
 
-export default function AuthCodeErrorPage() {
+function AuthCodeErrorContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
   const error_description = searchParams.get('error_description');
@@ -69,5 +70,25 @@ export default function AuthCodeErrorPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AuthCodeErrorPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-luxury-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="bg-white py-8 px-4 shadow-luxury rounded-lg sm:px-10">
+            <div className="text-center">
+              <AlertTriangle className="mx-auto h-12 w-12 text-gray-400 mb-4 animate-pulse" />
+              <h2 className="text-2xl font-bold text-luxury-black mb-4">Loading...</h2>
+              <p className="text-luxury-gray-600">Please wait while we process your request.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <AuthCodeErrorContent />
+    </Suspense>
   );
 }
