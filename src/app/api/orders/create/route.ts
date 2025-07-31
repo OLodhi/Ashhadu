@@ -371,7 +371,7 @@ async function sendEmailNotifications(
 
     // Prepare order items with product details
     const enrichedOrderItems = orderData.items.map((item: any) => {
-      const product = products?.find(p => p.id === item.productId);
+      const product = products?.find((p: any) => p.id === item.productId);
       return {
         id: item.productId,
         name: item.name || product?.name || 'Unknown Product',
