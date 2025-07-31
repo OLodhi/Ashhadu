@@ -9,9 +9,9 @@ export interface GooglePayConfig {
     merchantId: string;
     merchantName: string;
   };
-  allowedPaymentMethods: google.payments.api.PaymentMethodSpecification[];
-  allowedCardNetworks: google.payments.api.CardNetwork[];
-  allowedCardAuthMethods: google.payments.api.CardAuthMethod[];
+  allowedPaymentMethods: any[];
+  allowedCardNetworks: any[];
+  allowedCardAuthMethods: any[];
 }
 
 // Google Pay configuration for UK market
@@ -43,7 +43,7 @@ export const googlePayConfig: GooglePayConfig = {
 };
 
 // Base payment request configuration
-export const baseRequest: google.payments.api.PaymentDataRequest = {
+export const baseRequest: any = {
   apiVersion: 2,
   apiVersionMinor: 0,
   allowedPaymentMethods: googlePayConfig.allowedPaymentMethods
@@ -60,7 +60,7 @@ export const isGooglePayAvailable = (): Promise<boolean> => {
     try {
       const paymentsClient = getGooglePaymentsClient();
       paymentsClient.isReadyToPay(baseRequest)
-        .then((response: google.payments.api.IsReadyToPayResponse) => {
+        .then((response: any) => {
           resolve(response.result === true);
         })
         .catch(() => {
@@ -74,25 +74,25 @@ export const isGooglePayAvailable = (): Promise<boolean> => {
 };
 
 // Get Google Pay payments client
-export const getGooglePaymentsClient = (): google.payments.api.PaymentsClient => {
+export const getGooglePaymentsClient = (): any => {
   if (typeof window === 'undefined' || !window.google?.payments?.api) {
     throw new Error('Google Pay API not available');
   }
 
-  return new google.payments.api.PaymentsClient({
+  return new (window as any).google.payments.api.PaymentsClient({
     environment: googlePayConfig.environment,
     merchantInfo: googlePayConfig.merchantInfo,
     paymentDataCallbacks: {
-      onPaymentAuthorized: (paymentData) => {
+      onPaymentAuthorized: (paymentData: any) => {
         console.log('Payment authorized:', paymentData);
-        return { transactionState: 'SUCCESS' as google.payments.api.TransactionState };
+        return { transactionState: 'SUCCESS' as any };
       }
     }
   });
 };
 
 // Create payment request for payment method setup
-export const createGooglePayPaymentRequest = (amount: number = 0.01): google.payments.api.PaymentDataRequest => {
+export const createGooglePayPaymentRequest = (amount: number = 0.01): any => {
   return {
     ...baseRequest,
     merchantInfo: googlePayConfig.merchantInfo,
@@ -108,7 +108,7 @@ export const createGooglePayPaymentRequest = (amount: number = 0.01): google.pay
 
 // Process Google Pay payment for payment method setup
 export const processGooglePayPayment = async (
-  paymentData: google.payments.api.PaymentData,
+  paymentData: any,
   customerId: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
@@ -138,7 +138,7 @@ export const processGooglePayPayment = async (
 };
 
 // Helper to format Google Pay payment method for display
-export const formatGooglePayMethod = (paymentData: google.payments.api.PaymentData) => {
+export const formatGooglePayMethod = (paymentData: any) => {
   const paymentMethodData = paymentData.paymentMethodData;
   const info = paymentMethodData.info;
   
@@ -214,9 +214,9 @@ export const cleanupGooglePay = () => {
 export const googlePayButtonConfig = {
   onClick: () => {}, // Will be overridden by component
   allowedPaymentMethods: googlePayConfig.allowedPaymentMethods,
-  buttonColor: 'black' as google.payments.api.ButtonColor,
-  buttonType: 'plain' as google.payments.api.ButtonType,
-  buttonSizeMode: 'static' as google.payments.api.ButtonSizeMode
+  buttonColor: 'black' as any,
+  buttonType: 'plain' as any,
+  buttonSizeMode: 'static' as any
 };
 
 // TypeScript declarations for Google Pay API
@@ -225,121 +225,11 @@ declare global {
     google?: {
       payments?: {
         api?: {
-          PaymentsClient: new (config: google.payments.api.PaymentsClientConfig) => google.payments.api.PaymentsClient;
+          PaymentsClient: new (config: any) => any;
         };
       };
     };
   }
 }
 
-declare namespace google {
-  namespace payments {
-    namespace api {
-      interface PaymentsClientConfig {
-        environment: 'TEST' | 'PRODUCTION';
-        merchantInfo?: MerchantInfo;
-        paymentDataCallbacks?: PaymentDataCallbacks;
-      }
-
-      interface PaymentsClient {
-        isReadyToPay(request: IsReadyToPayRequest): Promise<IsReadyToPayResponse>;
-        loadPaymentData(request: PaymentDataRequest): Promise<PaymentData>;
-        createButton(config: ButtonConfig): HTMLElement;
-        prefetchPaymentData(request: PaymentDataRequest): void;
-      }
-
-      interface MerchantInfo {
-        merchantId: string;
-        merchantName: string;
-      }
-
-      interface IsReadyToPayRequest {
-        apiVersion: number;
-        apiVersionMinor: number;
-        allowedPaymentMethods: PaymentMethodSpecification[];
-      }
-
-      interface IsReadyToPayResponse {
-        result: boolean;
-      }
-
-      interface PaymentDataRequest extends IsReadyToPayRequest {
-        merchantInfo?: MerchantInfo;
-        transactionInfo: TransactionInfo;
-        callbackIntents?: CallbackIntent[];
-      }
-
-      interface PaymentMethodSpecification {
-        type: 'CARD';
-        parameters: PaymentMethodParameters;
-        tokenizationSpecification: TokenizationSpecification;
-      }
-
-      interface PaymentMethodParameters {
-        allowedAuthMethods: CardAuthMethod[];
-        allowedCardNetworks: CardNetwork[];
-      }
-
-      interface TokenizationSpecification {
-        type: 'PAYMENT_GATEWAY';
-        parameters: TokenizationParameters;
-      }
-
-      interface TokenizationParameters {
-        gateway: string;
-        [key: string]: string;
-      }
-
-      interface TransactionInfo {
-        totalPriceStatus: 'FINAL' | 'ESTIMATED';
-        totalPrice: string;
-        currencyCode: string;
-        countryCode: string;
-      }
-
-      interface PaymentData {
-        paymentMethodData: PaymentMethodData;
-      }
-
-      interface PaymentMethodData {
-        type: string;
-        info: PaymentMethodInfo;
-        tokenizationData: TokenizationData;
-      }
-
-      interface PaymentMethodInfo {
-        cardNetwork?: string;
-        cardDetails?: string;
-      }
-
-      interface TokenizationData {
-        type: string;
-        token: string;
-      }
-
-      interface PaymentDataCallbacks {
-        onPaymentAuthorized: (paymentData: PaymentData) => PaymentAuthorizationResult;
-      }
-
-      interface PaymentAuthorizationResult {
-        transactionState: TransactionState;
-      }
-
-      interface ButtonConfig {
-        onClick: () => void;
-        allowedPaymentMethods: PaymentMethodSpecification[];
-        buttonColor?: ButtonColor;
-        buttonType?: ButtonType;
-        buttonSizeMode?: ButtonSizeMode;
-      }
-
-      type CardNetwork = 'AMEX' | 'DISCOVER' | 'INTERAC' | 'JCB' | 'MASTERCARD' | 'VISA';
-      type CardAuthMethod = 'PAN_ONLY' | 'CRYPTOGRAM_3DS';
-      type CallbackIntent = 'PAYMENT_AUTHORIZATION';
-      type TransactionState = 'SUCCESS' | 'ERROR';
-      type ButtonColor = 'default' | 'black' | 'white';
-      type ButtonType = 'book' | 'buy' | 'checkout' | 'donate' | 'order' | 'pay' | 'plain' | 'subscribe';
-      type ButtonSizeMode = 'static' | 'fill';
-    }
-  }
-}
+// Google Pay namespace declarations removed - using any types for SSR compatibility
