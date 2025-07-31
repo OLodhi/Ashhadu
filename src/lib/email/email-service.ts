@@ -71,6 +71,12 @@ class EmailService {
    */
   async sendEmail(emailData: EmailData): Promise<{ success: boolean; id?: string; error?: string }> {
     try {
+      // Runtime check for API key
+      if (!process.env.RESEND_API_KEY) {
+        console.error('❌ EmailService: RESEND_API_KEY environment variable is required');
+        return { success: false, error: 'Email service not configured' };
+      }
+
       console.log('📧 EmailService: Sending email:', {
         to: emailData.to,
         subject: emailData.subject,

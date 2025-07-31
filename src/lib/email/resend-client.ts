@@ -1,10 +1,7 @@
 import { Resend } from 'resend';
 
-if (!process.env.RESEND_API_KEY) {
-  throw new Error('RESEND_API_KEY environment variable is required');
-}
-
-export const resend = new Resend(process.env.RESEND_API_KEY);
+// Create Resend client with lazy initialization to avoid build-time errors
+export const resend = new Resend(process.env.RESEND_API_KEY || 'dummy-key-for-build');
 
 // Email configuration constants
 export const EMAIL_CONFIG = {
