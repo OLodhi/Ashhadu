@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     const paymentIntentParams = {
       amount: amount, // Amount in pounds (will be converted to pence in helper)
       currency,
-      customerId: stripeCustomerId, // May be undefined for guests
+      customerId: stripeCustomerId || null as any, // Fallback to null for guest payments
       automaticPaymentMethods: true,
       metadata: {
         orderId: orderId || 'pending',
