@@ -100,7 +100,7 @@ export const stripeCustomerHelpers = {
       return { customer, error: null };
     } catch (error) {
       console.error('Error creating Stripe customer:', error);
-      return { customer: null, error: error as Stripe.StripeError };
+      return { customer: null, error: error as Stripe.StripeRawError };
     }
   },
 
@@ -111,7 +111,7 @@ export const stripeCustomerHelpers = {
       return { customer, error: null };
     } catch (error) {
       console.error('Error retrieving Stripe customer:', error);
-      return { customer: null, error: error as Stripe.StripeError };
+      return { customer: null, error: error as Stripe.StripeRawError };
     }
   },
 
@@ -122,7 +122,7 @@ export const stripeCustomerHelpers = {
       return { customer, error: null };
     } catch (error) {
       console.error('Error updating Stripe customer:', error);
-      return { customer: null, error: error as Stripe.StripeError };
+      return { customer: null, error: error as Stripe.StripeRawError };
     }
   },
 
@@ -133,7 +133,7 @@ export const stripeCustomerHelpers = {
       return { deleted, error: null };
     } catch (error) {
       console.error('Error deleting Stripe customer:', error);
-      return { deleted: null, error: error as Stripe.StripeError };
+      return { deleted: null, error: error as Stripe.StripeRawError };
     }
   },
 };
@@ -159,7 +159,7 @@ export const stripePaymentMethodHelpers = {
       return { setupIntent, error: null };
     } catch (error) {
       console.error('Error creating setup intent:', error);
-      return { setupIntent: null, error: error as Stripe.StripeError };
+      return { setupIntent: null, error: error as Stripe.StripeRawError };
     }
   },
 
@@ -172,7 +172,7 @@ export const stripePaymentMethodHelpers = {
       return { paymentMethod, error: null };
     } catch (error) {
       console.error('Error attaching payment method:', error);
-      return { paymentMethod: null, error: error as Stripe.StripeError };
+      return { paymentMethod: null, error: error as Stripe.StripeRawError };
     }
   },
 
@@ -183,7 +183,7 @@ export const stripePaymentMethodHelpers = {
       return { paymentMethod, error: null };
     } catch (error) {
       console.error('Error detaching payment method:', error);
-      return { paymentMethod: null, error: error as Stripe.StripeError };
+      return { paymentMethod: null, error: error as Stripe.StripeRawError };
     }
   },
 
@@ -197,7 +197,7 @@ export const stripePaymentMethodHelpers = {
       return { paymentMethods: paymentMethods.data, error: null };
     } catch (error) {
       console.error('Error listing payment methods:', error);
-      return { paymentMethods: [], error: error as Stripe.StripeError };
+      return { paymentMethods: [], error: error as Stripe.StripeRawError };
     }
   },
 
@@ -208,7 +208,7 @@ export const stripePaymentMethodHelpers = {
       return { paymentMethod, error: null };
     } catch (error) {
       console.error('Error retrieving payment method:', error);
-      return { paymentMethod: null, error: error as Stripe.StripeError };
+      return { paymentMethod: null, error: error as Stripe.StripeRawError };
     }
   },
 };
@@ -253,7 +253,7 @@ export const stripePaymentHelpers = {
       return { paymentIntent, error: null };
     } catch (error) {
       console.error('Error creating payment intent:', error);
-      return { paymentIntent: null, error: error as Stripe.StripeError };
+      return { paymentIntent: null, error: error as Stripe.StripeRawError };
     }
   },
 
@@ -264,7 +264,7 @@ export const stripePaymentHelpers = {
       return { paymentIntent, error: null };
     } catch (error) {
       console.error('Error confirming payment intent:', error);
-      return { paymentIntent: null, error: error as Stripe.StripeError };
+      return { paymentIntent: null, error: error as Stripe.StripeRawError };
     }
   },
 
@@ -275,7 +275,7 @@ export const stripePaymentHelpers = {
       return { paymentIntent, error: null };
     } catch (error) {
       console.error('Error retrieving payment intent:', error);
-      return { paymentIntent: null, error: error as Stripe.StripeError };
+      return { paymentIntent: null, error: error as Stripe.StripeRawError };
     }
   },
 };
