@@ -395,7 +395,7 @@ const ProductDetailPage = () => {
                         hdriUrl={product.hdriFiles?.[0]?.url || product.defaultHdriUrl || undefined}
                         hdriIntensity={product.hdriFiles?.[0]?.intensity || product.defaultHdriIntensity || 1.0}
                         enableHdri={product.hasHdri && (product.hdriFiles?.length > 0 || !!product.defaultHdriUrl)}
-                        backgroundBlur={product.backgroundBlur || 0}
+                        backgroundBlur={product.backgroundBlurIntensity || 0}
                       />
                     </div>
                   )}
