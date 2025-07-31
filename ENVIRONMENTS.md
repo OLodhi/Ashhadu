@@ -10,11 +10,12 @@ This project uses three distinct environments to ensure safe development and dep
 
 ## Environment URLs
 
-| Environment | URL | Database | Payment Keys |
-|-------------|-----|----------|--------------|
-| Production | https://ashhadu-islamic-art.vercel.app | Production Supabase | Live Stripe/PayPal |
-| Preview | https://[branch-name]-ashhadu-islamic-art.vercel.app | Production Supabase | Test Stripe/PayPal |
-| Development | http://localhost:3000 | Production Supabase | Test Stripe/PayPal |
+| Environment | Branch | URL | Database | Payment Keys |
+|-------------|--------|-----|----------|--------------|
+| Production | `main` | https://ashhadu-islamic-art.vercel.app | Production Supabase | Live Stripe/PayPal |
+| Preview | `preview` | https://preview-ashhadu-islamic-art.vercel.app | Production Supabase | Test Stripe/PayPal |
+| Development | `development` | https://development-ashhadu-islamic-art.vercel.app | Production Supabase | Test Stripe/PayPal |
+| Local | `any` | http://localhost:3000 | Production Supabase | Test Stripe/PayPal |
 
 ## Environment Variables Configuration
 
@@ -57,26 +58,38 @@ npm run dev
 # Uses: Test payment keys, production database
 ```
 
-### 2. Preview Deployment
+### 2. Development Environment
 ```bash
-# Create feature branch
-git checkout -b feature/new-feature
+# Switch to development branch
+git checkout development
 
 # Make changes and push
 git add .
 git commit -m "Add new feature"
-git push origin feature/new-feature
+git push origin development
 
-# Vercel automatically creates preview deployment
-# Access: https://feature-new-feature-ashhadu-islamic-art.vercel.app
+# Deploys to development environment
+# Access: https://development-ashhadu-islamic-art.vercel.app
 # Uses: Test payment keys, production database
 ```
 
-### 3. Production Deployment
+### 3. Preview Environment (Staging)
 ```bash
-# Merge to main branch
+# Merge development to preview for staging
+git checkout preview
+git merge development
+git push origin preview
+
+# Deploys to preview environment
+# Access: https://preview-ashhadu-islamic-art.vercel.app
+# Uses: Test payment keys, production database
+```
+
+### 4. Production Deployment
+```bash
+# Merge preview to main for production
 git checkout main
-git merge feature/new-feature
+git merge preview
 git push origin main
 
 # Deploys to production
@@ -111,8 +124,9 @@ git push origin main
 ### Check Environment Configuration
 Visit these URLs to verify configuration:
 - Production: `https://ashhadu-islamic-art.vercel.app/api/health`
-- Preview: `https://[branch-name]-ashhadu-islamic-art.vercel.app/api/health`
-- Development: `http://localhost:3000/api/health`
+- Preview: `https://preview-ashhadu-islamic-art.vercel.app/api/health`
+- Development: `https://development-ashhadu-islamic-art.vercel.app/api/health`
+- Local: `http://localhost:3000/api/health`
 
 ### Common Issues
 1. **Wrong payment keys**: Check environment in Vercel dashboard
