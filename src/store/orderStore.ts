@@ -287,8 +287,8 @@ export const useOrderStore = create<OrderStore>()(
         const refundAmount = amount || order.total;
         
         get().updateOrder(orderId, { 
-          status: 'refunded',
-          paymentStatus: 'refunded',
+          status: 'cancelled',
+          payment_status: 'refunded',
           notes: `Refunded ${refundAmount}: ${reason || 'Customer request'}`
         });
         
