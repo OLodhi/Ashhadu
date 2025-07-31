@@ -1,11 +1,11 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { XCircle } from 'lucide-react';
 import Logo from '@/components/ui/Logo';
 
-export default function PayPalCancelPage() {
+function PayPalCancelContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -115,5 +115,31 @@ export default function PayPalCancelPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PayPalCancelPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-luxury-gray-50 flex items-center justify-center">
+        <div className="max-w-md w-full mx-auto px-4">
+          <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+            <div className="mb-6">
+              <Logo className="w-16 h-16 mx-auto mb-4" />
+              <h1 className="font-playfair text-2xl font-bold text-luxury-black mb-2">
+                Payment Cancelled
+              </h1>
+            </div>
+            <div className="text-center">
+              <XCircle size={48} className="mx-auto mb-4 text-orange-500" />
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-luxury-gold mx-auto mb-4"></div>
+              <p className="text-luxury-gray-600">Processing cancellation...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <PayPalCancelContent />
+    </Suspense>
   );
 }
