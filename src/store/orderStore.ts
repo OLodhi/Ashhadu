@@ -31,7 +31,7 @@ interface OrderStore {
   searchParams: OrderSearchParams;
   
   // Actions - Order Management
-  createOrder: (order: Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'updatedAt'>) => string;
+  createOrder: (order: Omit<Order, 'id' | 'created_at' | 'updated_at'>) => string;
   updateOrder: (id: string, updates: Partial<Order>) => void;
   deleteOrder: (id: string) => void;
   duplicateOrder: (id: string) => void;
@@ -128,9 +128,9 @@ export const useOrderStore = create<OrderStore>()(
         const newOrder: Order = {
           ...orderData,
           id: generateUUID(),
-          orderNumber,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          // orderNumber, // Removed - not in actual Order type
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         };
 
         set((state) => ({
@@ -150,7 +150,7 @@ export const useOrderStore = create<OrderStore>()(
           orderId: newOrder.id,
           type: 'new_order',
           title: 'New Order Received',
-          message: `Order ${orderNumber} for ${newOrder.customer.firstName} ${newOrder.customer.lastName}`,
+          message: `Order ${orderNumber} for ${newOrder.customer?.first_name} ${newOrder.customer?.last_name}`,
           priority: 'medium',
           read: false,
           actionRequired: true,
@@ -164,7 +164,7 @@ export const useOrderStore = create<OrderStore>()(
         set((state) => ({
           orders: state.orders.map((order) =>
             order.id === id
-              ? { ...order, ...updates, updatedAt: new Date().toISOString() }
+              ? { ...order, ...updates, updated_at: new Date().toISOString() }
               : order
           ),
         }));
@@ -184,18 +184,13 @@ export const useOrderStore = create<OrderStore>()(
 
         const duplicatedOrder = {
           ...originalOrder,
-          customer: { ...originalOrder.customer },
-          billing: { ...originalOrder.billing },
-          shipping: { ...originalOrder.shipping },
-          items: originalOrder.items.map(item => ({ ...item, id: generateUUID() })),
+          customer: originalOrder.customer ? { ...originalOrder.customer } : undefined,
+          order_items: originalOrder.order_items?.map(item => ({ ...item, id: generateUUID() })),
           status: 'pending' as OrderStatus,
-          paymentStatus: 'pending' as PaymentStatus,
-          fulfillmentStatus: 'pending' as FulfillmentStatus,
-          productionStatus: 'not-started' as ProductionStatus,
+          payment_status: 'pending' as PaymentStatus,
           notes: 'Duplicated order',
-          paidAt: undefined,
-          shippedAt: undefined,
-          deliveredAt: undefined,
+          shipped_at: undefined,
+          delivered_at: undefined,
         };
 
         get().createOrder(duplicatedOrder);
@@ -216,19 +211,19 @@ export const useOrderStore = create<OrderStore>()(
           metadata: { previousStatus: order.status, newStatus: status, notes },
         });
 
-        // Auto-update related statuses
-        if (status === 'confirmed' && order.productionStatus === 'not-started') {
-          get().updateProductionStatus(orderId, 'queued');
+        // Auto-update related statuses (simplified)
+        if (status === 'processing') {
+          get().updateProductionStatus(orderId, 'in-progress');
         }
       },
 
       updatePaymentStatus: (orderId, status, transactionId) => {
-        const updates: Partial<Order> = { paymentStatus: status };
+        const updates: Partial<Order> = { payment_status: status };
         
         if (status === 'paid') {
-          updates.paidAt = new Date().toISOString();
+          // updates.paidAt = new Date().toISOString(); // Field doesn't exist in Order type
           if (transactionId) {
-            updates.transactionId = transactionId;
+            updates.stripe_payment_intent_id = transactionId;
           }
         }
 
@@ -250,8 +245,7 @@ export const useOrderStore = create<OrderStore>()(
       },
 
       updateFulfillmentStatus: (orderId, status) => {
-        get().updateOrder(orderId, { fulfillmentStatus: status });
-        
+        // Simplified - just add action since fulfillmentStatus doesn't exist in Order type
         get().addOrderAction({
           orderId,
           type: 'status_changed',
@@ -261,19 +255,13 @@ export const useOrderStore = create<OrderStore>()(
       },
 
       updateProductionStatus: (orderId, status) => {
-        get().updateOrder(orderId, { productionStatus: status });
-        
+        // Simplified - just add action since productionStatus doesn't exist in Order type
         get().addOrderAction({
           orderId,
           type: status === 'completed' ? 'production_completed' : 'status_changed',
           description: `Production status: ${status}`,
           performedBy: 'Admin',
         });
-
-        // Auto-update fulfillment status when production completes
-        if (status === 'completed') {
-          get().updateFulfillmentStatus(orderId, 'ready-to-ship');
-        }
       },
 
       // Order Operations
@@ -318,7 +306,7 @@ export const useOrderStore = create<OrderStore>()(
         
         if (paymentMethod) {
           get().updateOrder(orderId, { 
-            paymentMethod: { type: paymentMethod as any, provider: paymentMethod }
+            payment_method: paymentMethod
           });
         }
       },
@@ -326,9 +314,8 @@ export const useOrderStore = create<OrderStore>()(
       markAsShipped: (orderId, trackingNumber, shippingMethod) => {
         get().updateOrder(orderId, { 
           status: 'shipped',
-          fulfillmentStatus: 'shipped',
-          trackingNumber,
-          shippedAt: new Date().toISOString(),
+          // trackingNumber, // Field doesn't exist in Order type
+          shipped_at: new Date().toISOString(),
         });
         
         get().addOrderAction({
@@ -343,8 +330,7 @@ export const useOrderStore = create<OrderStore>()(
       markAsDelivered: (orderId, deliveryDate) => {
         get().updateOrder(orderId, { 
           status: 'delivered',
-          fulfillmentStatus: 'delivered',
-          deliveredAt: deliveryDate || new Date().toISOString(),
+          delivered_at: deliveryDate || new Date().toISOString(),
         });
         
         get().addOrderAction({
@@ -358,7 +344,7 @@ export const useOrderStore = create<OrderStore>()(
 
       // Production Management
       startProduction: (orderId) => {
-        get().updateProductionStatus(orderId, 'printing');
+        get().updateProductionStatus(orderId, 'in-progress');
         get().updateOrderStatus(orderId, 'processing');
         
         get().addOrderAction({
@@ -379,28 +365,18 @@ export const useOrderStore = create<OrderStore>()(
 
       addProductionNote: (orderId, itemId, note) => {
         const order = get().getOrder(orderId);
-        if (!order) return;
+        if (!order || !order.order_items) return;
 
-        const updatedItems = order.items.map(item =>
-          item.id === itemId
-            ? { ...item, printNotes: (item.printNotes || '') + '\n' + note }
-            : item
-        );
-
-        get().updateOrder(orderId, { items: updatedItems });
+        // This would need to be handled by the API since order_items is a relation
+        console.log('Production note added (would be handled by API):', { orderId, itemId, note });
       },
 
       updateProductionTime: (orderId, itemId, actualTime) => {
         const order = get().getOrder(orderId);
-        if (!order) return;
+        if (!order || !order.order_items) return;
 
-        const updatedItems = order.items.map(item =>
-          item.id === itemId
-            ? { ...item, actualProductionTime: actualTime }
-            : item
-        );
-
-        get().updateOrder(orderId, { items: updatedItems });
+        // This would need to be handled by the API since order_items is a relation
+        console.log('Production time updated (would be handled by API):', { orderId, itemId, actualTime });
       },
 
       // Communication
@@ -408,13 +384,12 @@ export const useOrderStore = create<OrderStore>()(
         const order = get().getOrder(orderId);
         if (!order) return;
 
-        const currentNotes = isInternal ? order.internalNotes : order.notes;
+        const currentNotes = order.notes;
         const timestamp = new Date().toISOString();
-        const newNote = `[${timestamp}] ${note}`;
+        const newNote = `[${timestamp}] ${isInternal ? '[INTERNAL]' : ''} ${note}`;
         
         get().updateOrder(orderId, {
-          [isInternal ? 'internalNotes' : 'notes']: 
-            currentNotes ? `${currentNotes}\n${newNote}` : newNote
+          notes: currentNotes ? `${currentNotes}\n${newNote}` : newNote
         });
         
         get().addOrderAction({
@@ -482,7 +457,7 @@ export const useOrderStore = create<OrderStore>()(
       },
 
       getOrderByNumber: (orderNumber) => {
-        return get().orders.find((order) => order.orderNumber === orderNumber);
+        return get().orders.find((order) => order.id === orderNumber); // Use ID instead since orderNumber doesn't exist
       },
 
       getOrdersByStatus: (status) => {
@@ -490,7 +465,7 @@ export const useOrderStore = create<OrderStore>()(
       },
 
       getOrdersByCustomer: (customerId) => {
-        return get().orders.filter((order) => order.customer.id === customerId);
+        return get().orders.filter((order) => order.customer?.id === customerId);
       },
 
       getPendingOrders: () => {
@@ -507,7 +482,7 @@ export const useOrderStore = create<OrderStore>()(
         
         return get().orders.filter((order) => 
           ['pending', 'confirmed'].includes(order.status) &&
-          new Date(order.createdAt) < threeDaysAgo
+          new Date(order.created_at) < threeDaysAgo
         );
       },
 
@@ -520,16 +495,16 @@ export const useOrderStore = create<OrderStore>()(
         }
 
         if (filters.paymentStatus && filters.paymentStatus.length > 0) {
-          filtered = filtered.filter((order) => filters.paymentStatus!.includes(order.paymentStatus));
+          filtered = filtered.filter((order) => filters.paymentStatus!.includes(order.payment_status));
         }
 
         if (filters.search) {
           const searchTerm = filters.search.toLowerCase();
           filtered = filtered.filter(
             (order) =>
-              order.orderNumber.toLowerCase().includes(searchTerm) ||
-              order.customer.email.toLowerCase().includes(searchTerm) ||
-              `${order.customer.firstName} ${order.customer.lastName}`.toLowerCase().includes(searchTerm)
+              order.id.toLowerCase().includes(searchTerm) ||
+              order.customer?.email?.toLowerCase().includes(searchTerm) ||
+              `${order.customer?.first_name || ''} ${order.customer?.last_name || ''}`.toLowerCase().includes(searchTerm)
           );
         }
 
@@ -537,7 +512,7 @@ export const useOrderStore = create<OrderStore>()(
           const start = new Date(filters.dateRange.start);
           const end = new Date(filters.dateRange.end);
           filtered = filtered.filter((order) => {
-            const orderDate = new Date(order.createdAt);
+            const orderDate = new Date(order.created_at);
             return orderDate >= start && orderDate <= end;
           });
         }
@@ -569,24 +544,24 @@ export const useOrderStore = create<OrderStore>()(
           deliveredOrders: orders.filter(o => o.status === 'delivered').length,
           cancelledOrders: orders.filter(o => o.status === 'cancelled').length,
           
-          ordersInProduction: orders.filter(o => ['printing', 'post-processing', 'quality-check'].includes(o.productionStatus)).length,
-          productionBacklog: orders.filter(o => o.productionStatus === 'queued').length,
+          ordersInProduction: orders.filter(o => o.status === 'processing').length,
+          productionBacklog: orders.filter(o => o.status === 'pending').length,
           averageProductionTime: 0, // Would be calculated from completed orders
           
-          paidOrders: orders.filter(o => o.paymentStatus === 'paid').length,
-          unpaidOrders: orders.filter(o => o.paymentStatus === 'pending').length,
-          refundedOrders: orders.filter(o => o.paymentStatus === 'refunded').length,
+          paidOrders: orders.filter(o => o.payment_status === 'paid').length,
+          unpaidOrders: orders.filter(o => o.payment_status === 'pending').length,
+          refundedOrders: orders.filter(o => o.payment_status === 'refunded').length,
           
-          todayOrders: orders.filter(o => new Date(o.createdAt).toDateString() === new Date().toDateString()).length,
+          todayOrders: orders.filter(o => new Date(o.created_at).toDateString() === new Date().toDateString()).length,
           weekOrders: orders.filter(o => {
             const weekAgo = new Date();
             weekAgo.setDate(weekAgo.getDate() - 7);
-            return new Date(o.createdAt) >= weekAgo;
+            return new Date(o.created_at) >= weekAgo;
           }).length,
           monthOrders: orders.filter(o => {
             const monthAgo = new Date();
             monthAgo.setMonth(monthAgo.getMonth() - 1);
-            return new Date(o.createdAt) >= monthAgo;
+            return new Date(o.created_at) >= monthAgo;
           }).length,
           
           topSellingProducts: [], // Would be calculated from order items
@@ -603,26 +578,22 @@ export const useOrderStore = create<OrderStore>()(
 
       // Production
       getProductionQueue: () => {
-        return get().orders.filter(order => order.productionStatus === 'queued');
+        return get().orders.filter(order => order.status === 'processing');
       },
 
       getOrdersInProduction: () => {
-        return get().orders.filter(order => 
-          ['printing', 'post-processing', 'quality-check', 'packaging'].includes(order.productionStatus)
-        );
+        return get().orders.filter(order => order.status === 'processing');
       },
 
       getProductionBacklog: () => {
-        return get().orders.filter(order => 
-          order.status === 'confirmed' && order.productionStatus === 'not-started'
-        );
+        return get().orders.filter(order => order.status === 'pending');
       },
 
       estimateProductionTime: (orderId) => {
         const order = get().getOrder(orderId);
-        if (!order) return 0;
+        if (!order || !order.order_items) return 0;
         
-        return order.items.reduce((total, item) => total + item.printTime + item.finishingTime, 0);
+        return order.order_items.reduce((total, item) => total + (item.quantity * 24), 0); // Simplified calculation
       },
 
       // Financial
@@ -630,7 +601,7 @@ export const useOrderStore = create<OrderStore>()(
         const order = get().getOrder(orderId);
         if (!order) return 0;
         
-        return order.subtotal + order.shippingCost + order.taxAmount - order.discountAmount;
+        return order.subtotal + order.shipping_amount + order.tax_amount;
       },
 
       calculateTax: (orderId) => {
@@ -645,17 +616,17 @@ export const useOrderStore = create<OrderStore>()(
         const order = get().getOrder(orderId);
         if (!order) return 0;
         
-        return order.shippingCost;
+        return order.shipping_amount;
       },
 
       getTotalRevenue: (dateRange) => {
-        let orders = get().orders.filter(order => order.paymentStatus === 'paid');
+        let orders = get().orders.filter(order => order.payment_status === 'paid');
         
         if (dateRange) {
           const start = new Date(dateRange.start);
           const end = new Date(dateRange.end);
           orders = orders.filter(order => {
-            const orderDate = new Date(order.createdAt);
+            const orderDate = new Date(order.created_at);
             return orderDate >= start && orderDate <= end;
           });
         }
@@ -666,7 +637,7 @@ export const useOrderStore = create<OrderStore>()(
       // Reports
       generateSalesReport: (dateRange) => {
         const orders = get().orders.filter(order => {
-          const orderDate = new Date(order.createdAt);
+          const orderDate = new Date(order.created_at);
           return orderDate >= new Date(dateRange.start) && orderDate <= new Date(dateRange.end);
         });
         
@@ -680,13 +651,13 @@ export const useOrderStore = create<OrderStore>()(
 
       generateProductionReport: (dateRange) => {
         const orders = get().orders.filter(order => {
-          const orderDate = new Date(order.createdAt);
+          const orderDate = new Date(order.created_at);
           return orderDate >= new Date(dateRange.start) && orderDate <= new Date(dateRange.end);
         });
         
         return {
-          totalItems: orders.reduce((sum, order) => sum + order.items.length, 0),
-          completedOrders: orders.filter(o => o.productionStatus === 'completed').length,
+          totalItems: orders.reduce((sum, order) => sum + (order.order_items?.length || 0), 0),
+          completedOrders: orders.filter(o => o.status === 'delivered').length,
           averageProductionTime: 0, // Calculate from actual production times
           orders: orders,
         };
