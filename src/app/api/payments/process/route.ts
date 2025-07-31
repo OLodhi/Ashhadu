@@ -120,13 +120,13 @@ export async function POST(request: NextRequest) {
             message: `Payment successful!${isGuestPayment ? ' (guest payment)' : ''}`
           }
         });
-      } else if (paymentResult.requiresApproval) {
+      } else if ('requiresApproval' in paymentResult && paymentResult.requiresApproval) {
         // Payment requires user approval (PayPal redirect)
         return NextResponse.json({
           success: false,
           requiresApproval: true,
-          approvalUrl: paymentResult.approvalUrl,
-          paypalOrderId: paymentResult.paypalOrderId,
+          approvalUrl: 'approvalUrl' in paymentResult ? paymentResult.approvalUrl : undefined,
+          paypalOrderId: 'paypalOrderId' in paymentResult ? paymentResult.paypalOrderId : undefined,
           orderId,
           error: 'Payment requires user approval'
         });
