@@ -156,6 +156,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Check if customer is deleted
+    if (stripeCustomer.deleted) {
+      return NextResponse.json(
+        { error: 'Stripe customer has been deleted' },
+        { status: 410 }
+      );
+    }
+
     return NextResponse.json({
       success: true,
       data: {
