@@ -6,12 +6,13 @@ import { X, ChevronLeft, ChevronRight, Package } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Model3DViewer from '@/components/models/Model3DViewer';
 import { Product3DModel } from '@/types/product';
+import { Model3DFormat } from '@/types/models';
 
 interface MediaItem {
   type: 'image' | '3d';
   url: string;
   alt?: string;
-  format?: string; // For 3D models
+  format?: Model3DFormat; // For 3D models
   model?: Product3DModel; // Full model data for 3D items
 }
 
@@ -159,7 +160,7 @@ export default function MediaLightbox({
               <div className="w-full h-full min-h-[500px] bg-gradient-to-br from-gray-900 to-black rounded-lg overflow-hidden">
                 <Model3DViewer
                   modelUrl={currentItem.url}
-                  format={currentItem.format || 'obj'}
+                  format={currentItem.format || 'obj' as Model3DFormat}
                   showControls={true}
                   autoRotate={false}
                   enableZoom={true}
