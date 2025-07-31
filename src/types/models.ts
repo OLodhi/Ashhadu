@@ -84,11 +84,11 @@ export interface Model3DProcessingOptions {
 
 // Types imported from product types above
 
-// Three.js specific types
+// Three.js specific types (using any for compatibility)
 export interface ThreeJSScene {
-  scene: THREE.Scene;
-  camera: THREE.Camera;
-  renderer: THREE.WebGLRenderer;
+  scene: any; // THREE.Scene
+  camera: any; // THREE.Camera
+  renderer: any; // THREE.WebGLRenderer
   controls: any; // OrbitControls type
 }
 
