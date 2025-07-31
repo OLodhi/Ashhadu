@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle, Loader2, XCircle } from 'lucide-react';
 import Logo from '@/components/ui/Logo';
 import { useCartStore } from '@/store/cartStore';
 
-export default function PayPalSuccessPage() {
+function PayPalSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { clearCart } = useCartStore();
@@ -168,5 +168,33 @@ export default function PayPalSuccessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PayPalSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-luxury-gray-50 flex items-center justify-center">
+        <div className="max-w-md w-full mx-auto px-4">
+          <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+            <div className="mb-6">
+              <Logo className="w-16 h-16 mx-auto mb-4" />
+              <h1 className="font-playfair text-2xl font-bold text-luxury-black mb-2">
+                PayPal Payment
+              </h1>
+            </div>
+            <div className="text-center">
+              <Loader2 size={48} className="mx-auto mb-4 text-luxury-gold animate-spin" />
+              <p className="text-luxury-gray-600 mb-4">Processing PayPal payment...</p>
+              <p className="text-sm text-luxury-gray-500">
+                Please wait while we process your payment...
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <PayPalSuccessContent />
+    </Suspense>
   );
 }
