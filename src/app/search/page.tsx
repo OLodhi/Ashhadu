@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Search, Filter, Grid, List, Star, ShoppingCart, Package } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -53,7 +53,7 @@ const sortOptions = [
   { value: 'price-desc', label: 'Price High to Low' }
 ];
 
-export default function SearchPage() {
+function SearchPageContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
   const { addToCart } = useCartStore();
@@ -559,5 +559,69 @@ export default function SearchPage() {
       
       <Footer />
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen">
+        <Header />
+        
+        <MainContentWrapper>
+          {/* Search Header Loading */}
+          <section className="pt-12 pb-8 md:pt-16 md:pb-12 lg:pt-20 lg:pb-16 bg-luxury-gray-50">
+            <div className="container-luxury">
+              <div className="text-center mb-8">
+                <div className="animate-pulse">
+                  <div className="h-8 bg-luxury-gray-200 rounded w-64 mx-auto mb-4"></div>
+                  <div className="h-4 bg-luxury-gray-200 rounded w-48 mx-auto"></div>
+                </div>
+              </div>
+
+              {/* Search Form Loading */}
+              <div className="max-w-2xl mx-auto mb-8">
+                <div className="relative animate-pulse">
+                  <div className="h-16 bg-luxury-gray-200 rounded-lg"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Filters and Results Loading */}
+          <section className="bg-luxury-gray-50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              {/* Toolbar Loading */}
+              <div className="bg-white rounded-lg shadow-luxury p-4 mb-6 animate-pulse">
+                <div className="flex justify-between items-center">
+                  <div className="h-4 bg-luxury-gray-200 rounded w-48"></div>
+                  <div className="flex space-x-4">
+                    <div className="h-10 bg-luxury-gray-200 rounded w-32"></div>
+                    <div className="h-10 bg-luxury-gray-200 rounded w-32"></div>
+                    <div className="h-10 bg-luxury-gray-200 rounded w-20"></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Loading Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="bg-white rounded-lg shadow-luxury p-6 animate-pulse">
+                    <div className="bg-luxury-gray-200 h-48 rounded-lg mb-4"></div>
+                    <div className="bg-luxury-gray-200 h-4 rounded mb-2"></div>
+                    <div className="bg-luxury-gray-200 h-4 rounded w-3/4 mb-2"></div>
+                    <div className="bg-luxury-gray-200 h-6 rounded w-24"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        </MainContentWrapper>
+        
+        <Footer />
+      </div>
+    }>
+      <SearchPageContent />
+    </Suspense>
   );
 }
