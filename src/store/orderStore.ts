@@ -240,7 +240,7 @@ export const useOrderStore = create<OrderStore>()(
         // Auto-confirm order if payment received
         const order = get().getOrder(orderId);
         if (status === 'paid' && order?.status === 'pending') {
-          get().updateOrderStatus(orderId, 'confirmed');
+          get().updateOrderStatus(orderId, 'processing');
         }
       },
 
@@ -481,7 +481,7 @@ export const useOrderStore = create<OrderStore>()(
         threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
         
         return get().orders.filter((order) => 
-          ['pending', 'confirmed'].includes(order.status) &&
+          ['pending', 'processing'].includes(order.status) &&
           new Date(order.created_at) < threeDaysAgo
         );
       },
