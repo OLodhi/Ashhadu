@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
@@ -11,7 +11,7 @@ import OAuthButtons from '@/components/auth/OAuthButtons';
 import SessionRecovery from '@/components/auth/SessionRecovery';
 import toast from 'react-hot-toast';
 
-export default function LoginPage() {
+function LoginPageContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -382,5 +382,107 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-luxury-black via-gray-900 to-luxury-black">
+        {/* White Header Banner Loading */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="px-4 py-4">
+            <div className="w-full max-w-md mx-auto">
+              <div className="flex justify-center">
+                <div className="animate-pulse">
+                  <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content Loading */}
+        <div className="flex items-center justify-center p-4 min-h-[calc(100vh-80px)]">
+          {/* Islamic Pattern Overlay */}
+          <div className="absolute inset-0 top-[80px] opacity-5">
+            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern id="islamic-pattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+                  <circle cx="25" cy="25" r="2" fill="#d4af37" />
+                  <circle cx="75" cy="25" r="2" fill="#d4af37" />
+                  <circle cx="25" cy="75" r="2" fill="#d4af37" />
+                  <circle cx="75" cy="75" r="2" fill="#d4af37" />
+                  <circle cx="50" cy="50" r="3" fill="#d4af37" />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#islamic-pattern)" />
+            </svg>
+          </div>
+
+          <div className="relative z-10 w-full max-w-md">
+            {/* Page Title Loading */}
+            <div className="text-center mb-8 animate-pulse">
+              <div className="h-8 bg-white/20 rounded w-48 mx-auto mb-2"></div>
+              <div className="h-4 bg-white/10 rounded w-64 mx-auto"></div>
+            </div>
+
+            {/* Login Form Loading */}
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-luxury-gold/20 p-8 shadow-2xl">
+              <div className="space-y-6 animate-pulse">
+                {/* Email Field Loading */}
+                <div>
+                  <div className="h-4 bg-white/20 rounded w-24 mb-2"></div>
+                  <div className="h-12 bg-white/5 border border-gray-600 rounded-lg flex items-center px-3">
+                    <div className="w-5 h-5 bg-gray-400 rounded mr-3"></div>
+                    <div className="h-4 bg-white/20 rounded flex-1"></div>
+                  </div>
+                </div>
+
+                {/* Password Field Loading */}
+                <div>
+                  <div className="h-4 bg-white/20 rounded w-16 mb-2"></div>
+                  <div className="h-12 bg-white/5 border border-gray-600 rounded-lg flex items-center px-3">
+                    <div className="w-5 h-5 bg-gray-400 rounded mr-3"></div>
+                    <div className="h-4 bg-white/20 rounded flex-1 mr-3"></div>
+                    <div className="w-5 h-5 bg-gray-400 rounded"></div>
+                  </div>
+                </div>
+
+                {/* Forgot Password Link Loading */}
+                <div className="text-right">
+                  <div className="h-4 bg-luxury-gold/30 rounded w-32 ml-auto"></div>
+                </div>
+
+                {/* Submit Button Loading */}
+                <div className="h-12 bg-luxury-gold/30 rounded-lg flex items-center justify-center">
+                  <div className="w-6 h-6 border-2 border-luxury-black/20 border-t-luxury-black rounded-full animate-spin mr-3"></div>
+                  <span className="text-luxury-black/50">Loading...</span>
+                </div>
+              </div>
+
+              {/* OAuth Buttons Loading */}
+              <div className="mt-6 space-y-3 animate-pulse">
+                <div className="h-12 bg-white/5 border border-gray-600 rounded-lg"></div>
+                <div className="h-12 bg-white/5 border border-gray-600 rounded-lg"></div>
+              </div>
+
+              {/* Sign Up Link Loading */}
+              <div className="mt-6 text-center animate-pulse">
+                <div className="h-4 bg-white/20 rounded w-48 mx-auto"></div>
+              </div>
+            </div>
+
+            {/* Additional Links Loading */}
+            <div className="mt-8 text-center space-y-2 animate-pulse">
+              <div className="h-4 bg-white/20 rounded w-32 mx-auto"></div>
+              <div className="h-3 bg-white/10 rounded w-64 mx-auto"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <LoginPageContent />
+    </Suspense>
   );
 }
