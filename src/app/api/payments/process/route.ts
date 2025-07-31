@@ -201,7 +201,7 @@ async function processStripePayment(order: any, paymentData: any) {
       const { paymentIntent, error } = await stripePaymentHelpers.createPaymentIntent({
         amount: order.total,
         currency: order.currency?.toLowerCase() || 'gbp',
-        customerId: undefined, // Guest payment
+        customerId: null as any, // Guest payment - null for no customer
         automaticPaymentMethods: true,
         metadata: {
           orderId: order.id,
