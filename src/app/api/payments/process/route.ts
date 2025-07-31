@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
       } else {
         // Payment failed
         return NextResponse.json(
-          { success: false, error: paymentResult.error || 'Payment failed' },
+          { success: false, error: ('error' in paymentResult ? paymentResult.error : null) || 'Payment failed' },
           { status: 400 }
         );
       }
