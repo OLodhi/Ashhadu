@@ -25,6 +25,7 @@ import {
 import { useCartStore } from '@/store/cartStore';
 import { formatPrice } from '@/lib/utils';
 import { Product } from '@/types/product';
+import { Model3DFormat } from '@/types/models';
 import { toast } from 'react-hot-toast';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -92,7 +93,7 @@ const ProductDetailPage = () => {
       type: 'image' | '3d';
       url: string;
       alt?: string;
-      format?: string;
+      format?: Model3DFormat;
       model?: any;
     }> = [];
 
@@ -113,7 +114,7 @@ const ProductDetailPage = () => {
         items.push({
           type: '3d',
           url: model.url,
-          format: model.format,
+          format: model.format as Model3DFormat,
           model: model,
           alt: `${product.name} - 3D Model ${index + 1}`
         });
