@@ -6,6 +6,7 @@ import FeaturedProducts from '@/components/homepage/FeaturedProducts';
 import CollectionsPreview from '@/components/homepage/CollectionsPreview';
 import AboutSection from '@/components/homepage/AboutSection';
 import TestimonialsSection from '@/components/homepage/TestimonialsSection';
+import NewsletterCTA from '@/components/homepage/NewsletterCTA';
 import { MainContentWrapper } from '@/components/layout/MainContentWrapper';
 
 export default function HomePage() {
@@ -19,6 +20,7 @@ export default function HomePage() {
         <CollectionsPreview />
         <AboutSection />
         <TestimonialsSection />
+        <NewsletterCTA />
       </MainContentWrapper>
       
       <Footer />

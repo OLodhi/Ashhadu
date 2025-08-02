@@ -19,6 +19,8 @@ import {
 import { AccountLayout } from '@/components/account/AccountLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWishlist } from '@/contexts/WishlistContext';
+import { useSettings } from '@/contexts/SettingsContext';
+import { SETTING_KEYS } from '@/types/settings';
 import { supabase } from '@/lib/supabase-client';
 
 interface Order {
@@ -39,7 +41,11 @@ interface DashboardStats {
 export default function AccountDashboard() {
   const { user, profile, customer, loading: authLoading, refreshProfile } = useAuth();
   const { wishlistCount, totalValue, wishlistItems } = useWishlist();
+  const { getSetting } = useSettings();
   const router = useRouter();
+  
+  // Get feature settings
+  const isWishlistEnabled = getSetting(SETTING_KEYS.FEATURE_WISHLIST);
   
   // Debug customer data
   console.log('Customer data:', customer);
@@ -247,13 +253,13 @@ export default function AccountDashboard() {
       icon: Package,
       color: 'bg-purple-500'
     },
-    {
+    ...(isWishlistEnabled ? [{
       name: 'My Wishlist',
       description: 'Save your favorite pieces',
       href: '/account/wishlist',
       icon: Heart,
       color: 'bg-pink-500'
-    }
+    }] : [])
   ];
 
   // Don't render anything while checking auth
@@ -306,7 +312,7 @@ export default function AccountDashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className={`grid grid-cols-1 ${isWishlistEnabled ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6`}>
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <div className="flex items-center">
               <div className="p-3 bg-purple-100 rounded-lg">
@@ -333,17 +339,19 @@ export default function AccountDashboard() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-pink-100 rounded-lg">
-                <Heart className="h-6 w-6 text-pink-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Wishlist Items</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.wishlistItems}</p>
+          {isWishlistEnabled && (
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <div className="flex items-center">
+                <div className="p-3 bg-pink-100 rounded-lg">
+                  <Heart className="h-6 w-6 text-pink-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Wishlist Items</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.wishlistItems}</p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Account Information */}
@@ -490,70 +498,72 @@ export default function AccountDashboard() {
         </div>
 
         {/* Recent Wishlist Items */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">Recent Wishlist Items</h3>
-            <Link
-              href="/account/wishlist"
-              className="text-luxury-gold hover:text-yellow-600 font-medium text-sm"
-            >
-              View All ({wishlistCount})
-            </Link>
-          </div>
-          
-          {wishlistItems.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {wishlistItems.slice(0, 3).map((item) => (
-                <div key={item.id} className="border border-gray-100 rounded-lg p-4 hover:border-gray-200 transition-colors">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                      {item.product.featured_image ? (
-                        <img
-                          src={item.product.featured_image}
-                          alt={item.product.name}
-                          className="w-full h-full object-cover rounded-lg"
-                        />
-                      ) : (
-                        <Heart className="h-6 w-6 text-gray-400" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <Link
-                        href={`/products/${item.product.id}`}
-                        className="text-sm font-medium text-gray-900 hover:text-luxury-gold transition-colors truncate block"
-                      >
-                        {item.product.name}
-                      </Link>
-                      {item.product.arabic_name && (
-                        <p className="text-xs text-gray-600 arabic-text mt-1">
-                          {item.product.arabic_name}
-                        </p>
-                      )}
-                      <p className="text-sm font-medium text-luxury-gold mt-1">
-                        {formatCurrency(item.product.price, item.product.currency)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <Heart className="mx-auto h-12 w-12 text-gray-400" />
-              <h4 className="mt-4 text-lg font-medium text-gray-900">No Wishlist Items</h4>
-              <p className="mt-2 text-gray-600">
-                Save your favorite Islamic art pieces to see them here
-              </p>
+        {isWishlistEnabled && (
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Recent Wishlist Items</h3>
               <Link
-                href="/shop"
-                className="mt-4 inline-flex items-center px-4 py-2 bg-luxury-gold text-luxury-black font-medium rounded-lg hover:bg-yellow-400 transition-colors"
+                href="/account/wishlist"
+                className="text-luxury-gold hover:text-yellow-600 font-medium text-sm"
               >
-                <Heart className="mr-2 h-4 w-4" />
-                Explore Art
+                View All ({wishlistCount})
               </Link>
             </div>
-          )}
-        </div>
+            
+            {wishlistItems.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {wishlistItems.slice(0, 3).map((item) => (
+                  <div key={item.id} className="border border-gray-100 rounded-lg p-4 hover:border-gray-200 transition-colors">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                        {item.product.featured_image ? (
+                          <img
+                            src={item.product.featured_image}
+                            alt={item.product.name}
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                        ) : (
+                          <Heart className="h-6 w-6 text-gray-400" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <Link
+                          href={`/products/${item.product.id}`}
+                          className="text-sm font-medium text-gray-900 hover:text-luxury-gold transition-colors truncate block"
+                        >
+                          {item.product.name}
+                        </Link>
+                        {item.product.arabic_name && (
+                          <p className="text-xs text-gray-600 arabic-text mt-1">
+                            {item.product.arabic_name}
+                          </p>
+                        )}
+                        <p className="text-sm font-medium text-luxury-gold mt-1">
+                          {formatCurrency(item.product.price, item.product.currency)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Heart className="mx-auto h-12 w-12 text-gray-400" />
+                <h4 className="mt-4 text-lg font-medium text-gray-900">No Wishlist Items</h4>
+                <p className="mt-2 text-gray-600">
+                  Save your favorite Islamic art pieces to see them here
+                </p>
+                <Link
+                  href="/shop"
+                  className="mt-4 inline-flex items-center px-4 py-2 bg-luxury-gold text-luxury-black font-medium rounded-lg hover:bg-yellow-400 transition-colors"
+                >
+                  <Heart className="mr-2 h-4 w-4" />
+                  Explore Art
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </AccountLayout>
   );

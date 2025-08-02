@@ -12,7 +12,7 @@ import {
   EyeOff
 } from 'lucide-react';
 // Removed useProductStore - now using API routes
-import { ProductCategory, IslamicArtCategory, Product, ProductImage, Product3DModel, ProductHDRI } from '@/types/product';
+import { ProductCategory, Product, ProductImage, Product3DModel, ProductHDRI } from '@/types/product';
 import { toast } from 'react-hot-toast';
 import ImageUpload from '@/components/ui/ImageUpload';
 import Model3DUpload from '@/components/ui/Model3DUpload';
@@ -38,7 +38,7 @@ const NewProductPage = () => {
     regularPrice: 0,
     currency: 'GBP' as const,
     vatIncluded: true,
-    category: 'islamic-calligraphy' as ProductCategory,
+    category: 'Islamic Calligraphy' as ProductCategory,
     subcategory: '',
     tags: [] as string[],
     images: [] as any[],
@@ -58,7 +58,6 @@ const NewProductPage = () => {
     weight: 0,
     material: [] as string[],
     color: [] as string[],
-    islamicCategory: 'ayat-al-kursi' as IslamicArtCategory,
     arabicText: '',
     transliteration: '',
     translation: '',
@@ -230,31 +229,12 @@ const NewProductPage = () => {
   };
 
   const categories = [
-    { value: 'islamic-calligraphy', label: 'Islamic Calligraphy' },
-    { value: 'mosque-models', label: 'Mosque Models' },
-    { value: 'geometric-art', label: 'Geometric Art' },
-    { value: 'arabic-text', label: 'Arabic Text' },
-    { value: 'decorative-art', label: 'Decorative Art' },
-    { value: 'custom-commissions', label: 'Custom Commissions' },
-    { value: 'architectural-models', label: 'Architectural Models' },
-    { value: 'wall-art', label: 'Wall Art' },
-    { value: 'sculptures', label: 'Sculptures' },
+    { value: 'Islamic Calligraphy', label: 'Islamic Calligraphy' },
+    { value: 'Islamic Architecture', label: 'Islamic Architecture' },
+    { value: 'Geometric Art', label: 'Geometric Art' },
+    { value: 'Heritage Collections', label: 'Heritage Collections' },
   ];
 
-  const islamicCategories = [
-    { value: 'ayat-al-kursi', label: 'Ayat al-Kursi' },
-    { value: 'bismillah', label: 'Bismillah' },
-    { value: 'surah-al-fatiha', label: 'Surah Al-Fatiha' },
-    { value: '99-names-allah', label: '99 Names of Allah' },
-    { value: 'shahada', label: 'Shahada' },
-    { value: 'mosque-architecture', label: 'Mosque Architecture' },
-    { value: 'geometric-patterns', label: 'Geometric Patterns' },
-    { value: 'arabic-names', label: 'Arabic Names' },
-    { value: 'duas-prayers', label: 'Duas & Prayers' },
-    { value: 'quranic-verses', label: 'Quranic Verses' },
-    { value: 'hadith-quotes', label: 'Hadith Quotes' },
-    { value: 'islamic-symbols', label: 'Islamic Symbols' },
-  ];
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -478,20 +458,15 @@ const NewProductPage = () => {
             
             <div>
               <label className="block text-sm font-medium text-luxury-black mb-2">
-                Islamic Art Category *
+                Subcategory
               </label>
-              <select
-                value={formData.islamicCategory}
-                onChange={(e) => handleInputChange('islamicCategory', e.target.value)}
+              <input
+                type="text"
+                value={formData.subcategory}
+                onChange={(e) => handleInputChange('subcategory', e.target.value)}
                 className="input-luxury"
-                required
-              >
-                {islamicCategories.map((cat) => (
-                  <option key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </option>
-                ))}
-              </select>
+                placeholder="e.g., Ayat al-Kursi, Bismillah"
+              />
             </div>
           </div>
 

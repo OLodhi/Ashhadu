@@ -31,9 +31,9 @@ const IslamicCalligraphyPage = () => {
         const response = await fetch('/api/products?status=published');
         if (response.ok) {
           const data = await response.json();
-          // Filter for calligraphy products only
+          // Filter for Islamic Calligraphy products only
           const calligraphyProducts = (data.data || []).filter(
-            (product: any) => product.islamicCategory === 'calligraphy'
+            (product: any) => product.category === 'Islamic Calligraphy'
           );
           setProducts(calligraphyProducts);
         } else {

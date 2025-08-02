@@ -4,11 +4,18 @@ import React, { useState } from 'react';
 import { Mail, Gift, Sparkles, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
+import { useSettings } from '@/contexts/SettingsContext';
 
 const NewsletterCTA = () => {
+  const { isNewsletterEnabled } = useSettings();
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
+
+  // Don't render if newsletter is disabled
+  if (!isNewsletterEnabled) {
+    return null;
+  }
 
   const benefits = [
     'Early access to new collections',

@@ -22,12 +22,18 @@ import {
 import { AccountLayout } from '@/components/account/AccountLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWishlist } from '@/contexts/WishlistContext';
+import { useSettings } from '@/contexts/SettingsContext';
+import { SETTING_KEYS } from '@/types/settings';
 import { WishlistFilters, WISHLIST_CONFIG } from '@/types/wishlist';
 import toast from 'react-hot-toast';
 
 export default function WishlistPage() {
   const { user, customer, loading: authLoading } = useAuth();
+  const { getSetting } = useSettings();
   const router = useRouter();
+  
+  // Check if wishlist feature is enabled
+  const isWishlistEnabled = getSetting(SETTING_KEYS.FEATURE_WISHLIST);
   const { 
     wishlistItems, 
     loading, 

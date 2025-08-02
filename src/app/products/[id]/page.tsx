@@ -45,7 +45,6 @@ const ProductDetailPage = () => {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState<string>('');
-  const [selectedMaterial, setSelectedMaterial] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'description' | 'specifications' | 'reviews' | 'cultural'>('description');
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -276,7 +275,6 @@ const ProductDetailPage = () => {
       ...product,
       quantity,
       selectedVariant,
-      selectedMaterial,
     });
     toast.success(`${product.name} added to cart!`);
   };
@@ -566,29 +564,6 @@ const ProductDetailPage = () => {
               </div>
             )}
 
-            {/* Material Options */}
-            {product.material && product.material.length > 1 && (
-              <div className="space-y-3">
-                <label className="block text-sm font-medium text-luxury-black">
-                  Material:
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {product.material.map((material) => (
-                    <button
-                      key={material}
-                      onClick={() => setSelectedMaterial(material)}
-                      className={`p-3 text-sm border rounded-lg transition-colors ${
-                        selectedMaterial === material
-                          ? 'border-luxury-gold bg-luxury-gold text-white'
-                          : 'border-luxury-gray-200 hover:border-luxury-gold'
-                      }`}
-                    >
-                      {material}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Quantity Selector */}
             <div className="flex items-center space-x-4">
@@ -752,10 +727,6 @@ const ProductDetailPage = () => {
                     <div className="flex justify-between">
                       <dt className="text-luxury-gray-600">Weight:</dt>
                       <dd className="text-luxury-black">{product.weight || 'N/A'}</dd>
-                    </div>
-                    <div className="flex justify-between">
-                      <dt className="text-luxury-gray-600">Material:</dt>
-                      <dd className="text-luxury-black">{product.material?.join(', ') || 'Various'}</dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-luxury-gray-600">Print Time:</dt>

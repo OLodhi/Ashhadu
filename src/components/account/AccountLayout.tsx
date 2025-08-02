@@ -17,6 +17,8 @@ import {
   Monitor
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSettings } from '@/contexts/SettingsContext';
+import { SETTING_KEYS } from '@/types/settings';
 import Header from '@/components/layout/Header';
 import SafeLink from '@/components/ui/SafeLink';
 import { useImpersonation } from '@/hooks/useImpersonation';
@@ -31,9 +33,13 @@ interface AccountLayoutProps {
 export function AccountLayout({ children, title, description }: AccountLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, profile, customer, signOut, loading } = useAuth();
+  const { getSetting } = useSettings();
   const { impersonationSession } = useImpersonation();
   const router = useRouter();
   const pathname = usePathname();
+  
+  // Get feature settings
+  const isWishlistEnabled = getSetting(SETTING_KEYS.FEATURE_WISHLIST);
 
   const handleSignOut = async () => {
     try {
@@ -70,12 +76,12 @@ export function AccountLayout({ children, title, description }: AccountLayoutPro
       icon: Package,
       current: pathname === '/account/orders',
     },
-    {
+    ...(isWishlistEnabled ? [{
       name: 'Wishlist',
       href: '/account/wishlist',
       icon: Heart,
       current: pathname === '/account/wishlist',
-    },
+    }] : []),
     {
       name: 'Payment Methods',
       href: '/account/payments',

@@ -1,64 +1,90 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Star, Quote, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const testimonials = [
-  {
-    id: 1,
-    name: 'Amina Hassan',
-    location: 'London, UK',
-    rating: 5,
-    text: 'The Ayat al-Kursi piece I ordered is absolutely breathtaking. The attention to detail and the quality of the 3D printing is exceptional. It has become the centerpiece of our living room.',
-    product: 'Ayat al-Kursi Calligraphy',
-    image: '/images/testimonials/amina.jpg',
-    verified: true
-  },
-  {
-    id: 2,
-    name: 'Omar Al-Rashid',
-    location: 'Manchester, UK',
-    rating: 5,
-    text: 'I commissioned a custom piece with my children\'s names in Arabic calligraphy. The result exceeded all expectations. The craftsmanship is truly divine.',
-    product: 'Custom Arabic Calligraphy',
-    image: '/images/testimonials/omar.jpg',
-    verified: true
-  },
-  {
-    id: 3,
-    name: 'Fatima Ahmed',
-    location: 'Birmingham, UK',
-    rating: 5,
-    text: 'The mosque model I purchased is incredibly detailed and beautifully crafted. It\'s not just art, it\'s a connection to our heritage and faith.',
-    product: 'Masjid an-Nabawi Model',
-    image: '/images/testimonials/fatima.jpg',
-    verified: true
-  },
-  {
-    id: 4,
-    name: 'Ibrahim Khan',
-    location: 'Leeds, UK',
-    rating: 5,
-    text: 'Outstanding quality and fast delivery. The Islamic geometric art piece is perfect for our mosque\'s prayer hall. Highly recommended!',
-    product: 'Islamic Geometric Art',
-    image: '/images/testimonials/ibrahim.jpg',
-    verified: true
-  },
-  {
-    id: 5,
-    name: 'Khadija Malik',
-    location: 'Edinburgh, UK',
-    rating: 5,
-    text: 'The customer service was exceptional, and the final product was even more beautiful than I imagined. Perfect for our new home.',
-    product: 'Bismillah Wall Art',
-    image: '/images/testimonials/khadija.jpg',
-    verified: true
-  }
-];
+interface Testimonial {
+  id: string;
+  name: string;
+  location: string;
+  rating: number;
+  text: string;
+  product: string;
+  productId?: string;
+  productSlug?: string;
+  verified: boolean;
+  createdAt: string;
+  relativeDate: string;
+}
 
 const TestimonialsSection = () => {
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch real reviews from the database
+  useEffect(() => {
+    const fetchTestimonials = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/reviews?limit=10');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data.length > 0) {
+            setTestimonials(data.data);
+          } else {
+            // Fallback to default testimonials if no reviews in database
+            setTestimonials([
+              {
+                id: '1',
+                name: 'Amina Hassan',
+                location: 'London, UK',
+                rating: 5,
+                text: 'The Ayat al-Kursi piece I ordered is absolutely breathtaking. The attention to detail and the quality of the 3D printing is exceptional. It has become the centerpiece of our living room.',
+                product: 'Ayat al-Kursi Calligraphy',
+                verified: true,
+                createdAt: new Date().toISOString(),
+                relativeDate: '2 weeks ago'
+              },
+              {
+                id: '2',
+                name: 'Omar Al-Rashid',
+                location: 'Manchester, UK',
+                rating: 5,
+                text: 'I commissioned a custom piece with my children\'s names in Arabic calligraphy. The result exceeded all expectations. The craftsmanship is truly divine.',
+                product: 'Custom Arabic Calligraphy',
+                verified: true,
+                createdAt: new Date().toISOString(),
+                relativeDate: '1 month ago'
+              },
+              {
+                id: '3',
+                name: 'Fatima Ahmed',
+                location: 'Birmingham, UK',
+                rating: 5,
+                text: 'The mosque model I purchased is incredibly detailed and beautifully crafted. It\'s not just art, it\'s a connection to our heritage and faith.',
+                product: 'Masjid an-Nabawi Model',
+                verified: true,
+                createdAt: new Date().toISOString(),
+                relativeDate: '3 weeks ago'
+              }
+            ]);
+          }
+        } else {
+          console.error('Failed to fetch testimonials');
+        }
+      } catch (error) {
+        console.error('Error fetching testimonials:', error);
+        // Use fallback testimonials on error
+        setTestimonials([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTestimonials();
+  }, []);
 
   const nextTestimonial = () => {
     setCurrentIndex((prev) => (prev + 1) % testimonials.length);
@@ -67,6 +93,24 @@ const TestimonialsSection = () => {
   const prevTestimonial = () => {
     setCurrentIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
   };
+
+  // Don't render if no testimonials or still loading
+  if (loading || testimonials.length === 0) {
+    return (
+      <section className="section-padding bg-luxury-gray-50">
+        <div className="container-luxury">
+          <div className="text-center mb-16">
+            <h2 className="heading-section luxury-accent mb-6">
+              What Our Customers Say
+            </h2>
+            <p className="text-body max-w-2xl mx-auto">
+              {loading ? 'Loading testimonials...' : 'No testimonials available at the moment.'}
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   const currentTestimonial = testimonials[currentIndex];
 
@@ -205,12 +249,21 @@ const TestimonialsSection = () => {
           viewport={{ once: true }}
           className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8"
         >
-          {[
-            { label: 'Trusted Reviews', value: '4.9/5' },
-            { label: 'Happy Customers', value: '500+' },
-            { label: 'Years Experience', value: '5+' },
-            { label: 'Satisfaction Rate', value: '99%' }
-          ].map((stat, index) => (
+          {(() => {
+            // Calculate dynamic stats from testimonials
+            const totalReviews = testimonials.length;
+            const totalRating = testimonials.reduce((sum, t) => sum + t.rating, 0);
+            const averageRating = totalReviews > 0 ? (totalRating / totalReviews).toFixed(1) : '5.0';
+            const verifiedCount = testimonials.filter(t => t.verified).length;
+            const satisfactionRate = totalReviews > 0 ? Math.round((verifiedCount / totalReviews) * 100) : 99;
+            
+            return [
+              { label: 'Average Rating', value: `${averageRating}/5` },
+              { label: 'Happy Customers', value: totalReviews > 0 ? `${totalReviews}+` : '500+' },
+              { label: 'Years Experience', value: '5+' },
+              { label: 'Satisfaction Rate', value: `${satisfactionRate}%` }
+            ];
+          })().map((stat, index) => (
             <div key={index} className="text-center">
               <div className="text-2xl font-bold text-luxury-gold mb-2">
                 {stat.value}

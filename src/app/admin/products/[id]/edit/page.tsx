@@ -313,31 +313,12 @@ const EditProductPage = () => {
   };
 
   const categories = [
-    { value: 'islamic-calligraphy', label: 'Islamic Calligraphy' },
-    { value: 'mosque-models', label: 'Mosque Models' },
-    { value: 'geometric-art', label: 'Geometric Art' },
-    { value: 'arabic-text', label: 'Arabic Text' },
-    { value: 'decorative-art', label: 'Decorative Art' },
-    { value: 'custom-commissions', label: 'Custom Commissions' },
-    { value: 'architectural-models', label: 'Architectural Models' },
-    { value: 'wall-art', label: 'Wall Art' },
-    { value: 'sculptures', label: 'Sculptures' },
+    { value: 'Islamic Calligraphy', label: 'Islamic Calligraphy' },
+    { value: 'Islamic Architecture', label: 'Islamic Architecture' },
+    { value: 'Geometric Art', label: 'Geometric Art' },
+    { value: 'Heritage Collections', label: 'Heritage Collections' },
   ];
 
-  const islamicCategories = [
-    { value: 'ayat-al-kursi', label: 'Ayat al-Kursi' },
-    { value: 'bismillah', label: 'Bismillah' },
-    { value: 'surah-al-fatiha', label: 'Surah Al-Fatiha' },
-    { value: '99-names-allah', label: '99 Names of Allah' },
-    { value: 'shahada', label: 'Shahada' },
-    { value: 'mosque-architecture', label: 'Mosque Architecture' },
-    { value: 'geometric-patterns', label: 'Geometric Patterns' },
-    { value: 'arabic-names', label: 'Arabic Names' },
-    { value: 'duas-prayers', label: 'Duas & Prayers' },
-    { value: 'quranic-verses', label: 'Quranic Verses' },
-    { value: 'hadith-quotes', label: 'Hadith Quotes' },
-    { value: 'islamic-symbols', label: 'Islamic Symbols' },
-  ];
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 p-6">
@@ -519,20 +500,15 @@ const EditProductPage = () => {
             
             <div>
               <label className="block text-sm font-medium text-luxury-black mb-2">
-                Islamic Art Category *
+                Subcategory
               </label>
-              <select
-                value={formData.islamicCategory}
-                onChange={(e) => handleInputChange('islamicCategory', e.target.value)}
+              <input
+                type="text"
+                value={formData.subcategory || ''}
+                onChange={(e) => handleInputChange('subcategory', e.target.value)}
                 className="input-luxury"
-                required
-              >
-                {islamicCategories.map((cat) => (
-                  <option key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </option>
-                ))}
-              </select>
+                placeholder="e.g., Ayat al-Kursi, Bismillah"
+              />
             </div>
           </div>
         </div>

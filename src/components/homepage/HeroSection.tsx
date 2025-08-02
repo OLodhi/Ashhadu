@@ -1,15 +1,17 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Play } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useSettings } from '@/contexts/SettingsContext';
 import { SETTING_KEYS } from '@/types/settings';
 import Model3DViewer from '@/components/models/Model3DViewer';
+import VideoLightbox from '@/components/ui/VideoLightbox';
 
 const HeroSection = () => {
   const { getSetting } = useSettings();
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
 
   // Get showcase settings
   const isShowcaseEnabled = getSetting(SETTING_KEYS.SHOWCASE_3D_MODEL_ENABLED) || false;
@@ -79,12 +81,26 @@ const HeroSection = () => {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Link href="/shop" className="btn-luxury group">
+              <button 
+                onClick={() => {
+                  const collectionsSection = document.getElementById('collections');
+                  if (collectionsSection) {
+                    collectionsSection.scrollIntoView({ 
+                      behavior: 'smooth',
+                      block: 'start'
+                    });
+                  }
+                }}
+                className="btn-luxury group"
+              >
                 Explore Collection
                 <ArrowRight size={20} className="ml-2 group-hover:translate-x-1 transition-transform" />
-              </Link>
+              </button>
               
-              <button className="btn-luxury-outline group">
+              <button 
+                onClick={() => setIsVideoOpen(true)}
+                className="btn-luxury-outline group"
+              >
                 <Play size={18} className="mr-2" />
                 Watch Our Story
               </button>
@@ -194,6 +210,14 @@ const HeroSection = () => {
           </motion.div>
         </div>
       </motion.div>
+
+      {/* Video Lightbox */}
+      <VideoLightbox
+        isOpen={isVideoOpen}
+        onClose={() => setIsVideoOpen(false)}
+        videoUrl="/videos/AshhaduIslamicArt.mp4"
+        title="Ashhadu Islamic Art - Our Story"
+      />
     </section>
   );
 };

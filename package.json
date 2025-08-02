@@ -59,7 +59,8 @@
     "eslint-config-next": "15.1.8",
     "prettier": "^3.3.0",
     "prettier-plugin-tailwindcss": "^0.6.0",
-    "react-email": "^4.2.3"
+    "react-email": "^4.2.3",
+    "supabase": "^2.33.7"
   },
   "keywords": [
     "islamic-art",

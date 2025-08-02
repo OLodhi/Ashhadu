@@ -31,9 +31,9 @@ const HeritageCollectionsPage = () => {
         const response = await fetch('/api/products?status=published');
         if (response.ok) {
           const data = await response.json();
-          // Filter for custom/heritage products only
+          // Filter for Heritage Collections products only
           const heritageProducts = (data.data || []).filter(
-            (product: any) => product.islamicCategory === 'custom'
+            (product: any) => product.category === 'Heritage Collections'
           );
           setProducts(heritageProducts);
         } else {

@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Heart } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWishlist } from '@/contexts/WishlistContext';
+import { useSettings } from '@/contexts/SettingsContext';
+import { SETTING_KEYS } from '@/types/settings';
 import { WishlistButtonProps } from '@/types/wishlist';
 import toast from 'react-hot-toast';
 
@@ -17,7 +19,16 @@ export default function WishlistButton({
 }: WishlistButtonProps) {
   const { user } = useAuth();
   const { isInWishlist, addToWishlist, removeFromWishlist, loading } = useWishlist();
+  const { getSetting } = useSettings();
   const [isToggling, setIsToggling] = useState(false);
+  
+  // Check if wishlist feature is enabled
+  const isWishlistEnabled = getSetting(SETTING_KEYS.FEATURE_WISHLIST);
+  
+  // Don't render if wishlist is disabled
+  if (!isWishlistEnabled) {
+    return null;
+  }
 
   const isInWishlistState = isInWishlist(productId);
 

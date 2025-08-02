@@ -644,7 +644,7 @@ const OrderDetailPage = () => {
                       updateOrderStatus('cancelled');
                     }
                   }}
-                  className="w-full btn-luxury-ghost text-sm text-red-600"
+                  className="w-full btn-luxury-ghost text-sm text-red-600 flex items-center justify-center"
                   disabled={updating}
                 >
                   <AlertCircle className="h-4 w-4 mr-2" />

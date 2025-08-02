@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const collections = [
@@ -11,7 +11,7 @@ const collections = [
     name: 'Islamic Calligraphy',
     arabicName: 'الخط العربي',
     description: 'Sacred verses and prayers in beautiful Arabic calligraphy',
-    productCount: 24,
+    productCount: 3,
     href: '/collections/calligraphy',
     image: '/images/collections/calligraphy.jpg',
     color: 'from-luxury-gold to-yellow-600',
@@ -22,7 +22,7 @@ const collections = [
     name: 'Islamic Architecture',
     arabicName: 'العمارة الإسلامية',
     description: 'Detailed models of famous mosques and Islamic architecture',
-    productCount: 12,
+    productCount: 1,
     href: '/collections/mosque-models',
     image: '/images/collections/mosques.jpg',
     color: 'from-green-600 to-emerald-700',
@@ -33,7 +33,7 @@ const collections = [
     name: 'Geometric Art',
     arabicName: 'الفن الهندسي',
     description: 'Traditional Islamic geometric patterns and designs',
-    productCount: 18,
+    productCount: 1,
     href: '/collections/geometric-art',
     image: '/images/collections/geometric.jpg',
     color: 'from-blue-600 to-indigo-700',
@@ -44,7 +44,7 @@ const collections = [
     name: 'Heritage Collections',
     arabicName: 'مجموعات التراث',
     description: 'Timeless Islamic art celebrating our rich cultural heritage and traditions',
-    productCount: 8,
+    productCount: 4,
     href: '/collections/custom',
     image: '/images/collections/custom.jpg',
     color: 'from-purple-600 to-violet-700',
@@ -54,7 +54,7 @@ const collections = [
 
 const CollectionsPreview = () => {
   return (
-    <section className="section-padding bg-luxury-gray-50">
+    <section id="collections" className="section-padding bg-luxury-gray-50">
       <div className="container-luxury">
         {/* Section Header */}
         <div className="text-center mb-16">
@@ -197,19 +197,6 @@ const CollectionsPreview = () => {
           ))}
         </div>
 
-        {/* View All Collections Button */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-          className="text-center mt-12"
-        >
-          <Link href="/collections" className="btn-luxury group">
-            View All Collections
-            <ArrowRight size={20} className="ml-2 group-hover:translate-x-1 transition-transform" />
-          </Link>
-        </motion.div>
       </div>
     </section>
   );

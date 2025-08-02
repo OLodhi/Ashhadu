@@ -31,9 +31,9 @@ const GeometricArtPage = () => {
         const response = await fetch('/api/products?status=published');
         if (response.ok) {
           const data = await response.json();
-          // Filter for geometric products only
+          // Filter for Geometric Art products only
           const geometricProducts = (data.data || []).filter(
-            (product: any) => product.islamicCategory === 'geometric'
+            (product: any) => product.category === 'Geometric Art'
           );
           setProducts(geometricProducts);
         } else {

@@ -31,9 +31,9 @@ const IslamicArchitecturePage = () => {
         const response = await fetch('/api/products?status=published');
         if (response.ok) {
           const data = await response.json();
-          // Filter for architecture products only
+          // Filter for Islamic Architecture products only
           const architectureProducts = (data.data || []).filter(
-            (product: any) => product.islamicCategory === 'architecture'
+            (product: any) => product.category === 'Islamic Architecture'
           );
           setProducts(architectureProducts);
         } else {
