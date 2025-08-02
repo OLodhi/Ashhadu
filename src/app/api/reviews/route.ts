@@ -19,7 +19,8 @@ export async function GET(request: NextRequest) {
         verified_purchase,
         created_at,
         customer_id,
-        products!inner (
+        product_id,
+        products (
           id,
           name,
           slug
@@ -38,24 +39,29 @@ export async function GET(request: NextRequest) {
     }
 
     // Format reviews for testimonials section
-    const formattedReviews = reviews?.map(review => ({
-      id: review.id,
-      name: review.customer_name,
-      email: review.customer_email,
-      rating: review.rating,
-      title: review.title,
-      text: review.comment,
-      product: review.products?.name || 'Unknown Product',
-      productId: review.products?.id,
-      productSlug: review.products?.slug,
-      verified: review.verified_purchase,
-      createdAt: review.created_at,
-      customerId: review.customer_id,
-      // Generate location from email domain or use default
-      location: generateLocationFromEmail(review.customer_email),
-      // Format date for display
-      relativeDate: formatRelativeDate(review.created_at)
-    })) || [];
+    const formattedReviews = reviews?.map(review => {
+      // Handle products relation - it could be an object or array depending on the join
+      const product = Array.isArray(review.products) ? review.products[0] : review.products;
+      
+      return {
+        id: review.id,
+        name: review.customer_name,
+        email: review.customer_email,
+        rating: review.rating,
+        title: review.title,
+        text: review.comment,
+        product: product?.name || 'Unknown Product',
+        productId: product?.id || review.product_id,
+        productSlug: product?.slug,
+        verified: review.verified_purchase,
+        createdAt: review.created_at,
+        customerId: review.customer_id,
+        // Generate location from email domain or use default
+        location: generateLocationFromEmail(review.customer_email),
+        // Format date for display
+        relativeDate: formatRelativeDate(review.created_at)
+      };
+    }) || [];
 
     return NextResponse.json({
       success: true,
